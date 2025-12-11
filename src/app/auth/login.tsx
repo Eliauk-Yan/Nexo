@@ -1,180 +1,101 @@
-import React, { useState } from 'react'
-import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  Dimensions,
-  ScrollView,
-} from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient' // Expo 渐变库
-import { BlurView } from 'expo-blur' // Expo 毛玻璃库图标
-import AntDesign from '@expo/vector-icons/AntDesign'
+import { LiquidGlassButton } from '@/components/ui'
+import { MESSAGES } from '@/constants/messages'
+import { useAuth } from '@/hooks/useAuth'
+import { handleApiError } from '@/utils/errorHandler'
+import { validatePhone } from '@/utils/validation'
 import Feather from '@expo/vector-icons/Feather'
-import { useRouter } from 'expo-router'
+import { LinearGradient } from 'expo-linear-gradient'
+import { useState } from 'react'
+import { Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
-const { width } = Dimensions.get('window')
+const DEFAULT_CODE = '123456'
+const DEFAULT_PHONE = '13800138000'
+const illustration = require('@/assets/images/react-logo.png')
 
 const Login = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isEmailFocused, setIsEmailFocused] = useState(false)
-  const [isPasswordFocused, setIsPasswordFocused] = useState(false)
+  const [phone] = useState(DEFAULT_PHONE)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { login } = useAuth()
 
-  const router = useRouter()
-  const handleLogin = () => {
-    setIsLoading(true)
-    router.push('/(tabs)/profile')
+  const handleLogin = async () => {
+    if (!validatePhone(phone)) {
+      Alert.alert('错误', MESSAGES.VALIDATION.PHONE_INVALID)
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      await login({ phone, code: DEFAULT_CODE })
+    } catch (error) {
+      Alert.alert('错误', handleApiError(error as Error))
+    } finally {
+      setIsSubmitting(false)
+    }
   }
+
+  const maskedPhone = `${phone.slice(0, 3)}****${phone.slice(-4)}`
+  const displayPhone = `+86 ${maskedPhone}`
 
   return (
     <View style={styles.container}>
+      <LinearGradient
+        colors={['#0a0a0a', '#111218']}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.flex}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* --- 登录卡片主体 --- */}
-          <BlurView intensity={30} tint="dark" style={styles.card}>
-            {/* Logo 区 */}
-            <View style={styles.header}>
-              <LinearGradient colors={['#6C5CE7', '#a29bfe']} style={styles.logoBg}>
-                <Feather name="hexagon" size={28} color="#FFF" fill="rgba(255,255,255,0.2)" />
-              </LinearGradient>
-              <Text style={styles.title}>欢迎回来</Text>
-              <Text style={styles.subtitle}>登录以管理您的 NFT 资产</Text>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.logoArea}>
+            <Text style={styles.logoWordmark}>NEXO!</Text>
+            <Text style={styles.tagline}>开启数字艺术与资产的灵感之旅</Text>
+          </View>
+
+          <View style={styles.illustrationBox}>
+            <Image source={illustration} style={styles.illustration} resizeMode="contain" />
+          </View>
+
+          <View style={styles.phoneCard}>
+            <Text style={styles.phoneStatic}>{displayPhone}</Text>
+            <Text style={styles.phoneSub}>其他手机号登录</Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={handleLogin}
+            activeOpacity={0.9}
+            disabled={!phone || isSubmitting}
+            style={[styles.primaryButtonWrapper, (!phone || isSubmitting) && styles.buttonDisabled]}
+          >
+            <LinearGradient
+              colors={['#ffffff', '#dcdde1']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.primaryButton}
+            >
+              <Text style={styles.primaryButtonText}>{isSubmitting ? '登录中...' : '一键登录'}</Text>
+              <Feather name="arrow-right" size={18} color="#0A0B14" />
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <View style={styles.otherSection}>
+            <Text style={styles.sectionTitle}>其他登录方式</Text>
+            <View style={styles.socialRow}>
+              <LiquidGlassButton icon="message-circle" />
+              <LiquidGlassButton icon="github" />
+              <LiquidGlassButton icon="credit-card" />
             </View>
+          </View>
 
-            {/* 1. 钱包登录按钮 */}
-            <TouchableOpacity style={styles.walletBtn} activeOpacity={0.8}>
-              <Feather name="credit-card" size={20} color="#6C5CE7" />
-              <Text style={styles.walletBtnText}>连接钱包登录</Text>
-            </TouchableOpacity>
-
-            {/* 分割线 */}
-            <View style={styles.dividerContainer}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>或使用手机号登录</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* 2. 表单区域 */}
-            <View style={styles.form}>
-              {/* 手机号输入 */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>手机号</Text>
-                <View style={[styles.inputWrapper, isEmailFocused && styles.inputWrapperFocused]}>
-                  <Feather
-                    name="phone"
-                    size={20}
-                    color={isEmailFocused ? '#6C5CE7' : '#666'}
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="188****8888"
-                    placeholderTextColor="#666"
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="phone-pad"
-                    autoCapitalize="none"
-                    onFocus={() => setIsEmailFocused(true)}
-                    onBlur={() => setIsEmailFocused(false)}
-                  />
-                </View>
-              </View>
-
-              {/* 密码输入 */}
-              <View style={styles.inputGroup}>
-                <View style={styles.passwordHeader}>
-                  <Text style={styles.label}>验证码</Text>
-                </View>
-                <View
-                  style={[styles.inputWrapper, isPasswordFocused && styles.inputWrapperFocused]}
-                >
-                  <Feather
-                    name="lock"
-                    size={20}
-                    color={isPasswordFocused ? '#6C5CE7' : '#666'}
-                    style={styles.inputIcon}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="输入您的密码"
-                    placeholderTextColor="#666"
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry={!showPassword}
-                    onFocus={() => setIsPasswordFocused(true)}
-                    onBlur={() => setIsPasswordFocused(false)}
-                  />
-                  <TouchableOpacity
-                    onPress={() => setShowPassword(!showPassword)}
-                    style={styles.eyeIcon}
-                  >
-                    {showPassword ? (
-                      <Feather name="eye-off" size={20} color="#666" />
-                    ) : (
-                      <Feather name="eye" size={20} color="#666" />
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* 登录按钮 */}
-              <TouchableOpacity
-                onPress={handleLogin}
-                disabled={isLoading}
-                activeOpacity={0.8}
-                style={styles.loginBtnContainer}
-              >
-                <LinearGradient
-                  colors={['#6C5CE7', '#8075e5']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.loginBtn}
-                >
-                  {isLoading ? (
-                    <Text style={styles.loginText}>登录中...</Text>
-                  ) : (
-                    <>
-                      <Text style={styles.loginText}>立即登录</Text>
-                      <Feather name="arrow-right" size={20} color="#FFF" />
-                    </>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-
-            {/* 底部社交 & 注册 */}
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>其他登录方式</Text>
-              <View style={styles.socialRow}>
-                <TouchableOpacity style={styles.socialBtn}>
-                  {/* 使用 Hexagon 模拟 Discord */}
-                  <AntDesign name="wechat" size={20} color="#888" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.socialBtn}>
-                  <Feather name="github" size={20} color="#888" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.socialBtn}>
-                  <AntDesign name="alipay-circle" size={20} color="#888" />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.signupRow}>
-                <Text style={styles.noAccountText}>还没有账号? </Text>
-                <TouchableOpacity>
-                  <Text style={styles.signupText}>创建一个 NFT 账户</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </BlurView>
+          <Text style={styles.agreement}>
+            登录即表示同意
+            <Text style={styles.link}>《用户协议》</Text>
+            和
+            <Text style={styles.link}>《隐私政策》</Text>
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </View>
@@ -184,204 +105,130 @@ const Login = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#050509',
   },
-  glow: {
-    position: 'absolute',
-    width: width * 1.2,
-    height: width * 1.2,
-    borderRadius: width,
-    opacity: 0.25,
-  },
-  glowPurple: {
-    backgroundColor: '#6C5CE7',
-    top: -width * 0.6,
-    left: -width * 0.4,
-  },
-  glowCyan: {
-    backgroundColor: '#00cec9',
-    bottom: -width * 0.5,
-    right: -width * 0.4,
-    opacity: 0.15,
-  },
-  keyboardView: {
+  flex: {
     flex: 1,
-    justifyContent: 'center',
   },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: 20,
-  },
-  card: {
-    borderRadius: 24,
+  content: {
     padding: 24,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-    backgroundColor: 'rgba(18, 18, 18, 0.6)', // Fallback for Android if blur doesn't work perfectly
+    paddingTop: 60,
+    paddingBottom: 40,
   },
-  header: {
+  logoArea: {
+    marginTop: 32,
     alignItems: 'center',
-    marginBottom: 30,
+    gap: 12,
   },
-  logoBg: {
-    width: 50,
-    height: 50,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: '#6C5CE7',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 15,
-    elevation: 10,
+  logoWordmark: {
+    color: '#f5f7fa',
+    fontSize: 36,
+    fontWeight: '900',
+    letterSpacing: 6,
+    textTransform: 'uppercase',
+    textShadowColor: 'rgba(255, 255, 255, 0.35)',
+    textShadowOffset: { width: 0, height: 6 },
+    textShadowRadius: 16,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFF',
-    marginBottom: 8,
-  },
-  subtitle: {
+  tagline: {
+    color: '#C9CEDC',
     fontSize: 14,
-    color: '#888',
+    textAlign: 'center',
+    lineHeight: 20,
   },
-  walletBtn: {
-    flexDirection: 'row',
+  illustrationBox: {
+    marginTop: 28,
+    marginBottom: 32,
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1E1E1E',
-    borderWidth: 1,
-    borderColor: '#333',
-    borderRadius: 12,
-    paddingVertical: 14,
-    marginBottom: 24,
   },
-  walletBtnText: {
-    color: '#FFF',
+  illustration: {
+    width: '100%',
+    height: 200,
+    transform: [{ translateY: -8 }],
+  },
+  phoneCard: {
+    marginTop: 12,
+    paddingVertical: 8,
+  },
+  cardLabel: {
+    color: '#E2E6F0',
+    fontSize: 14,
     fontWeight: '600',
-    fontSize: 15,
-    marginLeft: 10,
+    marginBottom: 12,
   },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#333',
-  },
-  dividerText: {
-    color: '#666',
-    fontSize: 12,
-    marginHorizontal: 16,
-  },
-  form: {
-    marginBottom: 20,
-  },
-  inputGroup: {
-    marginBottom: 16,
-  },
-  label: {
-    color: '#888',
-    fontSize: 12,
-    marginBottom: 6,
-    marginLeft: 4,
-  },
-  passwordHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  forgotText: {
-    color: '#6C5CE7',
-    fontSize: 12,
-  },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#0a0a0a',
-    borderWidth: 1,
-    borderColor: '#333',
-    borderRadius: 12,
-    height: 50,
-    paddingHorizontal: 12,
-  },
-  inputWrapperFocused: {
-    borderColor: '#6C5CE7',
-  },
-  inputIcon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    color: '#FFF',
-    height: '100%',
-  },
-  eyeIcon: {
-    padding: 4,
-  },
-  loginBtnContainer: {
-    marginTop: 10,
-    shadowColor: '#6C5CE7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  loginBtn: {
+  phoneRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
-    borderRadius: 12,
+    gap: 10,
+    paddingHorizontal: 12,
+    height: 54,
   },
-  loginText: {
-    color: '#FFF',
+  phoneStatic: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: '900',
+    textAlign: 'center',
+    letterSpacing: 2,
+  },
+  phoneSub: {
+    marginTop: 6,
+    textAlign: 'center',
+    color: '#9EA5BD',
+    fontSize: 12,
+  },
+  cardHint: {
+    color: '#7B8199',
+    fontSize: 12,
+    marginTop: 8,
+  },
+  primaryButtonWrapper: {
+    marginTop: 20,
+    borderRadius: 14,
+    overflow: 'hidden',
+    shadowColor: '#ffffff',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 12,
+  },
+  primaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+  },
+  primaryButtonText: {
+    color: '#0A0B14',
     fontSize: 16,
     fontWeight: 'bold',
-    marginRight: 8,
   },
-  footer: {
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  otherSection: {
+    marginTop: 30,
     alignItems: 'center',
-    marginTop: 10,
   },
-  footerText: {
-    color: '#444',
+  sectionTitle: {
+    color: '#9EA3B5',
     fontSize: 12,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   socialRow: {
     flexDirection: 'row',
-    gap: 20,
-    marginBottom: 30,
+    gap: 18,
   },
-  socialBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: '#1E1E1E',
-    borderWidth: 1,
-    borderColor: '#333',
-    justifyContent: 'center',
-    alignItems: 'center',
+  agreement: {
+    marginTop: 24,
+    color: '#9EA3B5',
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
   },
-  signupRow: {
-    flexDirection: 'row',
-  },
-  noAccountText: {
-    color: '#666',
-    fontSize: 14,
-  },
-  signupText: {
-    color: '#6C5CE7',
-    fontWeight: 'bold',
-    fontSize: 14,
+  link: {
+    color: '#F2F4F7',
   },
 })
 

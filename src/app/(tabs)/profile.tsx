@@ -1,3 +1,6 @@
+import Index from '@/components/ui/Avatar'
+import LiquidGlassButton from '@/components/ui/LiquidGlassButton'
+import { useRouter } from 'expo-router'
 import React, { useState } from 'react'
 import {
   Dimensions,
@@ -9,8 +12,6 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
-import Index from '@/components/ui/Avatar'
-import LiquidGlassButton from '@/components/ui/LiquidGlassButton'
 
 const { width } = Dimensions.get('window')
 const CARD_WIDTH = (width - 48) / 2
@@ -18,6 +19,7 @@ const HEADER_HEIGHT = 60 // 不含安全区
 
 const Profile = () => {
   const insets = useSafeAreaInsets()
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState('collected')
 
   const nftData = [
@@ -69,7 +71,7 @@ const Profile = () => {
         style={[styles.headerBar, { paddingTop: insets.top, height: insets.top + HEADER_HEIGHT }]}
       >
         <LiquidGlassButton icon="share" />
-        <LiquidGlassButton icon="settings" />
+        <LiquidGlassButton icon="settings" onPress={() => router.push('/settings')} />
       </View>
 
       <ScrollView

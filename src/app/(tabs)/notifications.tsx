@@ -1,24 +1,225 @@
-import { StyleSheet, Text, View } from 'react-native'
+/**
+ * 通知页面
+ * 展示用户的通知消息
+ */
+
+import React, { useState, useEffect } from 'react'
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  RefreshControl,
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import Feather from '@expo/vector-icons/Feather'
+import { notificationApi } from '@/services/api'
+import { Notification } from '@/types'
+import { colors, spacing, typography, borderRadius } from '@/config/theme'
+import { formatRelativeTime } from '@/utils/validation'
+import { handleApiError } from '@/utils/errorHandler'
 
 const Notifications = () => {
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [loading, setLoading] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true)
+      const response = await notificationApi.getList({ page: 1, pageSize: 50 })
+      setNotifications(response.list)
+      
+      const count = await notificationApi.getUnreadCount()
+      setUnreadCount(count)
+    } catch (error) {
+      console.error('Fetch notifications error:', handleApiError(error as Error))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchNotifications()
+  }, [])
+
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await notificationApi.markAsRead(id)
+      setNotifications((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, read: true } : item))
+      )
+      setUnreadCount((prev) => Math.max(0, prev - 1))
+    } catch (error) {
+      console.error('Mark as read error:', error)
+    }
+  }
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await notificationApi.markAllAsRead()
+      setNotifications((prev) => prev.map((item) => ({ ...item, read: true })))
+      setUnreadCount(0)
+    } catch (error) {
+      console.error('Mark all as read error:', error)
+    }
+  }
+
+  const renderItem = ({ item }: { item: Notification }) => {
+    const iconMap = {
+      like: 'heart',
+      comment: 'message-circle',
+      sale: 'dollar-sign',
+      offer: 'tag',
+      transfer: 'arrow-right',
+      system: 'bell',
+    }
+
+    return (
+      <TouchableOpacity
+        style={[styles.notificationItem, !item.read && styles.unreadItem]}
+        onPress={() => handleMarkAsRead(item.id)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.iconContainer}>
+          <Feather
+            name={iconMap[item.type] as any}
+            size={20}
+            color={item.read ? colors.textSecondary : colors.primary}
+          />
+        </View>
+        <View style={styles.content}>
+          <Text style={[styles.title, !item.read && styles.unreadTitle]}>
+            {item.title}
+          </Text>
+          <Text style={styles.message} numberOfLines={2}>
+            {item.message}
+          </Text>
+          <Text style={styles.time}>{formatRelativeTime(item.createdAt)}</Text>
+        </View>
+        {!item.read && <View style={styles.unreadDot} />}
+      </TouchableOpacity>
+    )
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>通知</Text>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>通知</Text>
+        {unreadCount > 0 && (
+          <TouchableOpacity onPress={handleMarkAllAsRead}>
+            <Text style={styles.markAllText}>全部已读</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <FlatList
+        data={notifications}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl refreshing={loading} onRefresh={fetchNotifications} tintColor={colors.primary} />
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Feather name="bell-off" size={48} color={colors.textTertiary} />
+            <Text style={styles.emptyText}>暂无通知</Text>
     </View>
+        }
+      />
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  headerTitle: {
+    fontSize: typography.fontSize.xxxl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+  },
+  markAllText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.primary,
+  },
+  list: {
+    padding: spacing.md,
+  },
+  notificationItem: {
+    flexDirection: 'row',
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  unreadItem: {
+    borderColor: colors.primary,
+    backgroundColor: colors.backgroundTertiary,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.backgroundSecondary,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'black',
+    marginRight: spacing.md,
+  },
+  content: {
+    flex: 1,
   },
   title: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  unreadTitle: {
+    color: colors.text,
+  },
+  message: {
+    fontSize: typography.fontSize.sm,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+    lineHeight: typography.fontSize.md * typography.lineHeight.normal,
+  },
+  time: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textTertiary,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+    marginLeft: spacing.sm,
+    alignSelf: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: spacing.xxl,
+  },
+  emptyText: {
+    color: colors.textTertiary,
+    fontSize: typography.fontSize.md,
+    marginTop: spacing.md,
   },
 })
 
