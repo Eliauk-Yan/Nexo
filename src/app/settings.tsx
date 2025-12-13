@@ -3,57 +3,44 @@ import { useAuth } from '@/hooks/useAuth'
 import Feather from '@expo/vector-icons/Feather'
 import { useRouter } from 'expo-router'
 import React, { useState } from 'react'
-import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TouchableOpacity,
-    View,
-} from 'react-native'
+import { Alert, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { colors } from '@/config/theme'
 
 const Settings = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { logout } = useAuth()
-  
+
   const [notificationsEnabled, setNotificationsEnabled] = useState(true)
   const [darkModeEnabled, setDarkModeEnabled] = useState(true)
 
   const handleLogout = async () => {
-    Alert.alert(
-      '退出登录',
-      '确定要退出登录吗？',
-      [
-        { text: '取消', style: 'cancel' },
-        { 
-          text: '退出', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await logout()
-              router.replace('/auth/login')
-            } catch (error) {
-              console.error('Logout failed:', error)
-            }
+    Alert.alert('退出登录', '确定要退出登录吗？', [
+      { text: '取消', style: 'cancel' },
+      {
+        text: '退出',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await logout()
+            router.replace('/auth/login')
+          } catch (error) {
+            console.error('Logout failed:', error)
           }
-        }
-      ]
-    )
+        },
+      },
+    ])
   }
 
-  const renderSectionHeader = (title: string) => (
-    <Text style={styles.sectionHeader}>{title}</Text>
-  )
+  const renderSectionHeader = (title: string) => <Text style={styles.sectionHeader}>{title}</Text>
 
   const renderItem = (
     icon: keyof typeof Feather.glyphMap,
     title: string,
     onPress?: () => void,
     rightElement?: React.ReactNode,
-    isDestructive = false
+    isDestructive = false,
   ) => (
     <TouchableOpacity
       style={styles.itemContainer}
@@ -68,11 +55,7 @@ const Settings = () => {
         <Text style={[styles.itemTitle, isDestructive && styles.destructiveText]}>{title}</Text>
       </View>
       <View style={styles.itemRight}>
-        {rightElement ? (
-          rightElement
-        ) : (
-          <Feather name="chevron-right" size={20} color="#666" />
-        )}
+        {rightElement ? rightElement : <Feather name="chevron-right" size={20} color="#666" />}
       </View>
     </TouchableOpacity>
   )
@@ -85,7 +68,7 @@ const Settings = () => {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {renderSectionHeader('账户')}
-        {renderItem('user', '个人资料', () => {})}
+        {renderItem('user', '个人资料', () => router.push('/settings/profile'))}
         {renderItem('shield', '账号安全', () => {})}
         {renderItem('credit-card', '支付设置', () => {})}
 
@@ -97,9 +80,9 @@ const Settings = () => {
           <Switch
             value={notificationsEnabled}
             onValueChange={setNotificationsEnabled}
-            trackColor={{ false: '#333', true: '#6C5CE7' }}
+            trackColor={{ false: '#333', true: colors.primary }}
             thumbColor={'#FFF'}
-          />
+          />,
         )}
         {renderItem(
           'moon',
@@ -108,9 +91,9 @@ const Settings = () => {
           <Switch
             value={darkModeEnabled}
             onValueChange={setDarkModeEnabled}
-            trackColor={{ false: '#333', true: '#6C5CE7' }}
+            trackColor={{ false: '#333', true: colors.primary }}
             thumbColor={'#FFF'}
-          />
+          />,
         )}
         {renderItem('globe', '多语言', () => {})}
 
@@ -119,11 +102,11 @@ const Settings = () => {
         {renderItem('info', '关于我们', () => {})}
 
         <View style={styles.footer}>
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <Text style={styles.logoutText}>退出登录</Text>
-            </TouchableOpacity>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutText}>退出登录</Text>
+          </TouchableOpacity>
         </View>
-        
+
         <Text style={styles.versionText}>Version 1.0.0</Text>
       </ScrollView>
     </View>
@@ -186,20 +169,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   footer: {
-      marginTop: 20,
+    marginTop: 20,
   },
   logoutButton: {
-      backgroundColor: '#1E1E1E',
-      padding: 16,
-      borderRadius: 12,
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: '#333',
+    backgroundColor: '#1E1E1E',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333',
   },
   logoutText: {
-      color: '#FF4444',
-      fontSize: 16,
-      fontWeight: 'bold',
+    color: '#FF4444',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   versionText: {
     color: '#444',

@@ -3,13 +3,12 @@
  * 管理用户登录、注册、登出等状态
  */
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'expo-router'
-import { authApi, userApi } from '@/services/api'
-import { storage } from '@/utils/storage'
-import { User, LoginForm, RegisterForm } from '@/types'
+import { authApi } from '@/api'
 import { ROUTES } from '@/constants/routes'
-import { MESSAGES } from '@/constants/messages'
+import { LoginForm, RegisterForm, User } from '@/types'
+import { storage } from '@/utils/storage'
+import { useRouter } from 'expo-router'
+import { useCallback, useEffect, useState } from 'react'
 
 interface UseAuthReturn {
   user: User | null
@@ -35,14 +34,6 @@ export const useAuth = (): UseAuthReturn => {
           const userInfo = await storage.getUserInfo<User>()
           if (userInfo) {
             setUser(userInfo)
-            // 可以在这里刷新用户信息
-            try {
-              const freshUser = await userApi.getProfile()
-              setUser(freshUser)
-              await storage.setUserInfo(freshUser)
-            } catch (error) {
-              console.error('Failed to refresh user info:', error)
-            }
           }
         }
       } catch (error) {
@@ -72,7 +63,7 @@ export const useAuth = (): UseAuthReturn => {
         setIsLoading(false)
       }
     },
-    [router]
+    [router],
   )
 
   // 注册
@@ -92,7 +83,7 @@ export const useAuth = (): UseAuthReturn => {
         setIsLoading(false)
       }
     },
-    [router]
+    [router],
   )
 
   // 登出
@@ -114,13 +105,10 @@ export const useAuth = (): UseAuthReturn => {
 
   // 刷新用户信息
   const refreshUser = useCallback(async () => {
-    try {
-      const freshUser = await userApi.getProfile()
-      setUser(freshUser)
-      await storage.setUserInfo(freshUser)
-    } catch (error) {
-      console.error('Refresh user error:', error)
-      throw error
+    // TODO: 实现刷新用户信息逻辑
+    const userInfo = await storage.getUserInfo<User>()
+    if (userInfo) {
+      setUser(userInfo)
     }
   }, [])
 
@@ -134,4 +122,3 @@ export const useAuth = (): UseAuthReturn => {
     refreshUser,
   }
 }
-

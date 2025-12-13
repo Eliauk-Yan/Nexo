@@ -8,11 +8,11 @@ const API_PREFIX = '/api/v1'
 export const API_ENDPOINTS = {
   // 认证相关
   AUTH: {
-    LOGIN: `${API_PREFIX}/auth/login`,
+    LOGIN: `/auth/login`,
     REGISTER: `${API_PREFIX}/auth/register`,
     LOGOUT: `${API_PREFIX}/auth/logout`,
     REFRESH_TOKEN: `${API_PREFIX}/auth/refresh`,
-    SEND_VERIFICATION_CODE: `${API_PREFIX}/auth/send-code`,
+    SEND_VERIFICATION_CODE: `/auth/verifyCode`,
     VERIFY_CODE: `${API_PREFIX}/auth/verify-code`,
     FORGOT_PASSWORD: `${API_PREFIX}/auth/forgot-password`,
     RESET_PASSWORD: `${API_PREFIX}/auth/reset-password`,

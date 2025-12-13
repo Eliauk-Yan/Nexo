@@ -3,9 +3,9 @@
  * 基于 fetch 封装，提供统一的请求接口
  */
 
-import { API_BASE_URL, API_TIMEOUT, STORAGE_KEYS } from '@/config/env'
+import { API_BASE_URL, API_TIMEOUT } from '@/config/env'
+import { ApiError, BaseResponse } from '@/types'
 import { storage } from './storage'
-import { BaseResponse, ApiError } from '@/types'
 
 type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
 
@@ -35,7 +35,7 @@ class Request {
     // 添加 token
     const token = await storage.getToken()
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`
+      headers['satoken'] = `Bearer ${token}`
     }
 
     return headers
@@ -72,11 +72,11 @@ class Request {
 
     if (isJson) {
       const data: BaseResponse<T> = await response.json()
-      if (data.code === 0 || data.code === 200) {
+      if (data.success === true) {
         return data.data
       } else {
         throw {
-          code: data.code,
+          code: parseInt(data.code) || 500,
           message: data.message,
         } as ApiError
       }

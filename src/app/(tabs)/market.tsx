@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { useMarketList } from '@/hooks/useMarket'
 import { NFTList } from '@/components/business/NFTList'
+import { ButtonHeader } from '@/components/ui'
 import { colors, spacing, typography, borderRadius } from '@/config/theme'
 import { NFT } from '@/types'
 
@@ -70,7 +71,9 @@ const Market = () => {
   )
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
+      <ButtonHeader />
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <NFTList
         nfts={nfts}
         loading={loading}
@@ -84,6 +87,7 @@ const Market = () => {
         contentContainerStyle={styles.content}
       />
     </SafeAreaView>
+    </View>
   )
 }
 
@@ -91,6 +95,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  safeArea: {
+    flex: 1,
   },
   header: {
     padding: spacing.md,

@@ -1,10 +1,10 @@
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
+import { GlassView } from 'expo-glass-effect'
 import React from 'react'
 import { StyleSheet, TouchableOpacity, View } from 'react-native'
-import { GlassView } from 'expo-glass-effect'
-import Feather from '@expo/vector-icons/Feather'
 
 type GlassViewProps = {
-  icon: keyof typeof Feather.glyphMap // 确保 icon 是 Feather 支持的名字
+  icon: keyof typeof FontAwesome6.glyphMap // 确保 icon 是 FontAwesome6 支持的名字
   onPress?: () => void // 可选点击事件
   size?: number // 图标大小，可选
   color?: string // 图标颜色，可选
@@ -17,7 +17,7 @@ const LiquidGlassButton = (props: GlassViewProps) => {
     <View>
       <GlassView style={styles.liquidButton} isInteractive={true}>
         <TouchableOpacity style={styles.touchable} onPress={onPress}>
-          <Feather name={icon} size={size} color={color} />
+          <FontAwesome6 name={icon} size={size} color={color} />
         </TouchableOpacity>
       </GlassView>
     </View>

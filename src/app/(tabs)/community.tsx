@@ -1,6 +1,6 @@
 /**
- * 通知页面
- * 展示用户的通知消息
+ * 社区（原通知）
+ * 暂沿用通知流，后续可替换为社区动态/帖子流
  */
 
 import React, { useState, useEffect } from 'react'
@@ -14,7 +14,9 @@ import {
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import Feather from '@expo/vector-icons/Feather'
-import { notificationApi } from '@/services/api'
+// TODO: 实现 notificationApi
+// import { notificationApi } from '@/api'
+import { ButtonHeader } from '@/components/ui'
 import { Notification } from '@/types'
 import { colors, spacing, typography, borderRadius } from '@/config/theme'
 import { formatRelativeTime } from '@/utils/validation'
@@ -28,11 +30,15 @@ const Notifications = () => {
   const fetchNotifications = async () => {
     try {
       setLoading(true)
-      const response = await notificationApi.getList({ page: 1, pageSize: 50 })
-      setNotifications(response.list)
+      // TODO: 实现 notificationApi 后恢复此功能
+      // const response = await notificationApi.getList({ page: 1, pageSize: 50 })
+      // setNotifications(response.list)
+      // const count = await notificationApi.getUnreadCount()
+      // setUnreadCount(count)
       
-      const count = await notificationApi.getUnreadCount()
-      setUnreadCount(count)
+      // 暂时使用空数据
+      setNotifications([])
+      setUnreadCount(0)
     } catch (error) {
       console.error('Fetch notifications error:', handleApiError(error as Error))
     } finally {
@@ -46,7 +52,8 @@ const Notifications = () => {
 
   const handleMarkAsRead = async (id: string) => {
     try {
-      await notificationApi.markAsRead(id)
+      // TODO: 实现 notificationApi 后恢复此功能
+      // await notificationApi.markAsRead(id)
       setNotifications((prev) =>
         prev.map((item) => (item.id === id ? { ...item, read: true } : item))
       )
@@ -58,7 +65,8 @@ const Notifications = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
-      await notificationApi.markAllAsRead()
+      // TODO: 实现 notificationApi 后恢复此功能
+      // await notificationApi.markAllAsRead()
       setNotifications((prev) => prev.map((item) => ({ ...item, read: true })))
       setUnreadCount(0)
     } catch (error) {
@@ -104,9 +112,11 @@ const Notifications = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
+      <ButtonHeader showNotification={false} />
+      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>通知</Text>
+        <Text style={styles.headerTitle}>社区</Text>
         {unreadCount > 0 && (
           <TouchableOpacity onPress={handleMarkAllAsRead}>
             <Text style={styles.markAllText}>全部已读</Text>
@@ -130,6 +140,7 @@ const Notifications = () => {
         }
       />
     </SafeAreaView>
+    </View>
   )
 }
 
@@ -137,6 +148,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  safeArea: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',

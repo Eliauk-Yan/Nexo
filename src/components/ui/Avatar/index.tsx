@@ -1,5 +1,6 @@
 import React from 'react'
 import { Image, StyleSheet } from 'react-native'
+import { colors } from '@/config/theme'
 
 type AvatarProps = {
   url?: string // 图片地址，可空
@@ -7,7 +8,7 @@ type AvatarProps = {
   size?: number // 尺寸，默认 100
 }
 
-const Index = ({ url, color = '#6C5CE7', size = 100 }: AvatarProps) => {
+const Index = ({ url, color = colors.primary, size = 100 }: AvatarProps) => {
   return (
     <Image
       source={{ uri: url }}

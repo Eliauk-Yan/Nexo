@@ -1,20 +1,31 @@
 import { Stack } from 'expo-router'
+import { StatusBar } from 'expo-status-bar'
 import 'react-native-reanimated'
 
 const RootLayout = () => {
   return (
-    <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="auth/login"
-        options={{
-          headerShown: false,
-          gestureEnabled: false, // 禁用手势返回
-        }}
-      />
-      <Stack.Screen name="settings" options={{ headerShown: false }} />
-    </Stack>
+    <>
+      <StatusBar translucent backgroundColor="transparent" style="light" />
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="auth/login"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="auth/verify"
+          options={{
+            headerShown: false,
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen name="settings" options={{ headerShown: false }} />
+      </Stack>
+    </>
   )
 }
 

@@ -18,7 +18,7 @@ export const ENV = getEnv()
 // API 配置
 export const API_CONFIG = {
   development: {
-    baseURL: 'http://localhost:3000/api',
+    baseURL: 'http://172.20.10.3:8082',
     timeout: 10000,
   },
   staging: {
@@ -64,7 +64,7 @@ export const STORAGE_KEYS = {
 // Mock 配置
 // 设置为 true 时使用 mock 数据，false 时使用真实 API
 // 可以通过环境变量或配置文件控制
-export const USE_MOCK = __DEV__ && true // 开发环境默认使用 mock，可根据需要修改
+export const USE_MOCK = false // 关闭 mock，使用真实 API
 
 // Mock 延迟配置（毫秒）
 export const MOCK_DELAY = {

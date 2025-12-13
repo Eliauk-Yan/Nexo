@@ -4,7 +4,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { marketApi } from '@/services/api'
+// TODO: 实现 marketApi
+// import { marketApi } from '@/api'
 import { NFT, MarketStats, MarketFilters, PaginationParams } from '@/types'
 
 interface UseMarketListParams extends PaginationParams, MarketFilters {}
@@ -35,19 +36,24 @@ export const useMarketList = (params?: UseMarketListParams): UseMarketListReturn
       try {
         setLoading(true)
         setError(null)
-        const response = await marketApi.getList({
-          ...params,
-          page: pageNum,
-          pageSize,
-        })
-
-        if (append) {
-          setNfts((prev) => [...prev, ...response.list])
-        } else {
-          setNfts(response.list)
+        // TODO: 实现 marketApi 后恢复此功能
+        // const response = await marketApi.getList({
+        //   ...params,
+        //   page: pageNum,
+        //   pageSize,
+        // })
+        // if (append) {
+        //   setNfts((prev) => [...prev, ...response.list])
+        // } else {
+        //   setNfts(response.list)
+        // }
+        // setHasMore(response.page < response.totalPages)
+        
+        // 暂时返回空数据
+        if (!append) {
+          setNfts([])
         }
-
-        setHasMore(response.page < response.totalPages)
+        setHasMore(false)
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Failed to fetch market NFTs'))
         console.error('Fetch market NFTs error:', err)
@@ -104,8 +110,10 @@ export const useMarketStats = (): UseMarketStatsReturn => {
     try {
       setLoading(true)
       setError(null)
-      const data = await marketApi.getStats()
-      setStats(data)
+      // TODO: 实现 marketApi 后恢复此功能
+      // const data = await marketApi.getStats()
+      // setStats(data)
+      setStats(null)
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch market stats'))
       console.error('Fetch market stats error:', err)
@@ -151,8 +159,10 @@ export const useMarketSearch = (): UseMarketSearchReturn => {
     try {
       setLoading(true)
       setError(null)
-      const response = await marketApi.search(keyword)
-      setNfts(response.list)
+      // TODO: 实现 marketApi 后恢复此功能
+      // const response = await marketApi.search(keyword)
+      // setNfts(response.list)
+      setNfts([])
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Search failed'))
       console.error('Search error:', err)
@@ -187,8 +197,10 @@ export const useTrendingNFTs = (limit = 10) => {
     try {
       setLoading(true)
       setError(null)
-      const response = await marketApi.getTrending({ page: 1, pageSize: limit })
-      setNfts(response.list)
+      // TODO: 实现 marketApi 后恢复此功能
+      // const response = await marketApi.getTrending({ page: 1, pageSize: limit })
+      // setNfts(response.list)
+      setNfts([])
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch trending NFTs'))
       console.error('Fetch trending NFTs error:', err)

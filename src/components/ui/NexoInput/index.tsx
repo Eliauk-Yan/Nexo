@@ -1,6 +1,7 @@
 import { Button, StyleSheet, Text, TextInput, View } from 'react-native'
 import Feather from '@expo/vector-icons/Feather'
 import React, { useState } from 'react'
+import { colors } from '@/config/theme'
 
 type NexoInputProps = {
   icon: keyof typeof Feather.glyphMap
@@ -25,7 +26,7 @@ const NexoInput = (props: NexoInputProps) => {
           <Feather
             name={icon}
             size={20}
-            color={isFocused ? '#6C5CE7' : '#666'}
+            color={isFocused ? colors.primary : '#666'}
             style={styles.inputIcon}
           />
         </View>
@@ -62,7 +63,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   inputWrapperFocused: {
-    borderColor: '#6C5CE7',
+    borderColor: colors.primary,
   },
   input: {
     flex: 1,

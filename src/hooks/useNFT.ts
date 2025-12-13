@@ -4,7 +4,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { nftApi } from '@/services/api'
+// TODO: 实现 nftApi
+// import { nftApi } from '@/api'
 import { NFT, PaginationParams, MarketFilters } from '@/types'
 
 interface UseNFTListParams extends PaginationParams, MarketFilters {}
@@ -35,19 +36,24 @@ export const useNFTList = (params?: UseNFTListParams): UseNFTListReturn => {
       try {
         setLoading(true)
         setError(null)
-        const response = await nftApi.getList({
-          ...params,
-          page: pageNum,
-          pageSize,
-        })
-
-        if (append) {
-          setNfts((prev) => [...prev, ...response.list])
-        } else {
-          setNfts(response.list)
+        // TODO: 实现 nftApi 后恢复此功能
+        // const response = await nftApi.getList({
+        //   ...params,
+        //   page: pageNum,
+        //   pageSize,
+        // })
+        // if (append) {
+        //   setNfts((prev) => [...prev, ...response.list])
+        // } else {
+        //   setNfts(response.list)
+        // }
+        // setHasMore(response.page < response.totalPages)
+        
+        // 暂时返回空数据
+        if (!append) {
+          setNfts([])
         }
-
-        setHasMore(response.page < response.totalPages)
+        setHasMore(false)
       } catch (err) {
         setError(err instanceof Error ? err : new Error('Failed to fetch NFTs'))
         console.error('Fetch NFTs error:', err)
@@ -106,8 +112,10 @@ export const useNFTDetail = (id: string | number): UseNFTDetailReturn => {
     try {
       setLoading(true)
       setError(null)
-      const data = await nftApi.getDetail(id)
-      setNft(data)
+      // TODO: 实现 nftApi 后恢复此功能
+      // const data = await nftApi.getDetail(id)
+      // setNft(data)
+      setNft(null)
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to fetch NFT detail'))
       console.error('Fetch NFT detail error:', err)
@@ -123,7 +131,8 @@ export const useNFTDetail = (id: string | number): UseNFTDetailReturn => {
   const like = useCallback(async () => {
     if (!nft) return
     try {
-      await nftApi.like(id)
+      // TODO: 实现 nftApi 后恢复此功能
+      // await nftApi.like(id)
       setNft({
         ...nft,
         isLiked: true,
@@ -138,7 +147,8 @@ export const useNFTDetail = (id: string | number): UseNFTDetailReturn => {
   const unlike = useCallback(async () => {
     if (!nft) return
     try {
-      await nftApi.unlike(id)
+      // TODO: 实现 nftApi 后恢复此功能
+      // await nftApi.unlike(id)
       setNft({
         ...nft,
         isLiked: false,
