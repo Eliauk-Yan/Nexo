@@ -19,6 +19,11 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.nexo.common.es</groupId>
+            <artifactId>common-es</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
         <!--公共文件服务-->
         <dependency>
             <groupId>com.nexo.common.file</groupId>

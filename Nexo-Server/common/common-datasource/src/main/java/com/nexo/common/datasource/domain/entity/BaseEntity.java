@@ -23,6 +23,7 @@ public class BaseEntity {
     @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
+    @TableLogic
     @TableField(value = "deleted", fill = FieldFill.INSERT)
     private Integer deleted;
 

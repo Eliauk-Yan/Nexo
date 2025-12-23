@@ -1,6 +1,7 @@
 package com.nexo.business.artwork.convert;
 
 import com.nexo.business.artwork.domain.entity.ArtWork;
+import com.nexo.business.artwork.domain.vo.ArtWorkDetailVO;
 import com.nexo.business.artwork.domain.vo.ArtWorkVO;
 import org.mapstruct.Mapper;
 
@@ -17,4 +18,6 @@ public interface ArtWorkConvertor {
     ArtWorkVO toArtWorkVO(ArtWork artWork);
 
     List<ArtWorkVO> toArtWorkVOList(List<ArtWork> artWorkList);
+
+    ArtWorkDetailVO toArtWorkDetailVO(ArtWork artWork);
 }

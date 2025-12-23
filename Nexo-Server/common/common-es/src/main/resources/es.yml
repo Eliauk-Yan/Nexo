@@ -1,5 +1,6 @@
 spring:
   elasticsearch:
+    enable: false # 默认关闭
     uris: http://192.168.147.100:9200
     username: yanshijie
     password: ysj245913@.

@@ -2,11 +2,14 @@ package com.nexo.business.artwork.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nexo.business.artwork.domain.dto.ArtWorkQueryDTO;
+import com.nexo.business.artwork.domain.vo.ArtWorkDetailVO;
 import com.nexo.business.artwork.domain.vo.ArtWorkVO;
 import com.nexo.business.artwork.service.ArtWorkService;
 import com.nexo.common.web.vo.MultiResult;
+import com.nexo.common.web.vo.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,8 +28,15 @@ public class ArtWorkController {
 
     @GetMapping("/list")
     public MultiResult<ArtWorkVO> getArtWorkList(ArtWorkQueryDTO queryDTO) {
-        Page<ArtWorkVO> page = artWorkService.getArtWorkList(queryDTO);
+        Page<ArtWorkVO> page = artWorkService.getArtWorkVOList(queryDTO);
         return MultiResult.multiSuccess(page.getRecords(), page.getTotal(), page.getCurrent(), page.getSize());
     }
+
+    @GetMapping("/{id}")
+    public Result<ArtWorkDetailVO> getArtWorkDetail(@PathVariable Long id) {
+        return Result.success(artWorkService.getArtWorkDetailById(id));
+    }
+
+
 
 }

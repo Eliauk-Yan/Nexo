@@ -12,3 +12,4 @@ spring:
       - classpath:/config.yml
       - classpath:/cache.yml
       - classpath:/file.yml
+      - classpath:/es.yml

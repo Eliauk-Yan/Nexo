@@ -1,16 +1,19 @@
-package com.nexo.business.artwork.service.impl;
+package com.nexo.business.artwork.service.impl.db;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nexo.business.artwork.domain.dto.ArtWorkQueryDTO;
 import com.nexo.business.artwork.domain.entity.ArtWork;
+import com.nexo.business.artwork.domain.vo.ArtWorkDetailVO;
 import com.nexo.business.artwork.domain.vo.ArtWorkVO;
 import com.nexo.business.artwork.convert.ArtWorkConvertor;
 import com.nexo.business.artwork.mapper.mybatis.ArtWorkMapper;
 import com.nexo.business.artwork.service.ArtWorkService;
+import com.nexo.business.artwork.service.impl.BaseArtWorkServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,12 +25,15 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
-public class ArtWorkServiceImpl extends ServiceImpl<ArtWorkMapper, ArtWork> implements ArtWorkService {
+@ConditionalOnProperty(name = "spring.elasticsearch.enable", havingValue = "true", matchIfMissing = true)
+public class ArtWorkDBServiceImpl extends BaseArtWorkServiceImpl {
 
     private final ArtWorkConvertor artWorkConvertor;
 
+    private final ArtWorkMapper artWorkMapper;
+
     @Override
-    public Page<ArtWorkVO> getArtWorkList(ArtWorkQueryDTO queryDTO) {
+    public Page<ArtWorkVO> getArtWorkVOList(ArtWorkQueryDTO queryDTO) {
         // 1. 创建分页对象
         Page<ArtWork> page = new Page<>(queryDTO.getCurrentPage(), queryDTO.getPageSize());
         // 2. 创建查询条件
@@ -42,5 +48,13 @@ public class ArtWorkServiceImpl extends ServiceImpl<ArtWorkMapper, ArtWork> impl
         Page<ArtWorkVO> voPage = new Page<>(artWorkPage.getCurrent(), artWorkPage.getSize(), artWorkPage.getTotal());
         voPage.setRecords(artWorkVOList);
         return voPage;
+    }
+
+    @Override
+    public ArtWorkDetailVO getArtWorkDetailById(Long id) {
+        // 1. 查询数据
+        ArtWork artWork = artWorkMapper.selectById(id);
+        // 2. 转换并返回数据
+        return artWorkConvertor.toArtWorkDetailVO(artWork);
     }
 }

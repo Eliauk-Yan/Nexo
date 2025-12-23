@@ -17,6 +17,9 @@
         <module>business-user</module>
         <module>business-notification</module>
         <module>business-artwork</module>
+        <module>business-pay</module>
+        <module>business-order</module>
+        <module>business-transaction</module>
     </modules>
 
     <properties>
