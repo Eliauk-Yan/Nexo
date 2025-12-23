@@ -7,7 +7,7 @@ import com.nexo.business.artwork.domain.dto.ArtWorkQueryDTO;
 import com.nexo.business.artwork.domain.entity.ArtWork;
 import com.nexo.business.artwork.domain.vo.ArtWorkVO;
 import com.nexo.business.artwork.convert.ArtWorkConvertor;
-import com.nexo.business.artwork.mapper.ArtWorkMapper;
+import com.nexo.business.artwork.mapper.mybatis.ArtWorkMapper;
 import com.nexo.business.artwork.service.ArtWorkService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;

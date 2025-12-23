@@ -1,4 +1,4 @@
-package com.nexo.business.notice.mapper;
+package com.nexo.business.notice.mapper.mybatis;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.nexo.business.notice.domain.entity.Notification;

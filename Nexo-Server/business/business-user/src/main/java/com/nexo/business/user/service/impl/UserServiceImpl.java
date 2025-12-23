@@ -6,7 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nexo.business.user.domain.entity.User;
 import com.nexo.business.user.service.UserService;
-import com.nexo.business.user.mapper.UserMapper;
+import com.nexo.business.user.mapper.mybaits.UserMapper;
 import com.nexo.business.user.convert.UserConverter;
 import com.nexo.business.user.domain.dto.response.UserProfile;
 import com.nexo.common.api.user.constant.UserState;

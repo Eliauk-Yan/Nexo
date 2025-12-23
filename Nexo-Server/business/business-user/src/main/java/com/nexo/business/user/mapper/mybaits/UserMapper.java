@@ -1,4 +1,4 @@
-package com.nexo.business.user.mapper;
+package com.nexo.business.user.mapper.mybaits;
 
 import com.alicp.jetcache.anno.CacheRefresh;
 import com.alicp.jetcache.anno.CacheType;

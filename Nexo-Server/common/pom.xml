@@ -25,6 +25,7 @@
         <module>common-base</module>
         <module>common-limiter</module>
         <module>common-file</module>
+        <module>common-es</module>
     </modules>
 
     <properties>

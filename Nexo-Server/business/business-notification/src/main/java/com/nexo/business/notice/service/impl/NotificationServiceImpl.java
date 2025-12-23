@@ -5,7 +5,7 @@ import com.nexo.business.notice.constant.NotificationState;
 import com.nexo.business.notice.constant.NotificationType;
 import com.nexo.business.notice.domain.entity.Notification;
 import com.nexo.business.notice.service.NotificationService;
-import com.nexo.business.notice.mapper.NotificationMapper;
+import com.nexo.business.notice.mapper.mybatis.NotificationMapper;
 import org.springframework.stereotype.Service;
 
 /**
