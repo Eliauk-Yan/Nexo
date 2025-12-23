@@ -1,0 +1,13 @@
+server:
+  port: 8091
+spring:
+  config:
+    import:
+      - classpath:/datasource.yml
+      - classpath:/rpc.yml
+      - classpath:/base.yml
+      - classpath:/config.yml
+      - classpath:/cache.yml
+      - classpath:/file.yml
+  application:
+    name: business-user

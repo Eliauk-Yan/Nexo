@@ -1,0 +1,17 @@
+dubbo:
+  consumer:
+    timeout: 3000
+    check: false
+  protocol:
+    name: dubbo
+    port: -1
+  registry:
+    address: nacos://192.168.147.100:8848
+    parameters:
+      namespace: 85435310-4c80-4b74-a54a-11ba69dbd400
+      group: dubbo
+  application:
+    name: ${spring.application.name}
+    serialize-check-status: WARN # 或 DISABLE（彻底关闭，不建议线上用）
+#    qos-enable: true # 是否启用 Dubbo QOS（在线运维命令端口）
+#    qos-accept-foreign-ip: false # QOS 是否接受非本机 IP 的连接（安全设置）

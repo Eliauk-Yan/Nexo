@@ -1,0 +1,16 @@
+server:
+  port: 8090
+spring:
+  config:
+    import: classpath:/datasource.yml,classpath:/rpc.yml,classpath:/base.yml,classpath:/config.yml,classpath:cache.yml
+  application:
+    name: business-notice
+
+aliyun:
+  sms:
+    access-key-id: ${ALIBABA_CLOUD_ACCESS_KEY_ID}
+    access-key-secret: ${ALIBABA_CLOUD_ACCESS_KEY_SECRET}
+    region-id: cn-beijing
+    endpoint: dypnsapi.aliyuncs.com
+    sign-name: 速通互联验证码
+    template-code: 100001

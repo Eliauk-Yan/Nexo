@@ -1,0 +1,11 @@
+minio:
+  enabled: true
+  endpoint: http://192.168.147.100:9000
+  access-key: yanshijie
+  secret-key: Ysj245913@.
+  bucket-name: nexo-dev
+  secure: false
+  presigned-expiry-hours: 24
+  temp-days: 7
+  max-file-size-mb: 100
+  auto-create-bucket: true
