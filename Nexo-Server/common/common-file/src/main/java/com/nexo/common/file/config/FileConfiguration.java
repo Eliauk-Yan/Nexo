@@ -33,10 +33,10 @@ public class FileConfiguration {
             // 检查并创建桶
             ensureBucketExists(minioClient, fileProperties);
 
-            log.info("MinIO客户端初始化成功，桶: {}", fileProperties.getBucketName());
+            log.info("MinIO 客户端初始化成功，桶: {}", fileProperties.getBucketName());
             return minioClient;
         } catch (Exception e) {
-            log.error("MinIO客户端初始化失败", e);
+            log.error("MinIO 客户端初始化失败", e);
             throw new RuntimeException("MinIO客户端初始化失败: " + e.getMessage(), e);
         }
     }

@@ -32,8 +32,9 @@ public enum FileErrorCode implements ErrorCode {
 
     CHECK_FILE_EXIST_FAILED("CHECK_FILE_EXIST_FAILED", "检查文件是否存在失败"),
 
-    GET_PRE_SIGN_URL_FAILED("GET_PRE_SIGN_URL_FAILED", "获取预签名'URL'失败"),
-    ;
+    GET_PRE_SIGN_URL_FAILED("GET_PRE_SIGN_URL_FAILED", "获取预签名'URL'失败");
+
     private final String code;
+
     private final String message;
 }

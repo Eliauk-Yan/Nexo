@@ -1,19 +1,18 @@
 package com.nexo.common.file.service.impl;
 
 import com.nexo.common.file.config.FileProperties;
+import com.nexo.common.file.constant.enums.ServicePath;
+import com.nexo.common.file.constant.enums.TypePath;
 import com.nexo.common.file.exception.FileErrorCode;
 import com.nexo.common.file.exception.FileException;
 import com.nexo.common.file.service.MinioService;
 import com.nexo.common.file.utils.FileUtils;
 import io.minio.*;
-import io.minio.errors.ErrorResponseException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
-import java.util.List;
 
 /**
  * @classname MinioServiceImpl
@@ -22,7 +21,6 @@ import java.util.List;
  * @created by YanShijie
  */
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class MinioServiceImpl implements MinioService {
 
@@ -31,102 +29,105 @@ public class MinioServiceImpl implements MinioService {
     private final FileProperties fileProperties;
 
     @Override
-    public String uploadFile(MultipartFile file, String filePath) {
+    public String uploadFile(MultipartFile file, ServicePath servicePath, TypePath typePath) {
         try {
-            // 验证文件类型
-            String originalFilename = file.getOriginalFilename();
-            String contentType = file.getContentType();
-            if (!FileUtils.isAllowedFileType(originalFilename, contentType)) {
-                throw new FileException(FileErrorCode.FILE_NOT_SUPPORTED);
-            }
-            // 上传文件
+            // 1. 拼接文件路径
+            String filePath = FileUtils.concatFilePath(servicePath, typePath, file.getOriginalFilename());
+            // 2. 上传文件
             PutObjectArgs putObjectArgs = PutObjectArgs.builder()
                     .bucket(fileProperties.getBucketName())
                     .object(filePath)
                     .stream(file.getInputStream(), file.getSize(), -1)
-                    .contentType(contentType)
+                    .contentType(file.getContentType())
                     .build();
             minioClient.putObject(putObjectArgs);
-            log.info("文件上传成功: {}", filePath);
-            return filePath;
+            log.info("文件上传成功: {}", file.getOriginalFilename());
+            // 3. 返回文件路径
+            return getFileUrl(filePath);
         } catch (Exception e) {
-            log.error("文件上传失败: {}", filePath, e);
+            log.error("文件上传失败: {}", file.getOriginalFilename(), e);
             throw new FileException(FileErrorCode.FILE_UPLOAD_FAILED);
         }
     }
 
     @Override
-    public InputStream downloadFile(String filePath) {
+    public void deleteFile(String fileURL) {
         try {
-            GetObjectArgs getObjectArgs = GetObjectArgs.builder()
-                    .bucket(fileProperties.getBucketName())
-                    .object(filePath)
-                    .build();
-            return minioClient.getObject(getObjectArgs);
-        } catch (Exception e) {
-            log.error("文件下载失败: {}", filePath, e);
-            throw new FileException(FileErrorCode.FILE_DOWNLOAD_FAILED);
-        }
-    }
-
-    @Override
-    public void deleteFile(String filePath) {
-        try {
+            // 1. 获取文件路径
+            String filePath = getFilePath(fileURL);
+            // 2. 检查文件是否存在
+            checkFileExist(filePath);
+            // 3. 创建删除文件参数
             RemoveObjectArgs removeObjectArgs = RemoveObjectArgs.builder()
                     .bucket(fileProperties.getBucketName())
                     .object(filePath)
                     .build();
+            // 4. 删除文件
             minioClient.removeObject(removeObjectArgs);
-            log.info("文件删除成功: {}", filePath);
+            log.info("文件删除成功: {}", fileURL);
         } catch (Exception e) {
-            log.error("文件删除失败: {}", filePath, e);
+            log.error("文件删除失败: {}", fileURL, e);
             throw new FileException(FileErrorCode.FILE_DELETE_FAILED);
         }
     }
 
     @Override
-    public void deleteFiles(List<String> filePaths) {
-        if (filePaths == null || filePaths.isEmpty()) {
-            return;
+    public InputStream downloadFile(String fileURL) {
+        try {
+            // 1. 获取文件路径
+            String filePath = getFilePath(fileURL);
+            // 2. 检查文件是否存在
+            checkFileExist(filePath);
+            // 3. 创建下载文件参数
+            GetObjectArgs getObjectArgs = GetObjectArgs.builder()
+                    .bucket(fileProperties.getBucketName())
+                    .object(fileURL)
+                    .build();
+            return minioClient.getObject(getObjectArgs);
+        } catch (Exception e) {
+            log.error("文件下载失败: {}", fileURL, e);
+            throw new FileException(FileErrorCode.FILE_DOWNLOAD_FAILED);
         }
-        filePaths.forEach(this::deleteFile);
     }
 
-    @Override
-    public boolean fileExists(String filePath) {
+    /**
+     * 检查文件是否存在
+     * @param filePath 文件路径
+     */
+    private void checkFileExist(String filePath) {
         try {
-            StatObjectArgs statObjectArgs = StatObjectArgs.builder()
-                    .bucket(fileProperties.getBucketName())
-                    .object(filePath)
-                    .build();
-
-            minioClient.statObject(statObjectArgs);
-            return true;
-        } catch (ErrorResponseException e) {
-            if (e.errorResponse().code().equals("NoSuchKey")) {
-                return false;
-            }
-            log.error("检查文件是否存在失败: {}", filePath, e);
-            throw new FileException(FileErrorCode.FILE_NOT_FOUND);
+            minioClient.statObject(
+                    StatObjectArgs.builder()
+                            .bucket(fileProperties.getBucketName())
+                            .object(filePath)
+                            .build()
+            );
         } catch (Exception e) {
             log.error("检查文件是否存在失败: {}", filePath, e);
             throw new FileException(FileErrorCode.CHECK_FILE_EXIST_FAILED);
         }
     }
 
-    @Override
-    public String getFileUrl(String filePath) {
+    /**
+     * 获取文件 URL
+     * @param filePath 文件路径
+     * @return 文件 URL
+     */
+    private String getFileUrl(String filePath) {
         String endpoint = fileProperties.getEndpoint();
         String bucketName = fileProperties.getBucketName();
-        // 移除 endpoint 末尾的斜杠
-        if (endpoint.endsWith("/")) {
-            endpoint = endpoint.substring(0, endpoint.length() - 1);
-        }
-        // 确保 filePath 以斜杠开头
-        if (!filePath.startsWith("/")) {
-            filePath = "/" + filePath;
-        }
-        return endpoint + "/" + bucketName + filePath;
+        return endpoint + "/" + bucketName + "/" + filePath;
+    }
+
+    /**
+     * 获取文件路径
+     * @param fileURL 文件 URL
+     * @return 文件路径
+     */
+    private String getFilePath(String fileURL) {
+        String endpoint = fileProperties.getEndpoint();
+        String bucketName = fileProperties.getBucketName();
+        return fileURL.replace(endpoint + "/" + bucketName + "/", "");
     }
 
 }

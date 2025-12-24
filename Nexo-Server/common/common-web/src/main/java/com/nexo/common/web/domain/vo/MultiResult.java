@@ -1,6 +1,6 @@
-package com.nexo.common.web.vo;
+package com.nexo.common.web.domain.vo;
 
-import com.nexo.common.web.constant.ResultCode;
+import com.nexo.common.web.constant.enums.ResultCode;
 
 import java.util.List;
 

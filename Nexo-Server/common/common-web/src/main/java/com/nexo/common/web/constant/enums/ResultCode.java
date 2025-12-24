@@ -1,4 +1,4 @@
-package com.nexo.common.web.constant;
+package com.nexo.common.web.constant.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

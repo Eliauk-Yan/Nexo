@@ -1,9 +1,10 @@
 package com.nexo.common.file.service;
 
+import com.nexo.common.file.constant.enums.ServicePath;
+import com.nexo.common.file.constant.enums.TypePath;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
-import java.util.List;
 
 /**
  * @classname MinioService
@@ -14,13 +15,14 @@ import java.util.List;
 public interface MinioService {
 
     /**
-     * 上传文件（指定路径）
+     * 上传文件
      *
-     * @param file     文件
-     * @param filePath 文件路径（包含文件名）
+     * @param file      文件
+     * @param servicePath  文件路径
+     * @param typePath  文件类型
      * @return 文件路径
      */
-    String uploadFile(MultipartFile file, String filePath);
+    String uploadFile(MultipartFile file, ServicePath servicePath, TypePath typePath);
 
     /**
      * 下载文件
@@ -36,29 +38,5 @@ public interface MinioService {
      * @param filePath 文件路径
      */
     void deleteFile(String filePath);
-
-    /**
-     * 批量删除文件
-     *
-     * @param filePaths 文件路径列表
-     */
-    void deleteFiles(List<String> filePaths);
-
-    /**
-     * 检查文件是否存在
-     *
-     * @param filePath 文件路径
-     * @return 是否存在
-     */
-    boolean fileExists(String filePath);
-
-    /**
-     * 获取文件访问URL（公开访问）
-     *
-     * @param filePath 文件路径
-     * @return 访问 URL
-     */
-    String getFileUrl(String filePath);
-
 }
 

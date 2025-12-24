@@ -2,10 +2,9 @@ package com.nexo.auth.interfaces.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.nexo.auth.interfaces.dto.request.LoginRequest;
-import com.nexo.auth.interfaces.dto.request.RegisterRequest;
 import com.nexo.auth.interfaces.dto.response.LoginResponse;
 import com.nexo.auth.domain.service.AuthService;
-import com.nexo.common.web.vo.Result;
+import com.nexo.common.web.domain.vo.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

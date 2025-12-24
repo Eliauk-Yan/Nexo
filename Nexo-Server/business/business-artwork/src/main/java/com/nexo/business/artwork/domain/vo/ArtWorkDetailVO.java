@@ -1,9 +1,13 @@
 package com.nexo.business.artwork.domain.vo;
 
+import lombok.Data;
+
 /**
  * @classname ArtWorkDetailVO
- * @description TODO
+ * @description 数字藏品详情 VO
  * @date 2025/12/23 22:47
  */
+@Data
 public class ArtWorkDetailVO {
+
 }

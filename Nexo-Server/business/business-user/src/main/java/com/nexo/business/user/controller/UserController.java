@@ -3,7 +3,7 @@ package com.nexo.business.user.controller;
 import com.nexo.business.user.service.UserService;
 import com.nexo.business.user.domain.dto.request.UserUpdateRequest;
 import com.nexo.business.user.domain.dto.response.UserProfile;
-import com.nexo.common.web.vo.Result;
+import com.nexo.common.web.domain.vo.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;

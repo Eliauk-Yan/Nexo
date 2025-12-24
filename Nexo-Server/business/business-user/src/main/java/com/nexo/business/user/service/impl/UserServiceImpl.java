@@ -12,8 +12,11 @@ import com.nexo.business.user.domain.dto.response.UserProfile;
 import com.nexo.common.api.user.constant.UserState;
 import com.nexo.common.api.user.constant.UserRole;
 import com.nexo.common.api.user.response.data.UserInfo;
+import com.nexo.common.file.constant.enums.ServicePath;
+import com.nexo.common.file.constant.enums.TypePath;
 import com.nexo.common.file.service.MinioService;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -81,8 +84,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public Boolean updateAvatar(MultipartFile avatar) {
-       // TODO
-        return true;
+        // 1. 获取当前登录用户ID
+        long userId = StpUtil.getLoginIdAsLong();
+        // 2. 根据用户ID查询用户信息
+        User currentUser = this.getById(userId);
+        // 3. 删除旧头像
+        if (StringUtils.isNotBlank(currentUser.getAvatarUrl())) {
+            minioService.deleteFile(currentUser.getAvatarUrl());
+        }
+        // 4. 上传新头像
+        String avatarUrl = minioService.uploadFile(avatar, ServicePath.USER, TypePath.IMAGE);
+        // 5. 更新用户信息
+        currentUser.setAvatarUrl(avatarUrl);
+
+        return this.updateById(currentUser);
     }
 
     @Override
