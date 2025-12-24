@@ -23,24 +23,23 @@ CREATE TABLE `notification`
 
 DROP TABLE IF EXISTS `users`;
 
-CREATE TABLE `users`
+CREATE TABLE users
 (
-    `id`          BIGINT UNSIGNED                      NOT NULL AUTO_INCREMENT COMMENT '用户ID（主键）',
-    `nick_name`   VARCHAR(255) UNIQUE COMMENT '昵称/显示名',
-    `phone`       VARCHAR(32)                                   DEFAULT NULL COMMENT '手机号（国际码）',
-    `email`       VARCHAR(255)                                  DEFAULT NULL COMMENT '邮箱',
-    `password`    VARCHAR(255)                         NOT NULL COMMENT '密码哈希（bcrypt/argon2）',
-    `role`        varchar(128)                                  DEFAULT NULL COMMENT '用户角色',
-    `state`       ENUM ('ACTIVE','FROZEN','SUSPENDED') NOT NULL DEFAULT 'ACTIVE' COMMENT '用户状态',
-    `invite_code` VARCHAR(64)                                   DEFAULT NULL COMMENT '邀请码（可唯一）',
-    `inviter_id`  BIGINT UNSIGNED                               DEFAULT NULL COMMENT '邀请人 user_id',
-    `avatar_url`  VARCHAR(1024)                                 DEFAULT NULL COMMENT '头像 URL',
-    `cover_url`   VARCHAR(1024)                                 DEFAULT NULL COMMENT '封面 URL',
-    `login_time`  DATETIME                                      DEFAULT NULL COMMENT '最后登录时间',
-    `created_at`  DATETIME(3)                          NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updated_at`  DATETIME(3)                          NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
-    `deleted`     TINYINT(1)                           NOT NULL DEFAULT 0 COMMENT '逻辑删除 0=正常 1=已删除',
-    `version`     INT UNSIGNED                         NOT NULL DEFAULT 1 COMMENT '乐观锁版本号',
+    id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    nick_name   VARCHAR(255) UNIQUE COMMENT '昵称/显示名',
+    phone       VARCHAR(32)              DEFAULT NULL COMMENT '手机号（国际码）',
+    email       VARCHAR(255)             DEFAULT NULL COMMENT '邮箱',
+    password    VARCHAR(255)    NOT NULL COMMENT '密码哈希（bcrypt/argon2）',
+    role        varchar(128)             DEFAULT NULL COMMENT '用户角色',
+    state       VARCHAR(32)     NOT NULL COMMENT '用户状态',
+    invite_code VARCHAR(64)              DEFAULT NULL COMMENT '邀请码（可唯一）',
+    inviter_id  BIGINT UNSIGNED          DEFAULT NULL COMMENT '邀请人 user_id',
+    avatar_url  VARCHAR(1024)            DEFAULT NULL COMMENT '头像 URL',
+    login_time  DATETIME                 DEFAULT NULL COMMENT '最后登录时间',
+    deleted     TINYINT(1)               DEFAULT 0 COMMENT '是否逻辑删除，0为未删除，非0为已删除',
+    version     INT                      DEFAULT 1 COMMENT '乐观锁版本号',
+    created_at  DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+    updated_at  DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_invite_code` (`invite_code`),
     UNIQUE KEY `uk_phone` (`phone`),
@@ -139,7 +138,7 @@ CREATE TABLE `assets`
     `nft_identifier`     VARCHAR(256) CHARACTER SET utf8mb4              DEFAULT NULL COMMENT 'NFT唯一标识符',
     `previous_holder_id` BIGINT                                          DEFAULT NULL COMMENT '上一持有者ID',
     `current_holder_id`  BIGINT                                          DEFAULT NULL COMMENT '当前持有者ID',
-    `state`             ENUM ('init', 'active', 'inactive', 'archived') DEFAULT 'init' COMMENT '资产状态',
+    `state`              ENUM ('init', 'active', 'inactive', 'archived') DEFAULT 'init' COMMENT '资产状态',
     `transaction_hash`   VARCHAR(256) CHARACTER SET utf8mb4              DEFAULT NULL COMMENT '交易哈希',
     `reference_price`    DECIMAL(18, 6)  NULL COMMENT '参考价格',
     `rarity`             VARCHAR(64)     NULL COMMENT '稀有度',
@@ -154,3 +153,29 @@ CREATE TABLE `assets`
     FOREIGN KEY (`artwork_id`) REFERENCES `artworks` (`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4 COMMENT = '资产表';
+
+CREATE TABLE chain_operation_log
+(
+    id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    chain_type     VARCHAR(32)     NOT NULL COMMENT '链类型(代码)',
+    biz_type       VARCHAR(32)     NOT NULL COMMENT '业务类型(代码)',
+    biz_id         VARCHAR(128)    NOT NULL COMMENT '业务ID',
+    operation_type VARCHAR(32)     NOT NULL COMMENT '操作类型(代码)',
+    state          VARCHAR(32)     NOT NULL COMMENT '状态(代码)',
+    operate_time   DATETIME        NOT NULL COMMENT '操作发起时间',
+    succeed_time   DATETIME                 DEFAULT NULL COMMENT '成功时间',
+    out_biz_id     VARCHAR(128)             DEFAULT NULL COMMENT '外部业务id',
+    param          MEDIUMTEXT      NULL COMMENT '入参',
+    result         MEDIUMTEXT      NULL COMMENT '返回结果',
+    deleted        TINYINT(1)               DEFAULT 0 COMMENT '是否逻辑删除，0为未删除，非0为已删除',
+    version        INT                      DEFAULT 1 COMMENT '乐观锁版本号',
+    created_at     DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+    updated_at     DATETIME(3)     NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
+
+    PRIMARY KEY (id),
+    KEY idx_biz (biz_type, biz_id),
+    KEY idx_out_biz_id (out_biz_id),
+    KEY idx_state_time (state, operate_time),
+    KEY idx_deleted (deleted)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='链操作日志';

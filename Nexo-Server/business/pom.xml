@@ -20,6 +20,7 @@
         <module>business-pay</module>
         <module>business-order</module>
         <module>business-transaction</module>
+        <module>business-blockchain</module>
     </modules>
 
     <properties>

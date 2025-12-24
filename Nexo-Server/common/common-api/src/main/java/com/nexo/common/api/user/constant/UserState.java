@@ -13,21 +13,13 @@ import lombok.Getter;
 @Getter
 public enum UserState {
 
-    NORMAL("NORMAL", "正常"),
-
-    UNVERIFIED("UNVERIFIED", "未实名"),
+    INIT("INIT", "初始化"),
 
     AUTHENTICATED("AUTHENTICATED", "已实名"),
 
-    RISK_CONTROL("RISK_CONTROL", "风控中"),
+    ACTIVE("ACTIVE", "已激活"),
 
-    BLACKLIST("BLACKLIST", "黑名单"),
-
-    FROZEN("FROZEN", "资产冻结"),
-
-    INACTIVE("INACTIVE", "未激活"),
-
-    DEACTIVATED("DEACTIVATED", "已注销");
+    FROZEN("FROZEN", "资产冻结");
 
     private final String code;
 
