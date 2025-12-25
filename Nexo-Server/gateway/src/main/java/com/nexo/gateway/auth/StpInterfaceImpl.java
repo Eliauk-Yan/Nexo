@@ -3,7 +3,6 @@ package com.nexo.gateway.auth;
 import cn.dev33.satoken.stp.StpInterface;
 import cn.dev33.satoken.stp.StpUtil;
 import com.nexo.common.api.user.constant.UserPermission;
-import com.nexo.common.api.user.constant.UserRole;
 import com.nexo.common.api.user.response.data.UserInfo;
 import org.springframework.stereotype.Component;
 

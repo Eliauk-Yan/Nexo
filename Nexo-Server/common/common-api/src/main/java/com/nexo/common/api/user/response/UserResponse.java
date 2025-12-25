@@ -6,7 +6,7 @@ import java.io.Serial;
 
 /**
  * @classname UserResponse
- * @description 用户RPC响应类
+ * @description 用户 RPC 响应类
  * @date 2025/12/02 09:15
  * @created by YanShijie
  */
