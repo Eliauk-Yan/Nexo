@@ -16,6 +16,10 @@ const RootLayout = () => {
         />
         <Stack.Screen name="settings/setting" options={{ headerShown: false }} />
         <Stack.Screen name="settings/account-security" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="notification/notification"
+          options={{ title: '通知', headerShown: false }}
+        />
       </Stack>
     </>
   )

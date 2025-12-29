@@ -1,0 +1,135 @@
+import { Stack } from 'expo-router';
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+} from 'react-native';
+import { FontAwesome6 } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors} from '@/config/theme'
+
+const NotificationPage = () => {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View style={styles.rootContainer}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <ScrollView
+        contentContainerStyle={[
+          styles.container,
+          { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 32 },
+        ]}
+      >
+        {/* Top statistic blocks */}
+        <View style={styles.topRow}>
+          <View style={styles.statBlock}>
+            <FontAwesome6 name="thumbs-up" size={22} color={colors.success} style={styles.iconSpacing} />
+            <Text style={styles.statLabel}>赞</Text>
+          </View>
+
+          <View style={styles.statBlock}>
+            <FontAwesome6 name="user-plus" size={22} color={colors.info} style={styles.iconSpacing} />
+            <Text style={styles.statLabel}>新增关注</Text>
+          </View>
+
+          <View style={styles.statBlock}>
+            <FontAwesome6 name="comment" size={22} color={colors.warning} style={styles.iconSpacing} />
+            <Text style={styles.statLabel}>评论</Text>
+          </View>
+        </View>
+
+        {/* Notification list */}
+        <View style={styles.listContainer}>
+          <Pressable style={styles.listItem} android_ripple={{ color: 'rgba(255, 255, 255, 0.1)' }}>
+            <View style={styles.leftSection}>
+              <FontAwesome6 name="bullhorn" size={20} color={colors.primary} />
+              <Text style={styles.listText}>活动通知</Text>
+            </View>
+            <FontAwesome6 name="chevron-right" size={14} color="#8E8E93" />
+          </Pressable>
+
+          <Pressable style={styles.listItem} android_ripple={{ color: 'rgba(255, 255, 255, 0.1)' }}>
+            <View style={styles.leftSection}>
+              <FontAwesome6 name="box-open" size={20} color={colors.primaryDark} />
+              <Text style={styles.listText}>藏品消息</Text>
+            </View>
+            <FontAwesome6 name="chevron-right" size={14} color="#8E8E93" />
+          </Pressable>
+
+          <Pressable style={[styles.listItem, styles.lastItem]} android_ripple={{ color: 'rgba(255, 255, 255, 0.1)' }}>
+            <View style={styles.leftSection}>
+              <FontAwesome6 name="envelope-open-text" size={20} color={colors.primaryLight} />
+              <Text style={styles.listText}>订阅消息</Text>
+            </View>
+            <FontAwesome6 name="chevron-right" size={14} color="#8E8E93" />
+          </Pressable>
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  container: {
+    paddingHorizontal: 16,
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 32,
+    gap: 12,
+  },
+  statBlock: {
+    flex: 1,
+    backgroundColor: colors.backgroundCard,
+    borderRadius: 28,
+    paddingVertical: 18,
+    alignItems: 'center',
+  },
+  iconSpacing: {
+    marginBottom: 8,
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#E5E5EA',
+    fontWeight: '600',
+  },
+  listContainer: {
+    backgroundColor: colors.backgroundCard,
+    borderRadius: 28,
+    width: '100%',
+    overflow: 'hidden',
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 25,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#38383A',
+  },
+  lastItem: {
+    borderBottomWidth: 0,
+  },
+  leftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  listText: {
+    fontSize: 15,
+    color: '#E5E5EA',
+    fontWeight: '500',
+  },
+});
+
+export default NotificationPage;
