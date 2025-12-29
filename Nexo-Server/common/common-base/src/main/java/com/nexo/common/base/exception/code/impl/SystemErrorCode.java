@@ -1,5 +1,6 @@
 package com.nexo.common.base.exception.code.impl;
 
+
 import com.nexo.common.base.exception.code.ErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

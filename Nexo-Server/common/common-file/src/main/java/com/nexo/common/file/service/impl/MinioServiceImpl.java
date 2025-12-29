@@ -1,10 +1,10 @@
 package com.nexo.common.file.service.impl;
 
 import com.nexo.common.file.config.FileProperties;
-import com.nexo.common.file.constant.enums.ServicePath;
-import com.nexo.common.file.constant.enums.TypePath;
-import com.nexo.common.file.exception.FileErrorCode;
-import com.nexo.common.file.exception.FileException;
+import com.nexo.common.file.domain.enums.ServicePath;
+import com.nexo.common.file.domain.enums.TypePath;
+import com.nexo.common.file.domain.exception.FileErrorCode;
+import com.nexo.common.file.domain.exception.FileException;
 import com.nexo.common.file.service.MinioService;
 import com.nexo.common.file.utils.FileUtils;
 import io.minio.*;

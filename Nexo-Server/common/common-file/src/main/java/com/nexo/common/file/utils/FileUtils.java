@@ -1,7 +1,7 @@
 package com.nexo.common.file.utils;
 
-import com.nexo.common.file.constant.enums.ServicePath;
-import com.nexo.common.file.constant.enums.TypePath;
+import com.nexo.common.file.domain.enums.ServicePath;
+import com.nexo.common.file.domain.enums.TypePath;
 
 /**
  * @classname FileUtils

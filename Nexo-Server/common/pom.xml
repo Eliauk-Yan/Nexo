@@ -22,10 +22,10 @@
         <module>common-api</module>
         <module>common-rpc</module>
         <module>common-sms</module>
-        <module>common-base</module>
         <module>common-limiter</module>
         <module>common-file</module>
         <module>common-es</module>
+        <module>common-base</module>
     </modules>
 
     <properties>

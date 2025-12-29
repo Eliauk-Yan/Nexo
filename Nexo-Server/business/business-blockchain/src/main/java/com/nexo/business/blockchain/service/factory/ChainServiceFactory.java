@@ -1,8 +1,8 @@
 package com.nexo.business.blockchain.service.factory;
 
-import com.nexo.business.blockchain.constant.enums.ChainType;
-import com.nexo.business.blockchain.exception.ChainErrorCode;
-import com.nexo.business.blockchain.exception.ChainException;
+import com.nexo.business.blockchain.domain.enums.ChainType;
+import com.nexo.business.blockchain.domain.exception.ChainErrorCode;
+import com.nexo.business.blockchain.domain.exception.ChainException;
 import com.nexo.business.blockchain.service.ChainService;
 import org.springframework.stereotype.Component;
 

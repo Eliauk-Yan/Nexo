@@ -1,3 +1,14 @@
+server:
+  port: 8093
+
 spring:
+  application:
+    name: business-blockchain
   profiles:
     active: dev
+  config:
+    import:
+      - classpath:/datasource.yml
+      - classpath:/rpc.yml
+      - classpath:/config.yml
+      - classpath:/cache.yml

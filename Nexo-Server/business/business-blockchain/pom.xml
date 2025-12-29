@@ -38,12 +38,6 @@
             <artifactId>common-datasource</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-        <!--公共基础-->
-        <dependency>
-            <groupId>com.nexo.common.base</groupId>
-            <artifactId>common-base</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
         <!--RPC-->
         <dependency>
             <groupId>com.nexo.common.rpc</groupId>

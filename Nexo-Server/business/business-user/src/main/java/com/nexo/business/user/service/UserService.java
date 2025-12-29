@@ -2,7 +2,7 @@ package com.nexo.business.user.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.nexo.business.user.domain.entity.User;
-import com.nexo.business.user.domain.dto.response.UserProfile;
+import com.nexo.business.user.interfaces.vo.UserProfileVO;
 import com.nexo.common.api.user.response.data.UserInfo;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -27,7 +27,7 @@ public interface UserService extends IService<User> {
      * 获取用户信息
      * @return 用户信息
      */
-    UserProfile getUserProfile();
+    UserProfileVO getUserProfile();
 
     /**
      * 更新用户头像

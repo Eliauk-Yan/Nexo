@@ -2,8 +2,8 @@ package com.nexo.business.notice.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.nexo.business.notice.constant.NotificationState;
-import com.nexo.business.notice.constant.NotificationType;
+import com.nexo.business.notice.domain.enums.NotificationState;
+import com.nexo.business.notice.domain.enums.NotificationType;
 import com.nexo.common.datasource.domain.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

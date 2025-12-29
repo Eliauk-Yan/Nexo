@@ -1,10 +1,10 @@
 package com.nexo.auth.interfaces.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
-import com.nexo.auth.interfaces.dto.request.LoginRequest;
-import com.nexo.auth.interfaces.dto.response.LoginResponse;
-import com.nexo.auth.domain.service.AuthService;
-import com.nexo.common.web.domain.vo.Result;
+import com.nexo.auth.interfaces.dto.LoginDTO;
+import com.nexo.auth.interfaces.vo.LoginVO;
+import com.nexo.auth.service.AuthService;
+import com.nexo.common.web.result.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -38,7 +38,7 @@ public class AuthController {
      * @return 登录结果
      */
     @PostMapping("/login")
-    public Result<LoginResponse> login(@RequestBody LoginRequest request) {
+    public Result<LoginVO> login(@RequestBody LoginDTO request) {
         return Result.success(authService.login(request));
     }
 

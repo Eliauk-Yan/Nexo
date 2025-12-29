@@ -21,10 +21,9 @@
 
     <dependencies>
         <!-- Spring Cloud Gateway -->
-
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-gateway</artifactId>
+            <artifactId>spring-cloud-starter-gateway-server-webflux </artifactId>
         </dependency>
         <dependency>
             <groupId>com.nexo.common.api</groupId>

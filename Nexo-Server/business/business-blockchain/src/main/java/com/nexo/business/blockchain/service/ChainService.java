@@ -1,6 +1,6 @@
 package com.nexo.business.blockchain.service;
 
-import com.nexo.business.blockchain.constant.enums.ChainType;
+import com.nexo.business.blockchain.domain.enums.ChainType;
 
 public interface ChainService {
 

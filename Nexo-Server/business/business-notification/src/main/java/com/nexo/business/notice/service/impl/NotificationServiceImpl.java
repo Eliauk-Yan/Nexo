@@ -1,8 +1,8 @@
 package com.nexo.business.notice.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.nexo.business.notice.constant.NotificationState;
-import com.nexo.business.notice.constant.NotificationType;
+import com.nexo.business.notice.domain.enums.NotificationState;
+import com.nexo.business.notice.domain.enums.NotificationType;
 import com.nexo.business.notice.domain.entity.Notification;
 import com.nexo.business.notice.service.NotificationService;
 import com.nexo.business.notice.mapper.mybatis.NotificationMapper;

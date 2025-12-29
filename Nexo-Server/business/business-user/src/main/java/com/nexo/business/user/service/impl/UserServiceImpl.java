@@ -6,14 +6,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nexo.business.user.domain.entity.User;
 import com.nexo.business.user.service.UserService;
-import com.nexo.business.user.mapper.mybaits.UserMapper;
-import com.nexo.business.user.convert.UserConverter;
-import com.nexo.business.user.domain.dto.response.UserProfile;
+import com.nexo.business.user.mapper.mybatis.UserMapper;
+import com.nexo.business.user.mapper.convert.UserConverter;
+import com.nexo.business.user.interfaces.vo.UserProfileVO;
 import com.nexo.common.api.user.constant.UserState;
 import com.nexo.common.api.user.constant.UserRole;
 import com.nexo.common.api.user.response.data.UserInfo;
-import com.nexo.common.file.constant.enums.ServicePath;
-import com.nexo.common.file.constant.enums.TypePath;
+import com.nexo.common.file.domain.enums.ServicePath;
+import com.nexo.common.file.domain.enums.TypePath;
 import com.nexo.common.file.service.MinioService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -59,7 +59,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setNickName(defaultNickName);
         user.setPhone(phone);
         user.setRole(UserRole.COLLECTOR);
-        user.setState(UserState.UNVERIFIED);
+        user.setState(UserState.INIT);
         // TODO 后续加入布隆过滤器，优化邀请码重复问题
         user.setInviteCode(RandomUtil.randomString(6));
         user.setInviterId(invitorId);
@@ -75,7 +75,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public UserProfile getUserProfile() {
+    public UserProfileVO getUserProfile() {
         // 1. 获取当前登录用户ID
         long userId = StpUtil.getLoginIdAsLong();
         // 2. 根据用户ID查询用户账户信息

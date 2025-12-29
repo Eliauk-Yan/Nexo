@@ -2,8 +2,8 @@ package com.nexo.common.web.handler;
 
 import com.nexo.common.base.exception.BusinessException;
 import com.nexo.common.base.exception.SystemException;
-import com.nexo.common.web.constant.enums.ResultCode;
-import com.nexo.common.web.domain.vo.Result;
+import com.nexo.common.web.result.enums.ResultCode;
+import com.nexo.common.web.result.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;

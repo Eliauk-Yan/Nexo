@@ -2,7 +2,7 @@ package com.nexo.business.artwork.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.nexo.business.artwork.constant.enums.AssetState;
+import com.nexo.business.artwork.domain.enums.AssetState;
 import com.nexo.common.datasource.domain.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;

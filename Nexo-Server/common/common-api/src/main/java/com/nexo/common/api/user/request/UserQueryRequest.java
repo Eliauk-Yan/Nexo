@@ -1,7 +1,7 @@
 package com.nexo.common.api.user.request;
 
+import com.nexo.common.api.base.request.BaseRequest;
 import com.nexo.common.api.user.request.condition.UserQueryCondition;
-import com.nexo.common.base.request.BaseRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

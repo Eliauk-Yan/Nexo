@@ -20,13 +20,13 @@
     </properties>
 
     <dependencies>
-        <!--公共API接口-->
+        <!--公共 API 接口-->
         <dependency>
             <groupId>com.nexo.common.api</groupId>
             <artifactId>common-api</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-        <!--RPC服务-->
+        <!--RPC 服务-->
         <dependency>
             <groupId>com.nexo.common.rpc</groupId>
             <artifactId>common-rpc</artifactId>

@@ -2,7 +2,7 @@ server:
   port: 8090
 spring:
   config:
-    import: classpath:/datasource.yml,classpath:/rpc.yml,classpath:/base.yml,classpath:/config.yml,classpath:cache.yml
+    import: classpath:/datasource.yml,classpath:/rpc.yml,classpath:/config.yml,classpath:cache.yml
   application:
     name: business-notice
 

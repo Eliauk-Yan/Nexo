@@ -1,7 +1,7 @@
 package com.nexo.common.file.service;
 
-import com.nexo.common.file.constant.enums.ServicePath;
-import com.nexo.common.file.constant.enums.TypePath;
+import com.nexo.common.file.domain.enums.ServicePath;
+import com.nexo.common.file.domain.enums.TypePath;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;

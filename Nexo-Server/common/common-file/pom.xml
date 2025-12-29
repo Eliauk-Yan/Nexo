@@ -35,12 +35,6 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
         </dependency>
-        <!-- 4. 基础模块 (用于 BusinessException) -->
-        <dependency>
-            <groupId>com.nexo.common.base</groupId>
-            <artifactId>common-base</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
         <!-- 5. SLF4J (用于日志) -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -51,6 +45,12 @@
             <groupId>io.minio</groupId>
             <artifactId>minio</artifactId>
             <version>8.6.0</version>
+        </dependency>
+        <!-- 7. baseException -->
+        <dependency>
+            <groupId>com.nexo.common.base</groupId>
+            <artifactId>common-base</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

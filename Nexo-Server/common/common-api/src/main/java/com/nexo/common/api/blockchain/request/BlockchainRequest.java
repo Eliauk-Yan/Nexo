@@ -1,6 +1,6 @@
 package com.nexo.common.api.blockchain.request;
 
-import com.nexo.common.base.request.BaseRequest;
+import com.nexo.common.api.base.request.BaseRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

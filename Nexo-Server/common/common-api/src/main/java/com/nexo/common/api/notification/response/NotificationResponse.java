@@ -1,12 +1,12 @@
 package com.nexo.common.api.notification.response;
 
-import com.nexo.common.base.response.BaseResponse;
+import com.nexo.common.api.base.response.BaseResponse;
 
 import java.io.Serial;
 
 /**
  * @classname NotificationResponse
- * @description 通知RPC响应类
+ * @description 通知 RPC 响应类
  * @date 2025/11/30 13:11
  * @created by YanShijie
  */
