@@ -8,5 +8,6 @@ spring:
       - classpath:/config.yml
       - classpath:/cache.yml
       - classpath:/file.yml
+      - classpath:/base.yml
   application:
     name: business-user

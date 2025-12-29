@@ -4,7 +4,7 @@
  */
 
 import { API_ENDPOINTS } from '@/constants/api'
-import { UpdateUserRequest, UserProfile } from '@/types'
+import { RealNameAuthDTO, UpdateUserRequest, UserProfile } from '@/types'
 import { request } from '@/utils/request'
 
 export const userApi = {
@@ -23,5 +23,9 @@ export const userApi = {
    */
   updateNickName: (data: UpdateUserRequest) => {
     return request.put<boolean>(API_ENDPOINTS.USER.UPDATE_NICK_NAME, data)
+  },
+
+  realNameAuthentication: (data: RealNameAuthDTO) => {
+    return request.post<boolean>(API_ENDPOINTS.USER.REAL_NAME_AUTH, data)
   },
 }

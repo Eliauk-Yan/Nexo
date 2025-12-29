@@ -6,5 +6,5 @@ package com.nexo.business.user.domain.entity;
  * @date 2025/12/02 09:46
  * @created by YanShijie
  */
-public class UserChainAccount {
+public class UserWallet {
 }

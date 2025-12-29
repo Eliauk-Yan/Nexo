@@ -36,5 +36,10 @@ public interface UserService extends IService<User> {
      */
     Boolean updateAvatar(MultipartFile avatar);
 
+    /**
+     * 更新用户昵称
+     * @return 昵称
+     */
     Boolean updateNickName(String nickName);
+
 }

@@ -1,5 +1,7 @@
 package com.nexo.business.user.interfaces.controller;
 
+import com.nexo.business.user.interfaces.dto.RealNameAuthDTO;
+import com.nexo.business.user.service.UserKycService;
 import com.nexo.business.user.service.UserService;
 import com.nexo.business.user.interfaces.dto.UserUpdateDTO;
 import com.nexo.business.user.interfaces.vo.UserProfileVO;
@@ -21,6 +23,8 @@ import org.springframework.web.multipart.MultipartFile;
 public class UserController {
 
     private final UserService userService;
+
+    private final UserKycService userKycService;
 
     /**
      * 获取用户信息
@@ -48,6 +52,16 @@ public class UserController {
     @PutMapping("/nickName")
     public Result<Boolean> updateNickName(@RequestBody UserUpdateDTO request) {
         return Result.success(userService.updateNickName(request.getNickName()));
+    }
+
+    /**
+     * 实名认证
+     * @param dto 实名认证信息
+     * @return 认证结果
+     */
+    @PostMapping("/realNameAuth")
+    public Result<Boolean> realNameAuthentication(@RequestBody RealNameAuthDTO dto) {
+        return Result.success(userKycService.realNameAuth(dto));
     }
 
 }

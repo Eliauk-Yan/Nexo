@@ -7,7 +7,7 @@ import { authStore } from '@/stores/authStore'
 import { UpdateUserRequest, UserInfo, UserProfile } from '@/types'
 import { useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
-import { Alert, Platform, ScrollView, StyleSheet, View } from 'react-native'
+import { Alert, ScrollView, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const AccountSecurity = () => {
@@ -17,16 +17,17 @@ const AccountSecurity = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const { user, setUser } = useAuthStore()
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const data = await userApi.getUserProfile()
-        setProfile(data)
-      } catch (error) {
-        console.error('获取用户信息失败', error)
-      }
+  const fetchProfile = async () => {
+    try {
+      const data = await userApi.getUserProfile()
+      setProfile(data)
+    } catch (error) {
+      console.error('获取用户信息失败', error)
     }
-    fetchProfile()
+  }
+
+  useEffect(() => {
+    void fetchProfile()
   }, [])
 
   const avatar = profile?.avatarUrl || ''
@@ -35,7 +36,7 @@ const AccountSecurity = () => {
   const alipayAccount = profile?.alipay || '未绑定'
   const wechatAccount = profile?.wechat || '未绑定'
   const appleId = profile?.appleId || '未绑定'
-  const isVerified = profile?.isVerified ?? false
+  const isRealNameAuth = profile?.realNameAuth ?? false
   const hasPassword = !!profile?.password
 
   const handleDeleteAccount = () => {
@@ -52,102 +53,149 @@ const AccountSecurity = () => {
     ])
   }
 
+  const handleRealNameVerification = () => {
+    if (isRealNameAuth) {
+      Alert.alert('实名认证', '你已完成实名认证')
+      return
+    }
+    Alert.prompt(
+      '实名认证',
+      '请输入您的真实姓名',
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '下一步',
+          onPress: async (name?: string) => {
+            if (!name) {
+              Alert.alert('提示', '姓名不能为空')
+              return
+            }
+            Alert.prompt(
+              '实名认证',
+              '请输入您的身份证号',
+              [
+                { text: '取消', style: 'cancel' },
+                {
+                  text: '提交',
+                  onPress: (idCard?: string) => {
+                    if (!idCard) {
+                      Alert.alert('提示', '请输入身份证号')
+                      return
+                    }
+                    try {
+                      userApi.realNameAuthentication({ realName: name, idCardNo: idCard })
+                      void fetchProfile()
+                    } catch (err) {
+                      console.error('实名认证提交失败', err)
+                      Alert.alert('提交失败', '请稍后重试')
+                    }
+                  },
+                },
+              ],
+              'plain-text',
+              '',
+              'number-pad',
+            )
+          },
+        },
+      ],
+      'plain-text',
+      '',
+    )
+  }
+
   const handleNicknamePress = () => {
     const current = profile?.nickName || ''
-    // iOS 原生 prompt
-    if (Platform.OS === 'ios' && Alert.prompt) {
-      Alert.prompt(
-        '修改昵称',
-        `当前昵称：${current || '未设置'}`,
-        [
-          { text: '取消', style: 'cancel' },
-          {
-            text: '确认',
-            onPress: async (text?: string) => {
-              if (text !== undefined) {
-                try {
-                  const payload: UpdateUserRequest = { nickName: text }
-                  await userApi.updateNickName(payload)
-                  const updated = await userApi.getUserProfile()
-                  setProfile(updated)
-                  // 同步全局登录态
-                  const mergedUser: UserInfo = {
-                    id: updated.id,
-                    nickName: updated.nickName,
-                    avatarUrl: updated.avatarUrl,
-                    role: user?.role ?? '',
-                  }
-                  await Promise.all([
-                    // fix 感觉冗余
-                    authStore.setUserInfo(mergedUser),
-                    setUser(mergedUser),
-                  ])
-                } catch (err) {
-                  console.error('更新昵称失败', err)
+
+    Alert.prompt(
+      '修改昵称',
+      `当前昵称：${current || '未设置'}`,
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '确认',
+          onPress: async (text?: string) => {
+            if (text !== undefined) {
+              try {
+                const payload: UpdateUserRequest = { nickName: text }
+                await userApi.updateNickName(payload)
+                const updated = await userApi.getUserProfile()
+                setProfile(updated)
+                // 同步全局登录态：同时更新持久化存储和内存状态
+                const mergedUser: UserInfo = {
+                  id: updated.id,
+                  nickName: updated.nickName,
+                  avatarUrl: updated.avatarUrl,
+                  role: user?.role ?? '',
                 }
+                // 先更新持久化存储，再更新内存状态
+                await authStore.setUserInfo(mergedUser)
+                setUser(mergedUser)
+              } catch (err) {
+                console.error('更新昵称失败', err)
               }
-            },
+            }
           },
-        ],
-        'plain-text',
-        current
-      )
-    }
+        },
+      ],
+      'plain-text',
+      current,
+    )
   }
 
   const menuItems: ListItemData[] = [
-    { 
-      label: '头像', 
+    {
+      label: '头像',
       type: 'avatar',
       value: avatar,
-      onPress: () => {} 
+      onPress: () => {},
     },
-    { 
-      label: '昵称', 
+    {
+      label: '昵称',
       type: 'text',
       value: nickname,
-      onPress: handleNicknamePress, 
+      onPress: handleNicknamePress,
     },
-    { 
-      label: '手机号', 
+    {
+      label: '手机号',
       type: 'text',
       value: phone,
-      onPress: () => {} 
+      onPress: () => {},
     },
-    { 
-      label: '支付宝账号', 
+    {
+      label: '支付宝账号',
       type: 'text',
       value: alipayAccount,
-      onPress: () => {} 
+      onPress: () => {},
     },
-    { 
-      label: '微信账号', 
+    {
+      label: '微信账号',
       type: 'text',
       value: wechatAccount,
-      onPress: () => {} 
+      onPress: () => {},
     },
-    { 
-      label: 'AppleID', 
+    {
+      label: 'AppleID',
       type: 'text',
       value: appleId,
-      onPress: () => {} 
+      onPress: () => {},
     },
-    { 
-      label: '实名认证', 
+    {
+      label: '实名认证',
       type: 'text',
-      value: isVerified ? '已认证' : '未认证',
-      onPress: () => {} 
+      value: isRealNameAuth ? '已认证' : '未认证',
+      onPress: handleRealNameVerification,
     },
-    { 
-      label: '操作密码', 
+    {
+      label: '操作密码',
       type: 'text',
       value: hasPassword ? '已设置' : '未设置',
-      onPress: () => {} 
+      onPress: () => {},
     },
-    { 
-      label: '账号注销', 
+    {
+      label: '账号注销',
       type: 'delete',
-      onPress: handleDeleteAccount, 
+      onPress: handleDeleteAccount,
     },
   ]
 
@@ -165,10 +213,7 @@ const AccountSecurity = () => {
         showsVerticalScrollIndicator={false}
       >
         {menuItems.map((item) => (
-          <ListItem
-            key={item.label}
-            item={item}
-          />
+          <ListItem key={item.label} item={item} />
         ))}
       </ScrollView>
     </View>
@@ -250,4 +295,3 @@ const styles = StyleSheet.create({
 })
 
 export default AccountSecurity
-

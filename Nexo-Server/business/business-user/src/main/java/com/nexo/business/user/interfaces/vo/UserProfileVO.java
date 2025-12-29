@@ -23,7 +23,7 @@ public class UserProfileVO {
 
     private String appleId;
 
-    private Boolean isVerified;
+    private Boolean realNameAuth;
 
     private String password;
 

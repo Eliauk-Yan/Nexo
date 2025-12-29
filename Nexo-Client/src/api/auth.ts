@@ -12,7 +12,6 @@ export const authApi = {
    * 发送验证码
    */
   sendVerificationCode: (phone: string) => {
-    // 后端接口使用 query 参数：POST /auth/verifyCode?phone=xxx
     const url = `${API_ENDPOINTS.AUTH.SEND_VERIFICATION_CODE}?phone=${encodeURIComponent(phone)}`
     return request.post<boolean>(url, undefined)
   },
@@ -34,6 +33,4 @@ export const authApi = {
   logout: () => {
     return request.post<void>(API_ENDPOINTS.AUTH.LOGOUT)
   },
-
 }
-

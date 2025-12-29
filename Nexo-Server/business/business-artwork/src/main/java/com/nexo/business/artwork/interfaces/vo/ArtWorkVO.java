@@ -25,16 +25,4 @@ public class ArtWorkVO {
 
     private Long inventory;
 
-    private Date saleTime;
-
-    private Integer version;
-
-    private Date bookStartTime;
-
-    private Date bookEndTime;
-
-    private Boolean canBook;
-
-    private Boolean hasBooked;
-
 }

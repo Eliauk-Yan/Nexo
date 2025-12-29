@@ -2,9 +2,6 @@
  * 用户相关类型定义
  */
 
-/**
- * 用户账户信息
- */
 export interface UserProfile {
   id: string
   avatarUrl: string
@@ -13,12 +10,17 @@ export interface UserProfile {
   alipay: string
   wechat: string
   appleId: string
-  isVerified: boolean
+  realNameAuth: boolean
   password: string
 }
 
-export interface UpdateUserRequest  {
+export interface UpdateUserRequest {
   nickName?: string
   phone?: string
   password?: string
+}
+
+export interface RealNameAuthDTO {
+  realName: string
+  idCardNo: string
 }

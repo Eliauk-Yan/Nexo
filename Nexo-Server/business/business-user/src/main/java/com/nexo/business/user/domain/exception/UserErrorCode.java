@@ -15,7 +15,9 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum UserErrorCode implements ErrorCode {
 
-    USER_NOT_EXIST("USER_NOT_EXIST", "用户不存在");
+    USER_NOT_EXIST("USER_NOT_EXIST", "用户不存在"),
+
+    REAL_NAME_AUTH_FAILED("REAL_NAME_AUTH_FAILED", "实名认证失败");;
 
     private final String code;
 
