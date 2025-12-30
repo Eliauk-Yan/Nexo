@@ -1,5 +1,9 @@
 package com.nexo.business.user.interfaces.vo;
 
+
+import com.github.houbb.sensitive.annotation.strategy.SensitiveStrategyEmail;
+import com.github.houbb.sensitive.annotation.strategy.SensitiveStrategyMaskHalf;
+import com.github.houbb.sensitive.annotation.strategy.SensitiveStrategyPhone;
 import lombok.Data;
 
 /**
@@ -15,16 +19,18 @@ public class UserProfileVO {
 
     private String nickName;
 
+    @SensitiveStrategyPhone
     private String phone;
 
+    @SensitiveStrategyMaskHalf
     private String alipay;
 
+    @SensitiveStrategyMaskHalf
     private String wechat;
 
+    @SensitiveStrategyEmail
     private String appleId;
 
     private Boolean realNameAuth;
-
-    private String password;
 
 }

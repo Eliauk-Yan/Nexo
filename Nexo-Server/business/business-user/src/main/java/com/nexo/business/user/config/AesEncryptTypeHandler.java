@@ -1,4 +1,4 @@
-package com.nexo.common.datasource.handler;
+package com.nexo.business.user.config;
 
 import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.type.BaseTypeHandler;
@@ -9,17 +9,12 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import com.nexo.common.datasource.utils.AesUtil;
-
 /**
  * @classname AesEncryptTypeHandler
  * @description MyBatisPlus AES 加密处理
  * @date 2025/12/30 10:25
  */
-@RequiredArgsConstructor
 public class AesEncryptTypeHandler extends BaseTypeHandler<String> {
-
-    private final AesUtil aesUtil;
 
     /**
      * 写数据库（加密）
@@ -31,7 +26,7 @@ public class AesEncryptTypeHandler extends BaseTypeHandler<String> {
             String parameter,
             JdbcType jdbcType
     ) throws SQLException {
-        ps.setString(i, aesUtil.encrypt(parameter));
+        ps.setString(i, AesUtil.encrypt(parameter));
     }
 
     /**
@@ -40,7 +35,7 @@ public class AesEncryptTypeHandler extends BaseTypeHandler<String> {
     @Override
     public String getNullableResult(ResultSet rs, String columnName)
             throws SQLException {
-        return aesUtil.decrypt(rs.getString(columnName));
+        return AesUtil.decrypt(rs.getString(columnName));
     }
 
     /**
@@ -49,7 +44,7 @@ public class AesEncryptTypeHandler extends BaseTypeHandler<String> {
     @Override
     public String getNullableResult(ResultSet rs, int columnIndex)
             throws SQLException {
-        return aesUtil.decrypt(rs.getString(columnIndex));
+        return AesUtil.decrypt(rs.getString(columnIndex));
     }
 
     /**
@@ -58,6 +53,6 @@ public class AesEncryptTypeHandler extends BaseTypeHandler<String> {
     @Override
     public String getNullableResult(CallableStatement cs, int columnIndex)
             throws SQLException {
-        return aesUtil.decrypt(cs.getString(columnIndex));
+        return AesUtil.decrypt(cs.getString(columnIndex));
     }
 }
