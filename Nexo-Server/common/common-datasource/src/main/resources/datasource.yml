@@ -19,16 +19,19 @@ spring:
     test-on-return: false # 是否在归还连接到连接池时检测连接的有效性。如果设置为true，连接在归还到连接池时会进行有效性检测。默认为false。
     pool-prepared-statements: true # 是否开启预处理语句池。预处理语句池可以提高性能，特别是在执行相同SQL语句多次时。默认为true。
     max-pool-prepared-statement-per-connection-size: 20 #每个连接上允许的最大预处理语句数。默认值为20。
-
-# MyBatis配置
+# MyBatis 配置
 mybatis:
   configuration:
     map-underscore-to-camel-case: true # 将数据库字段的下划线命名转换为驼峰命名
   mapper-locations: classpath:mapper/*.xml # MyBatis映射文件所在的位置，这里是使用XML的配置方式时需要配置的部分
-
+# MyBatis-Plus 配置
 mybatis-plus:
   global-config:
     db-config:
       logic-delete-field: deleted     # 如果你用了逻辑删除
       logic-delete-value: 1
       logic-not-delete-value: 0
+# 字段加减密配置
+crypto:
+  aes:
+    key: 2026恭喜发财🧧代码全过🎉

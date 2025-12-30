@@ -1,4 +1,4 @@
-package com.nexo.common.datasource.domain.entity;
+package com.nexo.common.datasource.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;

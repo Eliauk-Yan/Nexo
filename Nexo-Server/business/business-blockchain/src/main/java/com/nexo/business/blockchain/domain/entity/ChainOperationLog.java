@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.nexo.business.blockchain.domain.enums.ChainOperationBizType;
 import com.nexo.business.blockchain.domain.enums.ChainOperationState;
-import com.nexo.common.datasource.domain.entity.BaseEntity;
+import com.nexo.common.datasource.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

@@ -2,7 +2,8 @@ package com.nexo.business.user.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.nexo.common.datasource.domain.entity.BaseEntity;
+import com.nexo.common.datasource.entity.BaseEntity;
+import com.nexo.common.datasource.handler.AesEncryptTypeHandler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -14,7 +15,7 @@ import lombok.EqualsAndHashCode;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-@TableName("user_kyc")
+@TableName(value = "user_kyc", autoResultMap = true)
 public class UserKyc extends BaseEntity {
 
     /**
@@ -26,13 +27,13 @@ public class UserKyc extends BaseEntity {
     /**
      * 真实姓名
      */
-    @TableField("real_name")
+    @TableField(value = "real_name", typeHandler = AesEncryptTypeHandler.class)
     private String realName;
 
     /**
      * 身份证号码
      */
-    @TableField("id_card_no")
+    @TableField(value = "id_card_no", typeHandler = AesEncryptTypeHandler.class)
     private String idCardNo;
 
 

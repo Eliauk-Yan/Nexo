@@ -1,0 +1,63 @@
+package com.nexo.common.datasource.handler;
+
+import lombok.RequiredArgsConstructor;
+import org.apache.ibatis.type.BaseTypeHandler;
+import org.apache.ibatis.type.JdbcType;
+
+import java.sql.CallableStatement;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import com.nexo.common.datasource.utils.AesUtil;
+
+/**
+ * @classname AesEncryptTypeHandler
+ * @description MyBatisPlus AES 加密处理
+ * @date 2025/12/30 10:25
+ */
+@RequiredArgsConstructor
+public class AesEncryptTypeHandler extends BaseTypeHandler<String> {
+
+    private final AesUtil aesUtil;
+
+    /**
+     * 写数据库（加密）
+     */
+    @Override
+    public void setNonNullParameter(
+            PreparedStatement ps,
+            int i,
+            String parameter,
+            JdbcType jdbcType
+    ) throws SQLException {
+        ps.setString(i, aesUtil.encrypt(parameter));
+    }
+
+    /**
+     * 读数据库（按列名）
+     */
+    @Override
+    public String getNullableResult(ResultSet rs, String columnName)
+            throws SQLException {
+        return aesUtil.decrypt(rs.getString(columnName));
+    }
+
+    /**
+     * 读数据库（按列下标）
+     */
+    @Override
+    public String getNullableResult(ResultSet rs, int columnIndex)
+            throws SQLException {
+        return aesUtil.decrypt(rs.getString(columnIndex));
+    }
+
+    /**
+     * 读数据库（存储过程）
+     */
+    @Override
+    public String getNullableResult(CallableStatement cs, int columnIndex)
+            throws SQLException {
+        return aesUtil.decrypt(cs.getString(columnIndex));
+    }
+}

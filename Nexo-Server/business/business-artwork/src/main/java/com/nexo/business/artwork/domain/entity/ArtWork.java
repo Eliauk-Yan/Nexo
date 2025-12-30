@@ -3,7 +3,7 @@ package com.nexo.business.artwork.domain.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.nexo.business.artwork.domain.enums.ArtWorkState;
-import com.nexo.common.datasource.domain.entity.BaseEntity;
+import com.nexo.common.datasource.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
