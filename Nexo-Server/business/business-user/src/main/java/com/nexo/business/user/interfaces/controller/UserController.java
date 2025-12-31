@@ -1,7 +1,7 @@
 package com.nexo.business.user.interfaces.controller;
 
 import com.nexo.business.user.interfaces.dto.RealNameAuthDTO;
-import com.nexo.business.user.service.UserKycService;
+import com.nexo.business.user.service.UserCertificationService;
 import com.nexo.business.user.service.UserService;
 import com.nexo.business.user.interfaces.dto.UserUpdateDTO;
 import com.nexo.business.user.interfaces.vo.UserProfileVO;
@@ -24,7 +24,7 @@ public class UserController {
 
     private final UserService userService;
 
-    private final UserKycService userKycService;
+    private final UserCertificationService userCertificationService;
 
     /**
      * 获取用户信息
@@ -61,7 +61,7 @@ public class UserController {
      */
     @PostMapping("/realNameAuth")
     public Result<Boolean> realNameAuthentication(@RequestBody RealNameAuthDTO dto) {
-        return Result.success(userKycService.realNameAuth(dto));
+        return Result.success(userCertificationService.realNameAuth(dto));
     }
 
 }

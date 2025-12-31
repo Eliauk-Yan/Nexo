@@ -78,7 +78,7 @@ CREATE TABLE `user_kyc`
   COLLATE = utf8mb4_unicode_ci
     COMMENT ='用户 KYC 实名认证表（敏感字段请加密）';
 
-CREATE TABLE `user_chain_accounts`
+CREATE TABLE `accounts`
 (
     `id`           BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     `user_id`      BIGINT UNSIGNED NOT NULL,
