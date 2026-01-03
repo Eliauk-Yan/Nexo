@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -36,7 +35,6 @@ public class NotificationFacadeImpl implements NotificationFacade {
 
     private final SmsService smsService;
 
-    @Transactional
     @Override
     public NotificationResponse sendSmsVerifyCode(String phone) {
         // 2. 生成验证码

@@ -50,10 +50,9 @@
             <artifactId>common-config</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-        <!--通用限流-->
         <dependency>
-            <groupId>com.nexo.common.limiter</groupId>
-            <artifactId>common-limiter</artifactId>
+            <groupId>com.nexo.cache</groupId>
+            <artifactId>common-cache</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
