@@ -5,24 +5,19 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * @classname OperationType
- * @description 链操作业务类型
- * @date 2025/12/24 20:00
+ * @classname ChainOperateType
+ * @description 链操作枚举
+ * @date 2026/01/03 20:23
  */
 @AllArgsConstructor
 @Getter
-public enum ChainOperationBizType {
+public enum ChainOperateType {
 
-    USER("USER", "用户"),
-
-    ARTWORK("ARTWORK", "藏品"),
-
-    ASSET("ASSET", "资产"),
-
-    BLOCKCHAIN("BLOCKCHAIN", "区块链");
+    CREATE_ACCOUNT("CREATE_ACCOUNT", "创建链账户");
 
     @EnumValue
     private final String code;
 
     private final String desc;
+
 }

@@ -18,17 +18,17 @@ public @interface RateLimit {
     /**
      * 限流key，直接使用字符串
      */
-    String key() default "";
+    String key();
 
     /**
      * 窗口大小内限制数量
      */
-    int limit() default 1;
+    int limit();
 
     /**
      * 窗口大小（秒）
      */
-    int windowSize() default 60;
+    int windowSize();
 
     /**
      * 限流时的提示消息

@@ -2,8 +2,10 @@ package com.nexo.business.chain.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.nexo.business.chain.domain.enums.ChainOperateType;
 import com.nexo.business.chain.domain.enums.ChainOperationBizType;
 import com.nexo.business.chain.domain.enums.ChainOperationState;
+import com.nexo.business.chain.domain.enums.ChainType;
 import com.nexo.common.datasource.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -24,7 +26,7 @@ public class ChainOperationLog extends BaseEntity {
      * 链类型(代码)
      */
     @TableField("chain_type")
-    private String chainType;
+    private ChainType chainType;
 
     /**
      * 业务类型(代码)
@@ -42,7 +44,7 @@ public class ChainOperationLog extends BaseEntity {
      * 操作类型(代码)
      */
     @TableField("operation_type")
-    private String operationType;
+    private ChainOperateType operationType;
 
     /**
      * 状态(代码)

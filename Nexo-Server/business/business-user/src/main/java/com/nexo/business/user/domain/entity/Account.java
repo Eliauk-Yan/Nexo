@@ -3,6 +3,8 @@ package com.nexo.business.user.domain.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.nexo.common.datasource.entity.BaseEntity;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * @classname UserChainAccount
@@ -10,6 +12,8 @@ import com.nexo.common.datasource.entity.BaseEntity;
  * @date 2025/12/02 09:46
  * @created by YanShijie
  */
+@EqualsAndHashCode(callSuper = true)
+@Data
 @TableName("accounts")
 public class Account extends BaseEntity {
 

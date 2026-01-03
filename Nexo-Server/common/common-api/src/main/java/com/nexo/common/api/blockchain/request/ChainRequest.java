@@ -64,11 +64,4 @@ public class ChainRequest extends BaseRequest implements Serializable {
      */
     private String bizId;
 
-    /**
-     * 业务类型
-     */
-    private String bizType;
-
-
-
 }

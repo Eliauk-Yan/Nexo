@@ -1,5 +1,6 @@
 package com.nexo.business.chain.interfaces.facade;
 
+import com.nexo.business.chain.domain.enums.ChainType;
 import com.nexo.business.chain.service.ChainService;
 import com.nexo.business.chain.service.factory.ChainServiceFactory;
 import com.nexo.common.api.blockchain.ChainFacade;
@@ -7,8 +8,10 @@ import com.nexo.common.api.blockchain.request.ChainRequest;
 import com.nexo.common.api.blockchain.response.ChainResponse;
 import com.nexo.common.api.blockchain.response.data.ChainCreateData;
 import com.nexo.common.api.blockchain.response.data.ChainOperationData;
+import com.nexo.common.base.constant.ProfileConstant;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * @classname BlockchainFacadeImpl
@@ -21,9 +24,16 @@ public class ChainFacadeImpl implements ChainFacade {
 
     private final ChainServiceFactory chainServiceFactory;
 
+    @Value("${spring.profiles.active}")
+    private String profile;
+
+    @Value("${nexo.chain.type:MOCK}")
+    private String chainType;
+
+
     @Override
     public ChainResponse<ChainCreateData> createChainAccount(ChainRequest request) {
-        return null;
+        return getChainService().createChainAccount(request);
     }
 
     @Override
@@ -44,5 +54,12 @@ public class ChainFacadeImpl implements ChainFacade {
     @Override
     public ChainResponse<ChainOperationData> burn(ChainRequest request) {
         return null;
+    }
+
+    private ChainService getChainService() {
+        if (ProfileConstant.DEV.equals(profile)) {
+            return chainServiceFactory.get(ChainType.MOCK);
+        }
+        return chainServiceFactory.get(ChainType.valueOf(chainType));
     }
 }

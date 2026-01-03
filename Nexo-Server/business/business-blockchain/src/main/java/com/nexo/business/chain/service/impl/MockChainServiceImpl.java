@@ -2,6 +2,7 @@ package com.nexo.business.chain.service.impl;
 
 import cn.hutool.core.lang.UUID;
 import com.nexo.business.chain.domain.enums.ChainType;
+import com.nexo.business.chain.service.ChainOperationLogService;
 import com.nexo.business.chain.service.impl.base.AbstractChainService;
 import com.nexo.common.api.base.response.ResponseCode;
 import com.nexo.common.api.blockchain.request.ChainRequest;
@@ -17,8 +18,12 @@ import org.springframework.stereotype.Service;
 @Service("mockChainService")
 public class MockChainServiceImpl extends AbstractChainService {
 
+    public MockChainServiceImpl(ChainOperationLogService chainOperationLogService) {
+        super(chainOperationLogService);
+    }
+
     @Override
-    public ChainType supportType() {
+    public ChainType getChainType() {
         return ChainType.MOCK;
     }
 

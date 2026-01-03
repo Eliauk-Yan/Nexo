@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.nexo.business.user.domain.entity.Certification;
 import com.nexo.business.user.interfaces.dto.RealNameAuthDTO;
 
-public interface UserCertificationService extends IService<Certification> {
+public interface CertificationService extends IService<Certification> {
 
     /**
      * 实名认证

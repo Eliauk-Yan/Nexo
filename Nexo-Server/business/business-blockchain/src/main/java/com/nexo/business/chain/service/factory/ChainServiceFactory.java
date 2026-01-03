@@ -34,7 +34,7 @@ public class ChainServiceFactory {
 
     public ChainServiceFactory(List<ChainService> services) {
         for (ChainService service : services) {
-            blockchainServiceMap.put(service.supportType(), service);
+            blockchainServiceMap.put(service.getChainType(), service);
         }
     }
 

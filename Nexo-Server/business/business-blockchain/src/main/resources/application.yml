@@ -12,3 +12,11 @@ spring:
       - classpath:/rpc.yml
       - classpath:/config.yml
       - classpath:/cache.yml
+
+nexo:
+    chain:
+      wenchang:
+        host: https://api.wenchang-chain.com
+        api-key: 暂无
+        api-secret: 暂无
+        chain-addr-super: 暂未u

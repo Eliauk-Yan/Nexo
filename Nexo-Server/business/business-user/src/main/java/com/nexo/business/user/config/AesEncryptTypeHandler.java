@@ -1,6 +1,5 @@
 package com.nexo.business.user.config;
 
-import lombok.RequiredArgsConstructor;
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
 

@@ -7,7 +7,7 @@ import com.nexo.common.api.blockchain.response.data.ChainCreateData;
 
 public interface ChainService {
 
-    ChainType supportType();
+    ChainType getChainType();
 
     ChainResponse<ChainCreateData> createChainAccount(ChainRequest request);
 
