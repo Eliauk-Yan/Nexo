@@ -1,6 +1,8 @@
 package com.nexo.business.chain.service.impl;
 
 import cn.hutool.core.lang.UUID;
+import com.nexo.business.chain.api.request.ChainProviderRequest;
+import com.nexo.business.chain.api.response.ChainProviderResponse;
 import com.nexo.business.chain.domain.enums.ChainType;
 import com.nexo.business.chain.service.ChainOperationLogService;
 import com.nexo.business.chain.service.impl.base.AbstractChainService;
@@ -40,4 +42,10 @@ public class MockChainServiceImpl extends AbstractChainService {
         // 3. 返回响应
         return response;
     }
+
+    @Override
+    protected ChainProviderResponse doPost(ChainProviderRequest request) {
+        return null;
+    }
+
 }

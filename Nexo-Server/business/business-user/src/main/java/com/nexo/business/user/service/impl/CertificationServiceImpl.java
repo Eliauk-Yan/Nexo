@@ -10,8 +10,8 @@ import com.nexo.business.user.domain.exception.UserException;
 import com.nexo.business.user.interfaces.dto.RealNameAuthDTO;
 import com.nexo.business.user.mapper.mybatis.CertificationMapper;
 import com.nexo.business.user.service.AccountService;
-import com.nexo.business.user.service.UserAuthService;
 import com.nexo.business.user.service.CertificationService;
+import com.nexo.business.user.service.UserAuthService;
 import com.nexo.business.user.service.UserService;
 import com.nexo.common.api.blockchain.ChainFacade;
 import com.nexo.common.api.blockchain.request.ChainRequest;
@@ -53,7 +53,6 @@ public class CertificationServiceImpl extends ServiceImpl<CertificationMapper, C
         // 2. 获取用户ID
         long userId = StpUtil.getLoginIdAsLong();
         // 3. 保存用户实名认证信息
-        // TODO 数据加密
         Certification certification = new Certification();
         certification.setUserId(userId);
         certification.setRealName(dto.getRealName());

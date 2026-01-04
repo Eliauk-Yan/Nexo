@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.nexo.business.chain.domain.entity.ChainOperationLog;
 import com.nexo.business.chain.domain.enums.ChainOperateType;
 import com.nexo.business.chain.domain.enums.ChainOperationBizType;
+import com.nexo.business.chain.domain.enums.ChainOperationState;
 import com.nexo.business.chain.domain.enums.ChainType;
 
 public interface ChainOperationLogService extends IService<ChainOperationLog> {
@@ -15,7 +16,7 @@ public interface ChainOperationLogService extends IService<ChainOperationLog> {
      * @param identifier 幂等号
      * @return 操作日志
      */
-    ChainOperationLog findLog(String bizId, ChainOperationBizType bizType, String identifier);
+    ChainOperationLog queryLog(String bizId, ChainOperationBizType bizType, String identifier);
 
     /**
      * 插入操作日志
@@ -29,4 +30,11 @@ public interface ChainOperationLogService extends IService<ChainOperationLog> {
      */
     Long insertLog(ChainType chainType, String bizId, ChainOperationBizType bizType, ChainOperateType operateType, String param, String operationId);
 
+    /**
+     * 更新操作日志
+     * @param chainOperationLogId 操作日志 ID
+     * @param state 操作状态
+     * @param result 操作结果
+     */
+    boolean updateLog(Long chainOperationLogId, ChainOperationState state, String result);
 }

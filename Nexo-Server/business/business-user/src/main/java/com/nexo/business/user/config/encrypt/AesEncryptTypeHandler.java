@@ -1,4 +1,4 @@
-package com.nexo.business.user.config;
+package com.nexo.business.user.config.encrypt;
 
 import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;

@@ -3,8 +3,6 @@ package com.nexo.business.chain.utils;
 import cn.hutool.crypto.digest.DigestUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONWriter;
-import com.alibaba.nacos.shaded.com.google.common.collect.Maps;
-import org.springframework.http.HttpHeaders;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,22 +12,6 @@ import java.util.Map;
  * @date 2026/01/03 19:30
  */
 public class WenChangChainUtil {
-
-    public static Map<String,String> configureHeaders(String signature, Long timestamp, String apiKey) {
-        Map headers = Maps.newHashMapWithExpectedSize(3);
-        headers.put("X-Api-Key", apiKey);
-        headers.put("X-Timestamp", timestamp.toString());
-        headers.put("X-Signature", signature);
-        return headers;
-    }
-
-    public static HttpHeaders configureHeaders(HttpHeaders headers, String signature, Long timestamp, String apiKey) {
-        headers.add("X-Api-Key", apiKey);
-        headers.add("X-Timestamp", timestamp.toString());
-        headers.add("X-Signature", signature);
-        return headers;
-    }
-
 
     /**
      * <a href="https://docs.avata.bianjie.ai/doc-2728163#java-%E8%AF%AD%E8%A8%80%E7%89%88%E6%9C%AC">官网地址</a>

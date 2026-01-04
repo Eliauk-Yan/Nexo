@@ -3,7 +3,7 @@ package com.nexo.business.user.domain.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.nexo.common.datasource.entity.BaseEntity;
-import com.nexo.business.user.config.AesEncryptTypeHandler;
+import com.nexo.business.user.config.encrypt.AesEncryptTypeHandler;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

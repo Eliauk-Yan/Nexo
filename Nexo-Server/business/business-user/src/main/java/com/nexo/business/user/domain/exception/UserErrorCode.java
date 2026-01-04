@@ -19,7 +19,9 @@ public enum UserErrorCode implements ErrorCode {
 
     USER_NOT_EXIST("USER_NOT_EXIST", "用户不存在"),
 
-    REAL_NAME_AUTH_FAILED("REAL_NAME_AUTH_FAILED", "实名认证失败");
+    REAL_NAME_AUTH_FAILED("REAL_NAME_AUTH_FAILED", "实名认证失败"),
+
+    REAL_NAME_AUTH_SERVICE_ERROR("REAL_NAME_AUTH_SERVICE_ERROR", "实名认证服务错误");
 
     private final String code;
 

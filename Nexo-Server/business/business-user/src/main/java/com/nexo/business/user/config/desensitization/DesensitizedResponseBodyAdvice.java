@@ -1,4 +1,4 @@
-package com.nexo.business.user.interceptor;
+package com.nexo.business.user.config.desensitization;
 
 import com.github.houbb.sensitive.core.api.SensitiveUtil;
 import com.nexo.business.user.interfaces.vo.UserProfileVO;

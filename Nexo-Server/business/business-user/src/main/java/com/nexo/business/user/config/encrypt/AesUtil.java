@@ -1,4 +1,4 @@
-package com.nexo.business.user.config;
+package com.nexo.business.user.config.encrypt;
 
 import cn.hutool.crypto.SecureUtil;
 import cn.hutool.crypto.symmetric.AES;

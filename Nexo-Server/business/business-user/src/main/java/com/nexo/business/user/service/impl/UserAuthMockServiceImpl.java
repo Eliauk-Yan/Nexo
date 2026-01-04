@@ -1,24 +1,21 @@
-package com.nexo.business.user.service.impl.auth;
+package com.nexo.business.user.service.impl;
 
 import com.nexo.business.user.interfaces.dto.RealNameAuthDTO;
 import com.nexo.business.user.service.UserAuthService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 /**
  * @classname UserAuthMockServiceImpl
- * @description TODO
- * @date 2025/12/29 20:24
+ * @description 用户认证服务模拟实现类
+ * @date 2026/01/04 17:03
  */
-@Slf4j
 @Service
-@ConditionalOnProperty(name = "nexo.mock.enable", havingValue = "true")
+@ConditionalOnProperty(prefix = "nexo.mock", name = "enable", havingValue = "true", matchIfMissing = true)
 public class UserAuthMockServiceImpl implements UserAuthService {
 
     @Override
     public boolean realNameAuth(RealNameAuthDTO dto) {
-        log.info("用户实名认证成功");
         return true;
     }
 }
