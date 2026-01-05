@@ -52,7 +52,7 @@ public abstract class AbstractChainService implements ChainService {
         Long chainOperationLogId = chainOperationLogService.insertLog(getChainType(), request.getBizId(), bizType, operationType, JSON.toJSONString(request), request.getIdentifier());
         // 3. 构建外部服务调用请求体
         ChainProviderRequest chainProviderRequest = new ChainProviderRequest();
-        // 3.1 填充请求体参数
+        // 3.1 填充请求参数
         consumer.accept(chainProviderRequest);
         // 4. 发送请求
         ChainProviderResponse result = doPost(chainProviderRequest);

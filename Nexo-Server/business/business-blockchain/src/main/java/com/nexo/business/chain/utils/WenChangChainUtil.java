@@ -3,6 +3,8 @@ package com.nexo.business.chain.utils;
 import cn.hutool.crypto.digest.DigestUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONWriter;
+import com.google.common.collect.Maps;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,15 +16,23 @@ import java.util.Map;
 public class WenChangChainUtil {
 
     /**
+     * 配置请求头
+     * @param signature 请求签名
+     * @param timestamp 请求当前时间
+     * @param apiKey apiKey
+     * @return 请求头
+     */
+    public static Map<String,String> configureHeaders(String signature, Long timestamp, String apiKey) {
+        Map<String, String> headers = Maps.newHashMapWithExpectedSize(3);
+        headers.put("X-Api-Key", apiKey);
+        headers.put("X-Timestamp", timestamp.toString());
+        headers.put("X-Signature", signature);
+        return headers;
+    }
+
+    /**
+     * 签名请求
      * <a href="https://docs.avata.bianjie.ai/doc-2728163#java-%E8%AF%AD%E8%A8%80%E7%89%88%E6%9C%AC">官网地址</a>
-     * 对请求参数进行签名处理
-     *
-     * @param path      请求路径,仅截取域名后及 Query 参数前部分,例："/v2/accounts";
-     * @param query     Query 参数,例："key1=value1&key2=value2",需转为 Map 格式
-     * @param body      Body 参数,例："{\"count\": 1, \"operation_id\": \"random_string\"}",需转为 Map 格式
-     * @param timestamp 当前时间戳（毫秒）,例：1647751123703
-     * @param apiSecret 应用方的 API Secret,例："AKIDz8krbsJ5yKBZQpn74WFkmLPc5ab"
-     * @return 返回签名结果
      */
     public static String signRequest(String path, Map<String, Object> query, Map<String, Object> body, long timestamp, String apiSecret) {
         Map<String, Object> paramsMap = new HashMap<>();

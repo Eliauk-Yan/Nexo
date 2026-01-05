@@ -1,12 +1,16 @@
 package com.nexo.business.chain.api.request;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * @classname ChainServiceRequest
  * @description 链平台请求实体类
  * @date 2026/01/04 17:28
  */
+@AllArgsConstructor
+@NoArgsConstructor
 @Data
 public class ChainProviderRequest {
 
