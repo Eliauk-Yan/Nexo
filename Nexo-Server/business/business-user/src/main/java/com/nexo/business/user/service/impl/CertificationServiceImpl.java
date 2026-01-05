@@ -39,9 +39,8 @@ public class CertificationServiceImpl extends ServiceImpl<CertificationMapper, C
 
     private final AccountService accountService;
 
-
     @DubboReference(version = "1.0.0")
-    private final ChainFacade chainFacade;
+    private ChainFacade chainFacade;
 
     @Transactional(rollbackFor = Exception.class)
     @Override

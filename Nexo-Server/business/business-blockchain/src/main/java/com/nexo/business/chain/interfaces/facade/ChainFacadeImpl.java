@@ -30,7 +30,6 @@ public class ChainFacadeImpl implements ChainFacade {
     @Value("${nexo.chain.type:MOCK}")
     private String chainType;
 
-
     @Override
     public ChainResponse<ChainCreateData> createChainAccount(ChainRequest request) {
         return getChainService().createChainAccount(request);

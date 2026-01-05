@@ -18,7 +18,6 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-
     <dependencies>
         <!--公共 web-->
         <dependency>
@@ -63,11 +62,22 @@
             <version>1.0-SNAPSHOT</version>
         </dependency>
 
+        <!--引入百度超级链-->
         <dependency>
-            <groupId>com.antgroup.antchain.openapi</groupId>
-            <artifactId>openapi-caasplatform</artifactId>
-            <version>1.5.1</version>
+            <groupId>com.baidu.xuper</groupId>
+            <artifactId>xasset-sdk-java</artifactId>
+            <version>1.0.7</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>jdk.tools</groupId>
+                    <artifactId>jdk.tools</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.baidu.xuper</groupId>
+            <artifactId>xuper-java-sdk</artifactId>
+            <version>0.2.0</version>
         </dependency>
     </dependencies>
-
 </project>

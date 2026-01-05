@@ -30,7 +30,7 @@ public interface UserMapper extends BaseMapper<User> {
               u.password   as password,
               exists(
                 select 1
-                from nexo.user_kyc k
+                from nexo.certifications k
                 where k.deleted = 0
                   and k.user_id = u.id
               ) as realNameAuth

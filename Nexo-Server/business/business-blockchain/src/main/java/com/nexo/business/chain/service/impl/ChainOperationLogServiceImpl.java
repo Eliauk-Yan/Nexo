@@ -12,6 +12,8 @@ import com.nexo.business.chain.service.ChainOperationLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 /**
  * @classname ChainOperationLogServiceImpl
  * @description 链操作日志服务实现
@@ -39,6 +41,8 @@ public class ChainOperationLogServiceImpl extends ServiceImpl<ChainOperationLogM
         chainOperationLog.setOperationType(operateType);
         chainOperationLog.setParam(param);
         chainOperationLog.setOutBizId(operationId);
+        // 设置当前时间
+        chainOperationLog.setOperateTime(LocalDateTime.now());
         // 设置状态为处理中
         chainOperationLog.setState(ChainOperationState.PROCESSING);
         boolean res = this.save(chainOperationLog);

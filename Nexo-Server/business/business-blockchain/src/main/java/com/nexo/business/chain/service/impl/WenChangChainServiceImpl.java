@@ -1,6 +1,7 @@
 package com.nexo.business.chain.service.impl;
 
 import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
 import com.alibaba.fastjson2.JSON;
 import com.google.common.collect.Maps;
 import com.nexo.business.chain.api.request.ChainProviderRequest;
@@ -85,9 +86,12 @@ public class WenChangChainServiceImpl extends AbstractChainService {
         // 3. 添加请求体
         post.body(JSON.toJSONString(request.getBody()));
         // 4. 发送请求
-        String responseJson = post.execute().body();
-        // 5. 解析结果并返回
-        return JSON.parseObject(responseJson, ChainProviderResponse.class);
+        // Java 7 语法糖 try-with-resources 用完自动关闭 response.close
+        try (HttpResponse response = post.execute()) {
+            String responseJson = response.body();
+            // 5. 解析结果并返回
+            return JSON.parseObject(responseJson, ChainProviderResponse.class);
+        }
     }
 
 }

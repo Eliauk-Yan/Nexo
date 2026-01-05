@@ -13,7 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @EnableDubbo
 @SpringBootApplication
 public class UserApplication {
-    static void main(String[] args) {
+    public static void main(String[] args) {
         SpringApplication.run(UserApplication.class, args);
     }
 }

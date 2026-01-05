@@ -1,6 +1,7 @@
 package com.nexo.business.user.service.impl;
 
 import cn.hutool.http.HttpRequest;
+import cn.hutool.http.HttpResponse;
 import com.alibaba.fastjson2.JSON;
 import com.nexo.business.user.api.response.RealNameAuthResponse;
 import com.nexo.business.user.domain.exception.UserErrorCode;
@@ -32,11 +33,13 @@ public class UserAuthServiceImpl implements UserAuthService {
         request.form("name", dto.getRealName());
         request.form("idcard", dto.getIdCardNo());
         // 3. 发送请求
-        String responseJson = request.execute().body();
-        RealNameAuthResponse resp = JSON.parseObject(responseJson, RealNameAuthResponse.class);
-        if (!resp.getSuccess()) {
-            throw new UserException(UserErrorCode.REAL_NAME_AUTH_SERVICE_ERROR);
+        try (HttpResponse response = request.execute()) {
+            String responseJson = response.body();
+            RealNameAuthResponse resp = JSON.parseObject(responseJson, RealNameAuthResponse.class);
+            if (!resp.getSuccess()) {
+                throw new UserException(UserErrorCode.REAL_NAME_AUTH_SERVICE_ERROR);
+            }
+            return resp.getCode() == 200;
         }
-        return resp.getCode() == 200;
     }
 }

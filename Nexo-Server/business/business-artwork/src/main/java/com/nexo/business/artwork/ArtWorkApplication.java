@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @EnableDubbo
 @SpringBootApplication
 public class ArtWorkApplication {
-    static void main() {
-        SpringApplication.run(ArtWorkApplication.class);
+    public static void main(String[] args) {
+        SpringApplication.run(ArtWorkApplication.class, args);
     }
 }

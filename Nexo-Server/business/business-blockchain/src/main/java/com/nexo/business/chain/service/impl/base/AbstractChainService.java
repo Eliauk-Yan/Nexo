@@ -32,7 +32,7 @@ import java.util.function.Consumer;
 @RequiredArgsConstructor
 public abstract class AbstractChainService implements ChainService {
 
-    private final ChainOperationLogService chainOperationLogService;
+    protected final ChainOperationLogService chainOperationLogService;
 
     // 线程工厂
     private static final ThreadFactory blockchainResultProcessFactory = new ThreadFactoryBuilder().setNameFormat("blockchain-process-pool-%d").build();

@@ -5,7 +5,7 @@ spring:
   application:
     name: business-blockchain
   profiles:
-    active: dev
+    active: prod
   config:
     import:
       - classpath:/datasource.yml
@@ -14,9 +14,16 @@ spring:
       - classpath:/cache.yml
 
 nexo:
-    chain:
-      wenchang:
-        host: https://api.wenchang-chain.com
-        api-key: 暂无
-        api-secret: 暂无
-        chain-addr-super: 暂未u
+  chain:
+    type: BAIDU_SUPER
+    # 文昌链配置
+    wenchang:
+      host: https://api.wenchang-chain.com
+      api-key: 123456789
+      api-secret: 123456789
+      chain-addr-super: 123456789
+    # 百度超级链配置
+    baidu:
+      app-id: 110973
+      ak: b96b7a6634a8ef1f20e5de3d92ced17f
+      sk: a4d3346d7343e7b411680a6507199702

@@ -6,12 +6,12 @@ import lombok.NoArgsConstructor;
 
 /**
  * @classname ChainServiceRequest
- * @description 链平台请求实体类
+ * @description 链平台请求接口
  * @date 2026/01/04 17:28
  */
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Data
 public class ChainProviderRequest {
 
     /**
@@ -38,6 +38,5 @@ public class ChainProviderRequest {
      * 请求路径
      */
     private String path;
-
 
 }

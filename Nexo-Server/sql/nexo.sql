@@ -159,7 +159,7 @@ CREATE TABLE chain_operation_log
     id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
     chain_type     VARCHAR(32)     NOT NULL COMMENT '链类型(代码)',
     biz_type       VARCHAR(32)     NOT NULL COMMENT '业务类型(代码)',
-    biz_id         VARCHAR(128)    NOT NULL COMMENT '业务ID',
+    biz_id         VARCHAR(128)    COMMENT '业务ID',
     operation_type VARCHAR(32)     NOT NULL COMMENT '操作类型(代码)',
     state          VARCHAR(32)     NOT NULL COMMENT '状态(代码)',
     operate_time   DATETIME        NOT NULL COMMENT '操作发起时间',

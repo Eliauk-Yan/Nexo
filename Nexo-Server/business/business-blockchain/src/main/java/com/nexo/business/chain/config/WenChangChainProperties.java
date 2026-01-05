@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
  * @date 2026/01/03 19:24
  */
 @Component
-@ConfigurationProperties(prefix = "chain.wenchang")
+@ConfigurationProperties(prefix = "nexo.chain.wenchang")
 @Data
 public class WenChangChainProperties {
 

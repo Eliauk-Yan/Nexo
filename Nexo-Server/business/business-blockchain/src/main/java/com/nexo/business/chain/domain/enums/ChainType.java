@@ -11,7 +11,9 @@ public enum ChainType {
 
     MOCK("MOCK", "模拟"),
 
-    WEN_CHANG("WEN_CHANG", "文昌链");
+    WEN_CHANG("WEN_CHANG", "文昌链"),
+
+    BAIDU_SUPER("BAIDU_SUPER", "百度超级链");
 
     @EnumValue
     private final String code;
