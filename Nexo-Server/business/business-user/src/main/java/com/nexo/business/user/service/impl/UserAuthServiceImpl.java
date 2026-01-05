@@ -1,6 +1,7 @@
 package com.nexo.business.user.service.impl;
 
-import com.nexo.business.user.api.UserAuthApi;
+import cn.hutool.http.HttpRequest;
+import com.alibaba.fastjson2.JSON;
 import com.nexo.business.user.api.response.RealNameAuthResponse;
 import com.nexo.business.user.domain.exception.UserErrorCode;
 import com.nexo.business.user.domain.exception.UserException;
@@ -9,8 +10,6 @@ import com.nexo.business.user.service.UserAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 /**
  * @classname UserAuthServiceImpl
@@ -19,17 +18,22 @@ import org.springframework.util.MultiValueMap;
  */
 @Service
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "nexo.mock", name = "enable", havingValue = "false", matchIfMissing = false)
+@ConditionalOnProperty(prefix = "nexo.mock", name = "enable", havingValue = "false")
 public class UserAuthServiceImpl implements UserAuthService {
-
-    private final UserAuthApi userAuthApi;
 
     @Override
     public boolean realNameAuth(RealNameAuthDTO dto) {
-        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
-        form.add("name", dto.getRealName());
-        form.add("idcard", dto.getIdCardNo());
-        RealNameAuthResponse resp = userAuthApi.realNameAuth(form);
+        String url = "https://kzidcardv1.market.alicloudapi.com/api-mall/api/id_card/check";
+        // 1. 构建请求
+        HttpRequest request = HttpRequest.post(url)
+                .header("Authorization", "APPCODE 65b1e4df85b5405d92fb427d6e44d452")
+                .header("Content-Type", "application/x-www-form-urlencoded");
+        // 2. 表单参数
+        request.form("name", dto.getRealName());
+        request.form("idcard", dto.getIdCardNo());
+        // 3. 发送请求
+        String responseJson = request.execute().body();
+        RealNameAuthResponse resp = JSON.parseObject(responseJson, RealNameAuthResponse.class);
         if (!resp.getSuccess()) {
             throw new UserException(UserErrorCode.REAL_NAME_AUTH_SERVICE_ERROR);
         }

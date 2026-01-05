@@ -22,7 +22,7 @@ public class UserAuthTest {
         RealNameAuthDTO dto = new RealNameAuthDTO();
         // 输入测试的实名和身份证号
         dto.setRealName("闫世杰");
-        dto.setIdCardNo("152801200501245911");
+        dto.setIdCardNo("152801200501245910");
         boolean result = userAuthService.realNameAuth(dto);
         System.out.println(result);
     }

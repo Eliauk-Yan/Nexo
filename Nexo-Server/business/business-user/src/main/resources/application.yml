@@ -11,10 +11,3 @@ spring:
       - classpath:/base.yml
   application:
     name: business-user
-
-
-nexo:
-  auth:
-    real-name:
-      host: https://kzidcardv1.market.alicloudapi.com
-      appcode: 65b1e4df85b5405d92fb427d6e44d452
