@@ -1,6 +1,7 @@
 package com.nexo.business.chain.service.impl.base;
 
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.nexo.business.chain.api.request.ChainProviderRequest;
 import com.nexo.business.chain.api.response.ChainProviderResponse;
@@ -46,7 +47,26 @@ public abstract class AbstractChainService implements ChainService {
         ChainOperationLog chainOperationLog = chainOperationLogService.queryLog(request.getBizId(), bizType, request.getIdentifier());
         if (chainOperationLog != null) {
             // 1.1 多余请求，做幂等控制
-            // TODO 幂等控制
+            // 创建链账户操作
+            if (operationType == ChainOperateType.CREATE_ACCOUNT) {
+                // 创建兜底响应
+                ChainResponse<ChainCreateData> response = new ChainResponse<>();
+                // 填充响应数据
+                response.setSuccess(true);
+                response.setCode(ChainOperationState.SUCCESS.getCode());
+                JSONObject jsonObject = JSON.parseObject(chainOperationLog.getResult(), JSONObject.class);
+                String account = jsonObject.getString("native_address");
+                ChainCreateData data = new ChainCreateData(request.getIdentifier(), account, request.getUserId(), getChainType().name());
+                response.setData(data);
+                return response;
+            } else {
+                // 其他操作
+                ChainResponse<ChainOperationData> response = new ChainResponse<>();
+                response.setSuccess(true);
+                response.setCode(ChainOperationState.PROCESSING.getCode());
+                response.setData(new ChainOperationData(request.getIdentifier()));
+                return response;
+            }
         }
         // 2. 插入链操作日志
         Long chainOperationLogId = chainOperationLogService.insertLog(getChainType(), request.getBizId(), bizType, operationType, JSON.toJSONString(request), request.getIdentifier());
@@ -76,12 +96,8 @@ public abstract class AbstractChainService implements ChainService {
                 // 原生地址格式
                 String nativeAddress = result.getData().getString("native_address");
                 String userId = request.getUserId();
-                ChainCreateData data = new ChainCreateData();
-                // 填充数据
-                data.setOperationId(request.getIdentifier());
-                data.setAccount(nativeAddress);
-                data.setName(userId);
-                data.setPlatform(getChainType().getCode());
+                // 创建并填充数据
+                ChainCreateData data = new ChainCreateData(request.getIdentifier(), nativeAddress, userId, getChainType().name());
                 response.setData(data);
                 response.setSuccess(true);
             } else {
@@ -89,8 +105,7 @@ public abstract class AbstractChainService implements ChainService {
                 // 其他操作异步执行 先返回处理中
                 response.setCode(ChainOperationState.PROCESSING.getCode());
                 // 填充数据
-                ChainOperationData data = new ChainOperationData();
-                data.setOperationId(request.getIdentifier());
+                ChainOperationData data = new ChainOperationData(request.getIdentifier());
                 response.setSuccess(true);
                 response.setData(data);
             }

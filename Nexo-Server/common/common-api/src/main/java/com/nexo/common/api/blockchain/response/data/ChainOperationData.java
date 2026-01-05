@@ -1,6 +1,8 @@
 package com.nexo.common.api.blockchain.response.data;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -11,6 +13,8 @@ import java.io.Serializable;
  * @date 2025/12/31 10:35
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class ChainOperationData implements Serializable {
 
     @Serial

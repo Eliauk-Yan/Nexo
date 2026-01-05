@@ -1,6 +1,7 @@
 package com.nexo.business.chain.service.impl;
 
 import cn.hutool.core.lang.UUID;
+import com.alibaba.fastjson2.JSONObject;
 import com.nexo.business.chain.api.request.ChainProviderRequest;
 import com.nexo.business.chain.api.response.ChainProviderResponse;
 import com.nexo.business.chain.domain.enums.ChainType;
@@ -45,7 +46,15 @@ public class MockChainServiceImpl extends AbstractChainService {
 
     @Override
     protected ChainProviderResponse doPost(ChainProviderRequest request) {
-        return null;
+        // 1. 构造MOCK响应
+        ChainProviderResponse response = new ChainProviderResponse();
+        // 2. 填充MOCK返回数据
+        JSONObject data = new JSONObject();
+        data.put("success",true);
+        data.put("chainType","mock");
+        response.setData(data);
+        // 3. 返回MOCK响应
+        return response;
     }
 
 }
