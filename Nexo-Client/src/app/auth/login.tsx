@@ -47,15 +47,8 @@ const Login = () => {
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        <View
-          style={[
-            styles.header,
-            { top: insets.top },
-          ]}
-        >
-          <View
-            onLayout={(e) => setButtonHeight(e.nativeEvent.layout.height)}
-          >
+        <View style={[styles.header, { top: insets.top }]}>
+          <View onLayout={(e) => setButtonHeight(e.nativeEvent.layout.height)}>
             <LiquidGlassButton icon="chevron-left" size={14} onPress={() => router.back()} />
           </View>
         </View>
@@ -66,8 +59,8 @@ const Login = () => {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.logoBlock}>
-            <Text style={styles.logoTitle}>Nexo</Text>
-            <Text style={styles.logoSubtitle}>登录以管理你的账户</Text>
+            <Text style={styles.logoTitle}>NEXO</Text>
+            <Text style={styles.logoSubtitle}>开启数字藏品之旅</Text>
           </View>
 
           <View style={styles.fieldGroup}>
@@ -123,10 +116,7 @@ const Login = () => {
           </View>
 
           <TouchableOpacity
-            style={[
-              styles.submitBtn,
-              (!canSubmit || sending) && styles.submitBtnDisabled,
-            ]}
+            style={[styles.submitBtn, (!canSubmit || sending) && styles.submitBtnDisabled]}
             activeOpacity={0.8}
             onPress={handleSendCode}
             disabled={!canSubmit || sending}
@@ -201,17 +191,17 @@ const styles = StyleSheet.create({
   },
   logoBlock: {
     alignItems: 'flex-start',
-    marginBottom: spacing.xl,
+    marginBottom: 82,
   },
   logoTitle: {
-    fontSize: typography.fontSize.xxl,
+    fontSize: 86,
     fontWeight: typography.fontWeight.bold,
     color: colors.text,
     letterSpacing: 0.5,
   },
   logoSubtitle: {
     marginTop: spacing.xs,
-    fontSize: typography.fontSize.md,
+    fontSize: 18,
     color: colors.textSecondary,
     lineHeight: typography.fontSize.md * 1.4,
   },

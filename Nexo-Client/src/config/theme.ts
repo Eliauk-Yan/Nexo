@@ -8,37 +8,37 @@ export const colors = {
   primary: '#00D4FF', // 霓虹蓝
   primaryDark: '#0099CC', // 深蓝
   primaryLight: '#00E5FF', // 浅蓝
-  
+
   // 背景色（全局纯黑系）
   background: '#000000',
   backgroundSecondary: '#050505',
   backgroundTertiary: '#0a0a0a',
   backgroundCard: '#0f0f0f',
-  
+
   // 文字颜色
   text: '#FFFFFF',
   textSecondary: '#888888',
   textTertiary: '#666666',
   textDisabled: '#444444',
-  
+
   // 边框颜色
   border: '#3a3a3a',
   borderLight: '#2a2a2a',
   borderDark: '#1a1a1a',
-  
+
   // 状态颜色
   success: '#00C851',
   error: '#FF4444',
   warning: '#FFBB33',
   info: '#33B5E5',
-  
+
   // 渐变
   gradient: {
     primary: ['#00D4FF', '#0099CC'], // 霓虹蓝到深蓝
     secondary: ['#00E5FF', '#00B8E6'], // 浅蓝渐变
     dark: ['#000000', '#000000'],
   },
-  
+
   // 透明度
   overlay: 'rgba(0, 0, 0, 0.6)',
   glass: 'rgba(255, 255, 255, 0.1)',
@@ -51,6 +51,7 @@ export const spacing = {
   lg: 24,
   xl: 32,
   xxl: 48,
+  xxxl: 64,
 }
 
 export const borderRadius = {
@@ -129,4 +130,3 @@ export const theme = {
 }
 
 export type Theme = typeof theme
-

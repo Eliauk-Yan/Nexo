@@ -115,6 +115,7 @@ public abstract class AbstractChainService implements ChainService {
         if (response.getSuccess() && operationType != ChainOperateType.CREATE_ACCOUNT) {
             scheduler.schedule(() -> {
                 // TODO 异步处理
+
             }, 5, TimeUnit.SECONDS);
         }
         // 8. 返回结果
