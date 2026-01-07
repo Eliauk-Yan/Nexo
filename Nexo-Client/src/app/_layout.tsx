@@ -20,6 +20,7 @@ const RootLayout = () => {
           name="notification/notification"
           options={{ title: '通知', headerShown: false }}
         />
+        <Stack.Screen name="artwork/detail" options={{ headerShown: false }} />
       </Stack>
     </>
   )

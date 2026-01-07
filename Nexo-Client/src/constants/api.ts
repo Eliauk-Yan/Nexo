@@ -21,5 +21,6 @@ export const API_ENDPOINTS = {
   // 藏品相关
   ARTWORK: {
     LIST: `/artwork/list`,
+    DETAIL: `/artwork`, // Base path for detail, id will be appended
   },
 } as const

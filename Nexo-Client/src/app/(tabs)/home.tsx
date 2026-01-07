@@ -10,7 +10,10 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useRouter } from 'expo-router'
+
 const Home = () => {
+  const router = useRouter()
   const insets = useSafeAreaInsets()
   const headerHeight = insets.top + 60
   const [artworks, setArtworks] = useState<Artwork[]>([])
@@ -37,7 +40,7 @@ const Home = () => {
   }, [fetchTrending])
 
   const handleArtworkPress = (artwork: Artwork) => {
-    console.log('Artwork pressed:', artwork.id)
+    router.push({ pathname: '/artwork/detail', params: { id: artwork.id } })
   }
 
   const handleSearch = (keyword: string) => {

@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   },
   nickName: {
     fontSize: typography.fontSize.xxl,
-    color: colors.primary,
+    color: 'white',
     fontWeight: typography.fontWeight.bold,
     marginBottom: spacing.sm,
   },

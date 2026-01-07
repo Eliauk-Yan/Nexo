@@ -2,16 +2,19 @@
  * Market screen
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { artworkApi } from '@/api'
 import { NFTList } from '@/components/business/NFTList'
 import { Header } from '@/components/ui'
-import { colors, spacing, typography, borderRadius } from '@/config/theme'
-import { artworkApi } from '@/api'
+import { borderRadius, colors, spacing, typography } from '@/config/theme'
 import { Artwork } from '@/types'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+
+import { useRouter } from 'expo-router'
 
 const Market = () => {
+  const router = useRouter()
   const insets = useSafeAreaInsets()
   const [sortBy, setSortBy] = useState<'price' | 'date'>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
@@ -59,8 +62,7 @@ const Market = () => {
   }, [artworks, sortBy, sortOrder])
 
   const handleArtworkPress = (artwork: Artwork) => {
-    console.log('Artwork pressed:', artwork.id)
-    // router.push(`${ROUTES.NFT.DETAIL}?id=${artwork.id}`)
+    router.push({ pathname: '/artwork/detail', params: { id: artwork.id } })
   }
 
   const handleSortChange = (newSortBy: 'price' | 'date') => {

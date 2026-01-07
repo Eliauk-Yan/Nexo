@@ -9,6 +9,8 @@ import { useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
 import { Alert, ScrollView, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import * as ImagePicker from 'expo-image-picker'
+import * as AppleAuthentication from 'expo-apple-authentication'
 
 const AccountSecurity = () => {
   const router = useRouter()
@@ -39,7 +41,7 @@ const AccountSecurity = () => {
   const isRealNameAuth = profile?.realNameAuth ?? false
   const hasPassword = !!profile?.password
 
-  const handleDeleteAccount = () => {
+  const deleteAccount = () => {
     Alert.alert('账号注销', '注销账号后，所有数据将被永久删除且无法恢复。确定要继续吗？', [
       { text: '取消', style: 'cancel' },
       {
@@ -53,7 +55,7 @@ const AccountSecurity = () => {
     ])
   }
 
-  const handleRealNameVerification = () => {
+  const realNameAuthentication = () => {
     if (isRealNameAuth) {
       Alert.alert('实名认证', '你已完成实名认证')
       return
@@ -104,7 +106,7 @@ const AccountSecurity = () => {
     )
   }
 
-  const handleNicknamePress = () => {
+  const updateUsername = () => {
     const current = profile?.nickName || ''
 
     Alert.prompt(
@@ -143,18 +145,69 @@ const AccountSecurity = () => {
     )
   }
 
+  const updateAvatar = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync()
+
+    if (!permissionResult.granted) {
+      Alert.alert('Permission required', 'Permission to access the media library is required.')
+      return
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    })
+
+    console.log(result)
+
+    if (!result.canceled) {
+      // TODO 调用更新头像接口
+    }
+  }
+
+  const updatePaymentPassword = () => {
+    Alert.prompt(
+      '修改密码',
+      '请输入您的新密码',
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '确认',
+          onPress: async (text?: string) => {
+            const password = text?.trim() ?? ''
+            // 1. 必须是 6 位
+            if (password.length !== 6) {
+              Alert.alert('错误', '支付密码必须是 6 位数字')
+              return
+            }
+            // TODO 调用修改支付密码接口
+          },
+        },
+      ],
+      'plain-text',
+      '',
+      'number-pad',
+    )
+  }
+
+  const appleIdAuthentication = () => {
+    Alert.alert('提示', '请使用 Apple 账号登录')
+  }
+
   const menuItems: ListItemData[] = [
     {
       label: '头像',
       type: 'avatar',
       value: avatar,
-      onPress: () => {},
+      onPress: updateAvatar,
     },
     {
       label: '昵称',
       type: 'text',
       value: nickname,
-      onPress: handleNicknamePress,
+      onPress: updateUsername,
     },
     {
       label: '手机号',
@@ -178,24 +231,24 @@ const AccountSecurity = () => {
       label: 'AppleID',
       type: 'text',
       value: appleId,
-      onPress: () => {},
+      onPress: appleIdAuthentication,
     },
     {
       label: '实名认证',
       type: 'text',
       value: isRealNameAuth ? '已认证' : '未认证',
-      onPress: handleRealNameVerification,
+      onPress: realNameAuthentication,
     },
     {
-      label: '操作密码',
+      label: '支付密码',
       type: 'text',
       value: hasPassword ? '已设置' : '未设置',
-      onPress: () => {},
+      onPress: updatePaymentPassword,
     },
     {
       label: '账号注销',
       type: 'delete',
-      onPress: handleDeleteAccount,
+      onPress: deleteAccount,
     },
   ]
 
