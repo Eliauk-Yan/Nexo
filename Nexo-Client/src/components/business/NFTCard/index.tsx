@@ -15,22 +15,27 @@ export const NFTCard = memo(function NFTCard({ artwork, onPress }: NFTCardProps)
 
   return (
     <TouchableOpacity style={styles.container} onPress={handlePress} activeOpacity={0.8}>
-      <View style={styles.imageContainer}>
-        <Image source={artwork.cover} style={styles.image} contentFit="cover" transition={200} />
-        {artwork.saleTime && (
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>在售</Text>
+      <View style={styles.outerFrame}>
+        <View style={styles.imageSection}>
+          <View style={styles.imageFrame}>
+            <Image source={artwork.cover} style={styles.image} contentFit="cover" transition={200} />
           </View>
-        )}
-      </View>
+          {artwork.saleTime && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>在售</Text>
+            </View>
+          )}
+        </View>
 
-      <View style={styles.content}>
-        <Text style={styles.name} numberOfLines={1}>
-          {artwork.name}
-        </Text>
+        <View style={styles.content}>
+          <Text style={styles.name} numberOfLines={1}>
+            {artwork.name}
+          </Text>
 
-        <View style={styles.priceContainer}>
-          <Text style={styles.priceValue}>{formatPrice(artwork.price)} CNY</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.priceValue}>{formatPrice(artwork.price)} CNY</Text>
+            <Text style={styles.limitText}>限量 {artwork.quantity}</Text>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -39,19 +44,36 @@ export const NFTCard = memo(function NFTCard({ artwork, onPress }: NFTCardProps)
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.backgroundCard,
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
+    backgroundColor: 'transparent',
     width: '100%',
     marginBottom: spacing.sm,
+    padding: spacing.xs,
+  },
+  outerFrame: {
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    padding: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  imageContainer: {
+  imageSection: {
     width: '100%',
     aspectRatio: 1,
+    marginBottom: spacing.sm,
     position: 'relative',
+  },
+  imageFrame: {
+    flex: 1,
     backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    borderWidth: 4,
+    borderColor: '#e0e0e0', // Frame color
   },
   image: {
     width: '100%',
@@ -65,6 +87,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,
     borderRadius: borderRadius.sm,
+    zIndex: 1,
   },
   badgeText: {
     color: '#FFFFFF',
@@ -72,21 +95,32 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   content: {
-    padding: spacing.sm,
+    paddingTop: spacing.xs,
   },
   name: {
     fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.medium,
+    fontWeight: typography.fontWeight.bold,
     color: colors.text,
     marginBottom: spacing.xs,
+    textAlign: 'center',
   },
-  priceContainer: {
+  infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.xs,
   },
   priceValue: {
-    fontSize: typography.fontSize.sm,
+    fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.bold,
     color: colors.primary,
+  },
+  limitText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    backgroundColor: colors.backgroundTertiary,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
   },
 })

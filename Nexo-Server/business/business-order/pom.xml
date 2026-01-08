@@ -18,4 +18,43 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
+    <dependencies>
+        <!--公共 web-->
+        <dependency>
+            <groupId>com.nexo.common.web</groupId>
+            <artifactId>common-web</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <!--公共配置-->
+        <dependency>
+            <groupId>com.nexo.config</groupId>
+            <artifactId>common-config</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <!--数据源-->
+        <dependency>
+            <groupId>com.nexo.common.datasource</groupId>
+            <artifactId>common-datasource</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <!--RPC-->
+        <dependency>
+            <groupId>com.nexo.common.rpc</groupId>
+            <artifactId>common-rpc</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <!--api-->
+        <dependency>
+            <groupId>com.nexo.common.api</groupId>
+            <artifactId>common-api</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <!--缓存-->
+        <dependency>
+            <groupId>com.nexo.cache</groupId>
+            <artifactId>common-cache</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+
 </project>

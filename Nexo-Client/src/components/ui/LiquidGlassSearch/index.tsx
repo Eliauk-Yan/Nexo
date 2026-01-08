@@ -1,14 +1,14 @@
+import { LiquidGlassButton } from '@/components/ui'
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
+import { GlassContainer, GlassView } from 'expo-glass-effect'
 import React, { useRef, useState } from 'react'
 import {
+  NativeSyntheticEvent,
   StyleSheet,
   TextInput,
-  View,
-  NativeSyntheticEvent,
   TextInputSubmitEditingEventData,
+  View
 } from 'react-native'
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
-import { GlassContainer, GlassView, isLiquidGlassAvailable } from 'expo-glass-effect'
-import { LiquidGlassButton } from '@/components/ui'
 
 type LiquidGlassSearchBarProps = {
   value?: string
@@ -73,20 +73,7 @@ const LiquidGlassSearchBar: React.FC<LiquidGlassSearchBarProps> = ({
               onSubmitEditing={handleSubmit}
             />
 
-            {showClear && (
-              <View style={styles.clearHit}>
-                <LiquidGlassButton
-                  icon="xmark"
-                  onPress={() => {
-                    handleChange('')
-                    requestAnimationFrame(() => inputRef.current?.focus())
-                  }}
-                  size={16}
-                  color="#fff"
-                  glassStyle="clear"
-                />
-              </View>
-            )}
+
           </View>
         </GlassView>
       ) : (

@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ArtWorkController {
 
     private final ArtWorkService artWorkService;
-
+    
     @GetMapping("/list")
     public MultiResult<ArtWorkVO> getArtWorkList(ArtWorkQueryDTO queryDTO) {
         Page<ArtWorkVO> page = artWorkService.getArtWorkVOList(queryDTO);

@@ -1,26 +1,44 @@
-import { Stack } from 'expo-router';
+import { LiquidGlassButton } from '@/components/ui';
+import { colors } from '@/config/theme';
+import { FontAwesome6 } from '@expo/vector-icons';
+import { Stack, useRouter } from 'expo-router';
 import React from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
   Pressable,
   ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
-import { FontAwesome6 } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors} from '@/config/theme'
 
 const NotificationPage = () => {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+
+  const HEADER_HEIGHT = 44; // Button size
 
   return (
     <View style={styles.rootContainer}>
       <Stack.Screen options={{ headerShown: false }} />
+
+      {/* Header - Absolute & Transparent */}
+      <View style={[styles.header, { paddingTop: insets.top }]}>
+        <LiquidGlassButton
+          icon="chevron-left"
+          onPress={() => router.back()}
+        />
+        <Text style={styles.headerTitle}>消息中心</Text>
+        <View style={{ width: 44 }} />
+      </View>
+
       <ScrollView
         contentContainerStyle={[
           styles.container,
-          { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 32 },
+          {
+            paddingTop: insets.top + HEADER_HEIGHT + 24,
+            paddingBottom: insets.bottom + 32
+          },
         ]}
       >
         {/* Top statistic blocks */}
@@ -76,6 +94,24 @@ const styles = StyleSheet.create({
   rootContainer: {
     flex: 1,
     backgroundColor: '#000',
+  },
+  header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    // Transparent background by default
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#fff',
   },
   container: {
     paddingHorizontal: 16,

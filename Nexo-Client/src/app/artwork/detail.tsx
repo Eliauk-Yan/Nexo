@@ -3,10 +3,12 @@ import { LiquidGlassButton } from '@/components/ui'
 import { colors, spacing, typography } from '@/config/theme'
 import { ArtworkDetail } from '@/types'
 import { formatDate, formatPrice } from '@/utils/validation'
+import { GlassView } from 'expo-glass-effect'
 import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
 import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const ArtworkDetailScreen = () => {
@@ -16,11 +18,34 @@ const ArtworkDetailScreen = () => {
     const [detail, setDetail] = useState<ArtworkDetail | null>(null)
     const [loading, setLoading] = useState(true)
 
+    const rotateY = useSharedValue(0)
+
     useEffect(() => {
         if (id) {
             fetchDetail(Number(id))
         }
     }, [id])
+
+    useEffect(() => {
+        // Start rotation animation
+        rotateY.value = withRepeat(
+            withTiming(360, {
+                duration: 8000,
+                easing: Easing.linear,
+            }),
+            -1, // Infinite repeat
+            false // Do not reverse
+        )
+    }, [])
+
+    const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [
+                { perspective: 1000 },
+                { rotateY: `${rotateY.value}deg` }
+            ],
+        }
+    })
 
     const fetchDetail = async (artworkId: number) => {
         try {
@@ -35,9 +60,9 @@ const ArtworkDetailScreen = () => {
     }
 
     const handleAction = () => {
-        if (detail?.canBook && !detail.hasBooked) {
-            console.log('Booking artwork:', detail.id)
-            // TODO: Implement booking logic
+        if (detail) {
+            console.log('Buying artwork:', detail.id)
+            // TODO: Implement buy logic
         }
     }
 
@@ -51,7 +76,13 @@ const ArtworkDetailScreen = () => {
                 glassStyle="regular"
             />
             {title && <Text style={styles.headerTitle}>{title}</Text>}
-            <View style={{ width: 44 }} />
+            <LiquidGlassButton
+                icon="share-nodes"
+                onPress={() => { }}
+                size={20}
+                color="#fff"
+                glassStyle="regular"
+            />
         </View>
     )
 
@@ -76,24 +107,25 @@ const ArtworkDetailScreen = () => {
 
     return (
         <View style={styles.container}>
-            {renderHeader(detail.name)}
+            {renderHeader()}
 
             <ScrollView
                 style={styles.scrollView}
-                contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}
+                contentContainerStyle={{ paddingBottom: 100 + insets.bottom, paddingTop: insets.top + 60 }}
                 showsVerticalScrollIndicator={false}
             >
-                <Image
-                    source={detail.cover}
-                    style={styles.cover}
-                    contentFit="cover"
-                />
+                <View style={styles.imageSection}>
+                    <Animated.View style={[styles.image3DContainer, animatedStyle]}>
+                        <Image
+                            source={detail.cover}
+                            style={styles.cover}
+                            contentFit="cover"
+                        />
+                    </Animated.View>
+                    <Text style={styles.artworkName}>{detail.name}</Text>
+                </View>
 
                 <View style={styles.content}>
-                    <View style={styles.headerRow}>
-                        <Text style={styles.title}>{detail.name}</Text>
-                        <Text style={styles.price}>{formatPrice(detail.price)} CNY</Text>
-                    </View>
 
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>藏品信息</Text>
@@ -116,49 +148,25 @@ const ArtworkDetailScreen = () => {
                             </View>
                         )}
                     </View>
-
-                    {(detail.bookStartTime || detail.bookEndTime) && (
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>预约信息</Text>
-                            {detail.bookStartTime && (
-                                <View style={styles.infoRow}>
-                                    <Text style={styles.label}>开始时间</Text>
-                                    <Text style={styles.value}>{formatDate(detail.bookStartTime, 'MM-DD HH:mm')}</Text>
-                                </View>
-                            )}
-                            {detail.bookEndTime && (
-                                <View style={styles.infoRow}>
-                                    <Text style={styles.label}>结束时间</Text>
-                                    <Text style={styles.value}>{formatDate(detail.bookEndTime, 'MM-DD HH:mm')}</Text>
-                                </View>
-                            )}
-                        </View>
-                    )}
-
-                    <View style={styles.descriptionSection}>
-                        <Text style={styles.sectionTitle}>藏品介绍</Text>
-                        <Text style={styles.description}>
-                            这里是藏品的详细介绍文案。作为一款独特的数字藏品，它具有极高的收藏价值。
-                            (注：API目前没有返回description字段，此处为占位符)
-                        </Text>
-                    </View>
                 </View>
             </ScrollView>
 
-            <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
+            <GlassView
+                style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}
+                glassEffectStyle="regular"
+            >
+                <View style={styles.priceContainer}>
+                    <Text style={styles.priceLabel}>价格</Text>
+                    <Text style={styles.bottomPrice}>{formatPrice(detail.price)} <Text style={styles.currency}>CNY</Text></Text>
+                </View>
                 <TouchableOpacity
-                    style={[
-                        styles.actionButton,
-                        (!detail.canBook || detail.hasBooked) && styles.disabledButton
-                    ]}
+                    style={styles.actionButton}
                     onPress={handleAction}
-                    disabled={!detail.canBook || !!detail.hasBooked}
+                    activeOpacity={0.8}
                 >
-                    <Text style={styles.actionButtonText}>
-                        {detail.hasBooked ? '已预约' : detail.canBook ? '立即预约' : '暂不可预约'}
-                    </Text>
+                    <Text style={styles.actionButtonText}>立即购买</Text>
                 </TouchableOpacity>
-            </View>
+            </GlassView>
         </View>
     )
 }
@@ -186,18 +194,36 @@ const styles = StyleSheet.create({
     scrollView: {
         flex: 1,
     },
+    imageSection: {
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: spacing.xl,
+        marginBottom: spacing.md,
+    },
+    image3DContainer: {
+        width: 280,
+        height: 380,
+    },
     cover: {
         width: '100%',
-        height: 400,
-        backgroundColor: colors.backgroundSecondary,
+        height: '100%',
+        borderRadius: 20,
     },
     content: {
         padding: spacing.lg,
-        marginTop: -20,
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
         backgroundColor: colors.backgroundCard,
-        minHeight: 500,
+        borderRadius: 24,
+        marginHorizontal: spacing.sm,
+        marginBottom: spacing.lg,
+    },
+    headerRow: {
+        marginBottom: spacing.lg,
+    },
+    title: {
+        fontSize: typography.fontSize.xxl,
+        fontWeight: typography.fontWeight.bold,
+        color: colors.text,
     },
     header: {
         flexDirection: 'row',
@@ -220,29 +246,15 @@ const styles = StyleSheet.create({
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 4,
     },
-    headerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: spacing.xl,
-    },
-    title: {
-        flex: 1,
-        fontSize: typography.fontSize.xxl,
-        fontWeight: typography.fontWeight.bold,
-        color: colors.text,
-        marginRight: spacing.md,
-    },
+
     price: {
         fontSize: typography.fontSize.xl,
         fontWeight: typography.fontWeight.bold,
         color: colors.primary,
     },
     section: {
-        marginBottom: spacing.xl,
-        paddingBottom: spacing.lg,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
+        marginBottom: spacing.md,
+        paddingBottom: spacing.sm,
     },
     sectionTitle: {
         fontSize: typography.fontSize.lg,
@@ -264,38 +276,59 @@ const styles = StyleSheet.create({
         color: colors.text,
         fontWeight: typography.fontWeight.medium,
     },
-    descriptionSection: {
-        marginBottom: spacing.xl,
-    },
-    description: {
-        fontSize: typography.fontSize.md,
-        color: colors.textSecondary,
-        lineHeight: typography.lineHeight.normal,
-    },
     bottomBar: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: colors.backgroundCard,
         paddingTop: spacing.md,
         paddingHorizontal: spacing.lg,
         borderTopWidth: 1,
-        borderTopColor: colors.border,
+        borderTopColor: 'rgba(255,255,255,0.2)', // Lighter border for glass effect
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    priceContainer: {
+        justifyContent: 'center',
+    },
+    priceLabel: {
+        fontSize: typography.fontSize.xs,
+        color: colors.textSecondary,
+        marginBottom: 2,
+    },
+    bottomPrice: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: colors.text,
+        letterSpacing: -0.5,
+    },
+    currency: {
+        fontSize: typography.fontSize.sm,
+        fontWeight: 'normal',
+        color: colors.textSecondary,
     },
     actionButton: {
         backgroundColor: colors.primary,
-        paddingVertical: spacing.md,
+        paddingVertical: 12,
+        paddingHorizontal: 32,
         borderRadius: 100,
         alignItems: 'center',
     },
-    disabledButton: {
-        backgroundColor: colors.backgroundTertiary,
-    },
     actionButtonText: {
-        color: '#000',
+        color: colors.background,
+        fontSize: typography.fontSize.md,
+        fontWeight: '600',
+    },
+    artworkName: {
+        marginTop: spacing.xl,
+        marginBottom: spacing.xl,
         fontSize: typography.fontSize.lg,
-        fontWeight: typography.fontWeight.bold,
+        fontWeight: '500',
+        color: '#ffffff',
+        textAlign: 'center',
+        letterSpacing: 1,
+        opacity: 0.9,
     },
 })
 
