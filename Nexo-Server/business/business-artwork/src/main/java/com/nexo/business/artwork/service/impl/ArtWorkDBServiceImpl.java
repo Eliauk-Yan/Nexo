@@ -5,12 +5,13 @@ import com.alicp.jetcache.anno.CacheType;
 import com.alicp.jetcache.anno.Cached;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.nexo.business.artwork.domain.exception.ArtWorkErrorCode;
+import com.nexo.business.artwork.domain.exception.ArtWorkException;
 import com.nexo.business.artwork.interfaces.dto.ArtWorkQueryDTO;
 import com.nexo.business.artwork.domain.entity.ArtWork;
-import com.nexo.business.artwork.interfaces.vo.ArtWorkDetailVO;
+import com.nexo.business.artwork.interfaces.vo.ArtWorkInfoVO;
 import com.nexo.business.artwork.interfaces.vo.ArtWorkVO;
 import com.nexo.business.artwork.mapper.concert.ArtWorkConvertor;
-import com.nexo.business.artwork.mapper.mybatis.ArtWorkMapper;
 import com.nexo.business.artwork.service.impl.base.BaseArtWorkServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -18,6 +19,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -31,8 +33,6 @@ import java.util.concurrent.TimeUnit;
 public class ArtWorkDBServiceImpl extends BaseArtWorkServiceImpl {
 
     private final ArtWorkConvertor artWorkConvertor;
-
-    private final ArtWorkMapper artWorkMapper;
 
     @Override
     public Page<ArtWorkVO> getArtWorkVOList(ArtWorkQueryDTO queryDTO) {
@@ -52,18 +52,20 @@ public class ArtWorkDBServiceImpl extends BaseArtWorkServiceImpl {
         return voPage;
     }
 
-    @Override
-    public ArtWorkDetailVO getArtWorkDetailById(Long id) {
-        // 1. 查询数据
-        ArtWork artWork = getArtWorkById(id);
-        // 2. 转换并返回数据
-        return artWorkConvertor.toArtWorkDetailVO(artWork);
-    }
-
 
     @Cached(name = ":artwork:cache:id:", cacheType = CacheType.REMOTE, key = "#id", cacheNullValue = true) // 缓存空值防止缓存穿透
     @CacheRefresh(refresh = 60, timeUnit = TimeUnit.MINUTES)
+    @Override
     public ArtWork getArtWorkById(Long id) {
-        return this.getById(id);
+        return Optional
+                .ofNullable(this.getById(id))
+                .orElseThrow(() -> new ArtWorkException(ArtWorkErrorCode.ARTWORK_NOT_FOUND));
+    }
+
+    @Override
+    public ArtWorkInfoVO getArtWorkDetailById(Long id) {
+        ArtWork artWork = this.getArtWorkById(id);
+        return Optional.ofNullable(artWorkConvertor.toArtWorkInfoVO(artWork))
+                .orElseThrow(() -> new ArtWorkException(ArtWorkErrorCode.ARTWORK_NOT_FOUND));
     }
 }

@@ -62,7 +62,7 @@ const Market = () => {
   }, [artworks, sortBy, sortOrder])
 
   const handleArtworkPress = (artwork: Artwork) => {
-    router.push({ pathname: '/artwork/detail', params: { id: artwork.id } })
+    router.push({ pathname: '/artwork-detail', params: { id: artwork.id } })
   }
 
   const handleSortChange = (newSortBy: 'price' | 'date') => {

@@ -12,6 +12,6 @@ public class TokenDTO {
 
     private String scene;
 
-    private String id;
+    private Long key;
 
 }

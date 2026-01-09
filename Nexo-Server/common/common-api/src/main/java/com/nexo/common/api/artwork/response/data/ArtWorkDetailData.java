@@ -1,17 +1,22 @@
-package com.nexo.business.artwork.interfaces.vo;
+package com.nexo.common.api.artwork.response.data;
 
 import lombok.Data;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- * @classname ArtWorkDetailVO
- * @description 数字藏品详情 VO
- * @date 2025/12/23 22:47
+ * @classname ArtWorkDetailData
+ * @description 藏品详情数据
+ * @date 2026/01/09 10:31
  */
 @Data
-public class ArtWorkDetailVO {
+public class ArtWorkDetailData implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private Long id;
 

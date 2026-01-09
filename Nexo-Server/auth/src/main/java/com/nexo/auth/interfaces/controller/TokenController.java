@@ -22,7 +22,7 @@ public class TokenController {
 
     @GetMapping("get")
     public Result<String> getToken(TokenDTO dto) {
-        return Result.success(tokenService.getToken(dto.getScene(), dto.getId()));
+        return Result.success(tokenService.getToken(dto.getKey()));
     }
 
 }

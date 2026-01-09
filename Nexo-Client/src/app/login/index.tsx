@@ -24,7 +24,6 @@ const Login = () => {
   const insets = useSafeAreaInsets()
   const [phone, setPhone] = useState('')
   const [sending, setSending] = useState(false)
-  const [buttonHeight, setButtonHeight] = useState(0)
   const [agreed, setAgreed] = useState(false)
 
   const handleSendCode = async () => {
@@ -33,7 +32,7 @@ const Login = () => {
     setSending(true)
     try {
       await authApi.sendVerificationCode(phone)
-      router.push({ pathname: '/auth/verify', params: { phone } })
+      router.push({ pathname: '/login/verify', params: { phone } })
     } catch (error) {
       Alert.alert('错误', handleApiError(error as Error))
     } finally {
@@ -48,7 +47,7 @@ const Login = () => {
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
         <View style={[styles.header, { top: insets.top }]}>
-          <View onLayout={(e) => setButtonHeight(e.nativeEvent.layout.height)}>
+          <View>
             <LiquidGlassButton icon="chevron-left" size={14} onPress={() => router.back()} />
           </View>
         </View>

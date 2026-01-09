@@ -1,7 +1,7 @@
 import LiquidGlassSearchBar from '@/components/ui/LiquidGlassSearch'
+import { useRouter } from 'expo-router'
 import React from 'react'
 import { StyleSheet, View } from 'react-native'
-import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 type HeaderProps = {
@@ -16,7 +16,7 @@ const Header = (props: HeaderProps) => {
       <LiquidGlassSearchBar
         placeholder={props.placeholder}
         onSubmit={(t) => console.log('submit:', t)}
-        onPressAction={() => router.push('/notification/notification')}
+        onPressAction={() => router.push('/notification')}
         actionIcon="bell"
         glassStyle="regular"
         tintColor="rgba(255,255,255,0.12)"

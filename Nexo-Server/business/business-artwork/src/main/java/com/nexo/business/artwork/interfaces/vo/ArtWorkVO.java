@@ -14,8 +14,8 @@ import java.util.Date;
 public class ArtWorkVO {
 
     private Long id;
-
-    private String name;
+    //
+    // private String name;
 
     private String cover;
 

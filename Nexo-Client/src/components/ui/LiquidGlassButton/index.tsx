@@ -1,7 +1,7 @@
-import React from 'react'
-import { StyleSheet, TouchableOpacity } from 'react-native'
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
 import { GlassView } from 'expo-glass-effect'
+import React from 'react'
+import { StyleSheet, TouchableOpacity } from 'react-native'
 
 type LiquidGlassButtonProps = {
   icon: keyof typeof FontAwesome6.glyphMap

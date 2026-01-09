@@ -1,8 +1,9 @@
 package com.nexo.business.artwork.mapper.concert;
 
 import com.nexo.business.artwork.domain.entity.ArtWork;
-import com.nexo.business.artwork.interfaces.vo.ArtWorkDetailVO;
+import com.nexo.business.artwork.interfaces.vo.ArtWorkInfoVO;
 import com.nexo.business.artwork.interfaces.vo.ArtWorkVO;
+import com.nexo.common.api.artwork.response.data.ArtWorkDetailData;
 import org.mapstruct.Mapper;
 
 import java.util.List;
@@ -19,5 +20,7 @@ public interface ArtWorkConvertor {
 
     List<ArtWorkVO> toArtWorkVOList(List<ArtWork> artWorkList);
 
-    ArtWorkDetailVO toArtWorkDetailVO(ArtWork artWork);
+    ArtWorkDetailData toArtWorkDetailData(ArtWork artWork);
+
+    ArtWorkInfoVO toArtWorkInfoVO(ArtWork artWork);
 }

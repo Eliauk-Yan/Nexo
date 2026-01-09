@@ -9,18 +9,14 @@ const RootLayout = () => {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="setting" options={{ headerShown: false }} />
         <Stack.Screen
-          name="auth/verify"
-          options={{ headerShown: false, presentation: 'modal', animation: 'slide_from_bottom' }}
-        />
-        <Stack.Screen name="settings/setting" options={{ headerShown: false }} />
-        <Stack.Screen name="settings/account-security" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="notification/notification"
+          name="notification"
           options={{ title: '通知', headerShown: false }}
         />
-        <Stack.Screen name="artwork/detail" options={{ headerShown: false }} />
+        <Stack.Screen name="artwork-detail" options={{ headerShown: false }} />
+        <Stack.Screen name="order" options={{ headerShown: false }} />
       </Stack>
     </>
   )

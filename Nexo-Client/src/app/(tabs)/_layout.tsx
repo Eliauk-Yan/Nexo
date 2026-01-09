@@ -1,7 +1,7 @@
 import React from 'react'
 
-import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs'
 import { colors } from '@/config/theme'
+import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs'
 
 const TabLayout = () => {
   return (
@@ -9,11 +9,6 @@ const TabLayout = () => {
       <NativeTabs.Trigger name="home">
         <Label>首页</Label>
         <Icon sf={{ default: 'house', selected: 'house.fill' }} />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="community">
-        <Label>社区</Label>
-        <Icon sf={{ default: 'person.2', selected: 'person.2.fill' }} />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="mint">

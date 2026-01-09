@@ -1,8 +1,9 @@
 package com.nexo.business.artwork.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.nexo.business.artwork.domain.entity.ArtWork;
 import com.nexo.business.artwork.interfaces.dto.ArtWorkQueryDTO;
-import com.nexo.business.artwork.interfaces.vo.ArtWorkDetailVO;
+import com.nexo.business.artwork.interfaces.vo.ArtWorkInfoVO;
 import com.nexo.business.artwork.interfaces.vo.ArtWorkVO;
 import com.nexo.business.artwork.service.impl.base.BaseArtWorkServiceImpl;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -24,7 +25,12 @@ public class ArtWorkESServiceImpl extends BaseArtWorkServiceImpl {
     }
 
     @Override
-    public ArtWorkDetailVO getArtWorkDetailById(Long id) {
+    public ArtWork getArtWorkById(Long id) {
+        return null;
+    }
+
+    @Override
+    public ArtWorkInfoVO getArtWorkDetailById(Long id) {
         return null;
     }
 }

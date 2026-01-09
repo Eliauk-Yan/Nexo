@@ -6,19 +6,19 @@
 export const ROUTES = {
   // 认证相关
   AUTH: {
-    LOGIN: '/auth/login',
+    LOGIN: '/login',
     FORGOT_PASSWORD: '/auth/forgot-password',
   },
-  
+
   // 主页面
   TABS: {
     HOME: '/(tabs)/',
-    COMMUNITY: '/(tabs)/community',
+
     MINT: '/(tabs)/mint',
     MARKET: '/(tabs)/market',
     ACCOUNT: '/(tabs)/account',
   },
-  
+
   // NFT 相关
   NFT: {
     DETAIL: '/nft/detail',
@@ -26,17 +26,17 @@ export const ROUTES = {
     CREATE: '/nft/create',
     EDIT: '/nft/edit',
   },
-  
+
   // 用户相关
   USER: {
     PROFILE: '/user/profile',
-    SETTINGS: '/settings',
+    SETTINGS: '/setting',
     WALLET: '/user/wallet',
     COLLECTIONS: '/user/collections',
     CREATED: '/user/created',
     FAVORITES: '/user/favorites',
   },
-  
+
   // 市场相关
   MARKET: {
     LIST: '/market/list',

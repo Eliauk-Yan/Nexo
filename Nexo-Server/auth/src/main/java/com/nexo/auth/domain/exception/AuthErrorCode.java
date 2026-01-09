@@ -14,7 +14,11 @@ public enum AuthErrorCode implements ErrorCode {
 
     USER_REGISTER_FAILED("USER_REGISTER_FAILED", "用户注册失败"),
 
-    USER_EXIST("USER_EXIST", "用户已存在");
+    USER_EXIST("USER_EXIST", "用户已存在"),
+
+    TOKEN_KEY_ERROR("TOKEN_KEY_ERROR", "用户 KEY 错误"),
+
+    USER_NOT_LOGIN("USER_NOT_LOGIN", "用户未登录");
 
     private final String code;
 

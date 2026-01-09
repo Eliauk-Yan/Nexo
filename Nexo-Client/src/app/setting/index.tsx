@@ -37,14 +37,24 @@ const Setting = () => {
       label: '账号与安全',
       icon: 'shield',
       color: '#33B5E5',
-      onPress: () => router.push('/settings/account-security'),
+      onPress: () => router.push('/setting/account'),
     },
-    { label: '通用设置', icon: 'settings', color: '#FFFFFF', onPress: () => {} },
+    {
+      label: '通用设置',
+      icon: 'settings',
+      color: '#FFFFFF',
+      onPress: () => router.push('/setting/general'),
+    },
   ]
 
   const aboutItems: MenuItem[] = [
-    { label: '关于我们', icon: 'info', color: '#00D4FF', onPress: () => {} },
-    { label: '分享APP', icon: 'share-2', color: '#00C851', onPress: () => {} },
+    {
+      label: '关于我们',
+      icon: 'info',
+      color: '#00D4FF',
+      onPress: () => router.push('/setting/about'),
+    },
+    { label: '分享APP', icon: 'share-2', color: '#00C851', onPress: () => { } },
   ]
 
   const personalLinks = [

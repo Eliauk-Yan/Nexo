@@ -16,15 +16,15 @@ const Account = () => {
   const { user, isLogin } = useAuth()
 
   const actionList = [
-    { label: '订单', icon: 'shopping-bag', color: '#33B5E5', onPress: () => {} },
+    { label: '订单', icon: 'shopping-bag', color: '#33B5E5', onPress: () => router.push('/order') },
     {
       label: '设置',
       icon: 'settings',
       color: '#FFFFFF',
-      onPress: () => router.push('/settings/setting'),
+      onPress: () => router.push('/setting/index'),
     },
-    { label: '区块链', icon: 'link', color: '#D4AF37', onPress: () => {} },
-    { label: '批量转赠', icon: 'send', color: '#00C851', onPress: () => {} },
+    { label: '区块链', icon: 'link', color: '#D4AF37', onPress: () => { } },
+    { label: '批量转赠', icon: 'send', color: '#00C851', onPress: () => { } },
   ]
 
   return (
@@ -50,13 +50,19 @@ const Account = () => {
                 activeOpacity={0.8}
                 onPress={
                   isLogin
-                    ? () => router.push('/settings/account-security')
-                    : () => router.push('/auth/login')
+                    ? () => router.push('/setting/account')
+                    : () => router.push('/login/index')
                 }
               >
                 <Text style={styles.nickName}>{user?.nickName || '未登录'}</Text>
               </TouchableOpacity>
               {!isLogin && <Text style={styles.tip}>登录后可以查看更多功能</Text>}
+              {isLogin && (
+                <View style={styles.addressContainer}>
+                  <Text style={styles.addressText}>0x71C...9A23</Text>
+                  <Feather name="copy" size={12} color={colors.textSecondary} />
+                </View>
+              )}
             </View>
           </View>
 
@@ -84,7 +90,7 @@ const Account = () => {
               <TouchableOpacity
                 style={styles.loginButton}
                 activeOpacity={0.8}
-                onPress={() => router.push('/auth/login')}
+                onPress={() => router.push('/login/index')}
               >
                 <Text style={styles.loginButtonText}>立即登录</Text>
               </TouchableOpacity>
@@ -142,6 +148,21 @@ const styles = StyleSheet.create({
   tip: {
     fontSize: typography.fontSize.md,
     color: colors.textSecondary,
+  },
+  addressContainer: {
+    marginTop: spacing.xs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.lg,
+    alignSelf: 'flex-start',
+  },
+  addressText: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textSecondary,
+    marginRight: spacing.xs,
   },
   avatarPlaceholder: {
     alignItems: 'center',

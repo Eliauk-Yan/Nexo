@@ -61,7 +61,6 @@ const ArtworkDetailScreen = () => {
 
     const handleAction = () => {
         if (detail) {
-            console.log('Buying artwork:', detail.id)
             // TODO: Implement buy logic
         }
     }
@@ -153,7 +152,8 @@ const ArtworkDetailScreen = () => {
 
             <GlassView
                 style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}
-                glassEffectStyle="regular"
+                glassEffectStyle="clear"
+                isInteractive
             >
                 <View style={styles.priceContainer}>
                     <Text style={styles.priceLabel}>价格</Text>
@@ -217,14 +217,6 @@ const styles = StyleSheet.create({
         marginHorizontal: spacing.sm,
         marginBottom: spacing.lg,
     },
-    headerRow: {
-        marginBottom: spacing.lg,
-    },
-    title: {
-        fontSize: typography.fontSize.xxl,
-        fontWeight: typography.fontWeight.bold,
-        color: colors.text,
-    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -245,12 +237,6 @@ const styles = StyleSheet.create({
         textShadowColor: 'rgba(0,0,0,0.5)',
         textShadowOffset: { width: 0, height: 1 },
         textShadowRadius: 4,
-    },
-
-    price: {
-        fontSize: typography.fontSize.xl,
-        fontWeight: typography.fontWeight.bold,
-        color: colors.primary,
     },
     section: {
         marginBottom: spacing.md,
@@ -283,8 +269,6 @@ const styles = StyleSheet.create({
         right: 0,
         paddingTop: spacing.md,
         paddingHorizontal: spacing.lg,
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.2)', // Lighter border for glass effect
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',

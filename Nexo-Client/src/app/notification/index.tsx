@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -43,25 +44,41 @@ const NotificationPage = () => {
       >
         {/* Top statistic blocks */}
         <View style={styles.topRow}>
-          <View style={styles.statBlock}>
+          <TouchableOpacity
+            style={styles.statBlock}
+            activeOpacity={0.8}
+            onPress={() => router.push('/notification/like')}
+          >
             <FontAwesome6 name="thumbs-up" size={22} color={colors.success} style={styles.iconSpacing} />
             <Text style={styles.statLabel}>赞</Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.statBlock}>
+          <TouchableOpacity
+            style={styles.statBlock}
+            activeOpacity={0.8}
+            onPress={() => router.push('/notification/follow')}
+          >
             <FontAwesome6 name="user-plus" size={22} color={colors.info} style={styles.iconSpacing} />
             <Text style={styles.statLabel}>新增关注</Text>
-          </View>
+          </TouchableOpacity>
 
-          <View style={styles.statBlock}>
+          <TouchableOpacity
+            style={styles.statBlock}
+            activeOpacity={0.8}
+            onPress={() => router.push('/notification/comment')}
+          >
             <FontAwesome6 name="comment" size={22} color={colors.warning} style={styles.iconSpacing} />
             <Text style={styles.statLabel}>评论</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         {/* Notification list */}
         <View style={styles.listContainer}>
-          <Pressable style={styles.listItem} android_ripple={{ color: 'rgba(255, 255, 255, 0.1)' }}>
+          <Pressable
+            style={styles.listItem}
+            android_ripple={{ color: 'rgba(255, 255, 255, 0.1)' }}
+            onPress={() => router.push('/notification/activity')}
+          >
             <View style={styles.leftSection}>
               <FontAwesome6 name="bullhorn" size={20} color={colors.primary} />
               <Text style={styles.listText}>活动通知</Text>
@@ -69,7 +86,11 @@ const NotificationPage = () => {
             <FontAwesome6 name="chevron-right" size={14} color="#8E8E93" />
           </Pressable>
 
-          <Pressable style={styles.listItem} android_ripple={{ color: 'rgba(255, 255, 255, 0.1)' }}>
+          <Pressable
+            style={styles.listItem}
+            android_ripple={{ color: 'rgba(255, 255, 255, 0.1)' }}
+            onPress={() => router.push('/notification/collection')}
+          >
             <View style={styles.leftSection}>
               <FontAwesome6 name="box-open" size={20} color={colors.primaryDark} />
               <Text style={styles.listText}>藏品消息</Text>
@@ -77,7 +98,11 @@ const NotificationPage = () => {
             <FontAwesome6 name="chevron-right" size={14} color="#8E8E93" />
           </Pressable>
 
-          <Pressable style={[styles.listItem, styles.lastItem]} android_ripple={{ color: 'rgba(255, 255, 255, 0.1)' }}>
+          <Pressable
+            style={[styles.listItem, styles.lastItem]}
+            android_ripple={{ color: 'rgba(255, 255, 255, 0.1)' }}
+            onPress={() => router.push('/notification/subscription')}
+          >
             <View style={styles.leftSection}>
               <FontAwesome6 name="envelope-open-text" size={20} color={colors.primaryLight} />
               <Text style={styles.listText}>订阅消息</Text>

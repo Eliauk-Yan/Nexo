@@ -40,7 +40,7 @@ const Home = () => {
   }, [fetchTrending])
 
   const handleArtworkPress = (artwork: Artwork) => {
-    router.push({ pathname: '/artwork/detail', params: { id: artwork.id } })
+    router.push({ pathname: '/artwork-detail', params: { id: artwork.id } })
   }
 
   const handleSearch = (keyword: string) => {

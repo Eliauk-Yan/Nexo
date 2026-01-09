@@ -5,12 +5,11 @@ import { colors, spacing } from '@/config/theme'
 import { useAuthStore } from '@/stores/authState'
 import { authStore } from '@/stores/authStore'
 import { UpdateUserRequest, UserInfo, UserProfile } from '@/types'
+import * as ImagePicker from 'expo-image-picker'
 import { useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
 import { Alert, ScrollView, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import * as ImagePicker from 'expo-image-picker'
-import * as AppleAuthentication from 'expo-apple-authentication'
 
 const AccountSecurity = () => {
   const router = useRouter()
@@ -160,8 +159,6 @@ const AccountSecurity = () => {
       quality: 1,
     })
 
-    console.log(result)
-
     if (!result.canceled) {
       // TODO 调用更新头像接口
     }
@@ -213,19 +210,19 @@ const AccountSecurity = () => {
       label: '手机号',
       type: 'text',
       value: phone,
-      onPress: () => {},
+      onPress: () => { },
     },
     {
       label: '支付宝账号',
       type: 'text',
       value: alipayAccount,
-      onPress: () => {},
+      onPress: () => { },
     },
     {
       label: '微信账号',
       type: 'text',
       value: wechatAccount,
-      onPress: () => {},
+      onPress: () => { },
     },
     {
       label: 'AppleID',
@@ -290,60 +287,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.xl,
     gap: spacing.sm,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.lg,
-  },
-  modalContent: {
-    width: '100%',
-    backgroundColor: colors.backgroundCard,
-    borderRadius: 20,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  modalTitle: {
-    fontSize: 18,
-    color: colors.text,
-    fontWeight: '600',
-  },
-  modalLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    color: colors.text,
-    backgroundColor: colors.backgroundSecondary,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: spacing.md,
-  },
-  modalButton: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: 12,
-    backgroundColor: colors.backgroundSecondary,
-  },
-  modalCancel: {
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  modalConfirm: {
-    backgroundColor: colors.primary,
-  },
-  modalButtonText: {
-    color: colors.text,
-    fontSize: 14,
   },
 })
 
