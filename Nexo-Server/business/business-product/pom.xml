@@ -3,24 +3,21 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
-        <groupId>com.nexo</groupId>
-        <artifactId>Nexo-Server</artifactId>
+        <groupId>com.nexo.business</groupId>
+        <artifactId>business</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>com.nexo.business</groupId>
-    <artifactId>business</artifactId>
+    <groupId>com.nexo.business.product</groupId>
+    <artifactId>business-product</artifactId>
     <packaging>pom</packaging>
 
     <modules>
-        <module>business-user</module>
-        <module>business-notification</module>
-        <module>business-pay</module>
-        <module>business-order</module>
-        <module>business-transaction</module>
-        <module>business-blockchain</module>
-        <module>business-product</module>
+        <module>product-blindbox</module>
+        <module>product-artwork</module>
+        <module>product-interfaces</module>
     </modules>
 
     <properties>
@@ -28,12 +25,5 @@
         <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-    </dependencies>
 
 </project>

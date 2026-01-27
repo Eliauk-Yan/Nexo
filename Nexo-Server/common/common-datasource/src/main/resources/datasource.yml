@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: jdbc:mysql://192.168.147.100:3306/nexo
+    url: jdbc:mysql://47.99.39.81:3306/nexo
     username: yanshijie
-    password: Ysj245913@.
+    password: B@n@n@_La15_YSJ
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.alibaba.druid.pool.DruidDataSource
     # Druid连接池配置

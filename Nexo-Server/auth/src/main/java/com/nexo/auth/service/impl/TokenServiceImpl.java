@@ -4,7 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.nexo.auth.domain.exception.AuthErrorCode;
 import com.nexo.auth.domain.exception.AuthException;
 import com.nexo.auth.service.TokenService;
-import com.nexo.auth.utils.TokenUtils;
+import com.nexo.common.web.utils.TokenUtils;
 import com.nexo.common.api.artwork.ArtWorkFacade;
 import com.nexo.common.api.artwork.response.ArtWorkResponse;
 import com.nexo.common.api.artwork.response.data.ArtWorkDetailData;
