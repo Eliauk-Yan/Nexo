@@ -32,7 +32,7 @@ const Login = () => {
     setSending(true)
     try {
       await authApi.sendVerificationCode(phone)
-      router.push({ pathname: '/login/verify', params: { phone } })
+      router.push({ pathname: '/(tabs)/account/verify', params: { phone } })
     } catch (error) {
       Alert.alert('错误', handleApiError(error as Error))
     } finally {

@@ -26,6 +26,7 @@ public class AuthController {
 
     /**
      * 发送验证码接口
+     * 
      * @param phone 手机号
      * @return 发送结果
      */
@@ -37,6 +38,7 @@ public class AuthController {
 
     /**
      * 登录或注册接口
+     * 
      * @param request 请求参数
      * @return 登录结果
      */
@@ -47,6 +49,7 @@ public class AuthController {
 
     /**
      * 退出登录
+     * 
      * @return 返回结果
      */
     @PostMapping("/logout")

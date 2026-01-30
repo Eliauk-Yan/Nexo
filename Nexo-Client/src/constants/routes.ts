@@ -6,13 +6,13 @@
 export const ROUTES = {
   // 认证相关
   AUTH: {
-    LOGIN: '/login',
+    LOGIN: '/(tabs)/account/sign-in',
     FORGOT_PASSWORD: '/auth/forgot-password',
   },
 
   // 主页面
   TABS: {
-    HOME: '/(tabs)/',
+    HOME: '/(tabs)/home',
 
     MINT: '/(tabs)/mint',
     MARKET: '/(tabs)/market',

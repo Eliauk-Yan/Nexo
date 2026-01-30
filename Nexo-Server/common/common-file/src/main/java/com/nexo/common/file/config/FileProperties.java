@@ -10,16 +10,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @created by YanShijie
  */
 @Data
-@ConfigurationProperties(prefix = "minio")
+@ConfigurationProperties(prefix = "rustfs")
 public class FileProperties {
 
     /**
-     * 是否启用MinIO（默认启用）
+     * 是否启用RustFS（默认启用）
      */
     private boolean enabled = true;
 
     /**
-     * MinIO 服务端点
+     * RustFS 服务端点
      */
     private String endpoint;
 
@@ -34,33 +34,8 @@ public class FileProperties {
     private String secretKey;
 
     /**
-     * 桶名称（默认：nexo-dev）
+     * 桶名称
      */
-    private String bucketName = "nexo-dev";
-
-    /**
-     * 是否使用HTTPS（默认：false）
-     */
-    private boolean secure = false;
-
-    /**
-     * 预签名链接有效期（小时，默认：24）
-     */
-    private int presignedExpiryHours = 24;
-
-    /**
-     * 临时文件有效期（天，默认：7）
-     */
-    private int tempDays = 7;
-
-    /**
-     * 最大文件大小（MB，默认：100）
-     */
-    private long maxFileSizeMB = 100;
-
-    /**
-     * 是否自动创建桶（默认：true）
-     */
-    private boolean autoCreateBucket = true;
+    private String bucketName = "nexo";
 
 }

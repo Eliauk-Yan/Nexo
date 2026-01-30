@@ -1,6 +1,8 @@
 import React from 'react'
+import { Redirect } from 'expo-router'
 
 import { colors } from '@/config/theme'
+import { useSession } from '@/utils/ctx'
 import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs'
 
 const TabLayout = () => {

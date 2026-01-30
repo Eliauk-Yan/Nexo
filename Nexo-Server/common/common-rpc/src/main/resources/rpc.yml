@@ -6,9 +6,9 @@ dubbo:
     name: dubbo
     port: -1
   registry:
-    address: nacos://192.168.147.100:8848
+    address: nacos://47.99.39.81:8848
     parameters:
-      namespace: 85435310-4c80-4b74-a54a-11ba69dbd400
+      namespace: b668cde8-b9d1-431c-b94d-c445be411f48
       group: dubbo
   application:
     name: ${spring.application.name}

@@ -48,7 +48,7 @@ const AccountSecurity = () => {
         style: 'destructive',
         onPress: () => {
           // TODO: 实现账号注销逻辑
-          console.log('Account deletion requested')
+          console.log('Index deletion requested')
         },
       },
     ])
@@ -210,19 +210,19 @@ const AccountSecurity = () => {
       label: '手机号',
       type: 'text',
       value: phone,
-      onPress: () => { },
+      onPress: () => {},
     },
     {
       label: '支付宝账号',
       type: 'text',
       value: alipayAccount,
-      onPress: () => { },
+      onPress: () => {},
     },
     {
       label: '微信账号',
       type: 'text',
       value: wechatAccount,
-      onPress: () => { },
+      onPress: () => {},
     },
     {
       label: 'AppleID',

@@ -12,13 +12,15 @@ import com.nexo.business.user.interfaces.vo.UserProfileVO;
 import com.nexo.common.api.user.constant.UserState;
 import com.nexo.common.api.user.constant.UserRole;
 import com.nexo.common.api.user.response.data.UserInfo;
-import com.nexo.common.file.domain.enums.ServicePath;
-import com.nexo.common.file.domain.enums.TypePath;
-import com.nexo.common.file.service.MinioService;
+import com.nexo.common.file.service.FileService;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 /**
  * @classname UserServiceImpl
@@ -36,7 +38,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     private final UserMapper userMapper;
 
-    private final MinioService minioService;
+    private final FileService fileService;
 
     @Override
     public void register(String phone, String inviteCode) {
@@ -49,7 +51,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 3.1 判断是否有邀请人
         if (inviteCode != null) {
             // 3.2 获取邀请人信息
-            User invitor = this.getOne(new LambdaQueryWrapper<User>().eq(User::getInviteCode, inviteCode).eq(User::getDeleted, 0));
+            User invitor = this
+                    .getOne(new LambdaQueryWrapper<User>().eq(User::getInviteCode, inviteCode).eq(User::getDeleted, 0));
             if (invitor != null) {
                 invitorId = invitor.getId();
             }
@@ -90,13 +93,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         User currentUser = this.getById(userId);
         // 3. 删除旧头像
         if (StringUtils.isNotBlank(currentUser.getAvatarUrl())) {
-            minioService.deleteFile(currentUser.getAvatarUrl());
+            fileService.deleteFile(currentUser.getAvatarUrl());
         }
-        // 4. 上传新头像
-        String avatarUrl = minioService.uploadFile(avatar, ServicePath.USER, TypePath.IMAGE);
+        // 4. 设置文件路径（模块 + 唯一标识 + 功能 + 时间）
+        String filePath = "/user/" + userId + "/avatar/" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        // 5. 上传文件
+        String avatarUrl = fileService.uploadFile(avatar, filePath);
         // 5. 更新用户信息
         currentUser.setAvatarUrl(avatarUrl);
-
         return this.updateById(currentUser);
     }
 

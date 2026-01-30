@@ -9,7 +9,7 @@ import { borderRadius, colors, spacing, typography } from '@/config/theme'
 
 import { useAuth } from '@/hooks/useAuth'
 
-const Account = () => {
+const Index = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const headerHeight = insets.top + 60
@@ -21,7 +21,7 @@ const Account = () => {
       label: '设置',
       icon: 'settings',
       color: '#FFFFFF',
-      onPress: () => router.push('/setting/index'),
+      onPress: () => router.push('/setting'),
     },
     { label: '区块链', icon: 'link', color: '#D4AF37', onPress: () => { } },
     { label: '批量转赠', icon: 'send', color: '#00C851', onPress: () => { } },
@@ -49,9 +49,7 @@ const Account = () => {
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={
-                  isLogin
-                    ? () => router.push('/setting/account')
-                    : () => router.push('/login/index')
+                  isLogin ? () => router.push('/setting/account') : () => router.push('/(tabs)/account/sign-in')
                 }
               >
                 <Text style={styles.nickName}>{user?.nickName || '未登录'}</Text>
@@ -90,7 +88,7 @@ const Account = () => {
               <TouchableOpacity
                 style={styles.loginButton}
                 activeOpacity={0.8}
-                onPress={() => router.push('/login/index')}
+                onPress={() => router.push('/(tabs)/account/sign-in')}
               >
                 <Text style={styles.loginButtonText}>立即登录</Text>
               </TouchableOpacity>
@@ -236,4 +234,4 @@ const styles = StyleSheet.create({
   },
 })
 
-export default Account
+export default Index
