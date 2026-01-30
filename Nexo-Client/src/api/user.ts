@@ -1,11 +1,28 @@
-/**
- * 认证相关 API
- * 封装所有认证相关的 API 请求方法
- */
-
 import { API_ENDPOINTS } from '@/constants/api'
-import { RealNameAuthDTO, UpdateUserRequest, UserProfile } from '@/types'
 import { request } from '@/utils/request'
+
+export interface UserProfile {
+  id: string
+  avatarUrl: string
+  nickName: string
+  phone: string
+  alipay: string
+  wechat: string
+  appleId: string
+  realNameAuth: boolean
+  password: string
+}
+
+export interface UpdateUserRequest {
+  nickName?: string
+  phone?: string
+  password?: string
+}
+
+export interface RealNameAuthDTO {
+  realName: string
+  idCardNo: string
+}
 
 export const userApi = {
   /**

@@ -8,17 +8,7 @@ const AuthLayout = () => {
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      {session ? (
-        <Stack.Screen name="index" />
-      ) : (
-        <>
-          <Stack.Screen name="sign-in" />
-          <Stack.Screen
-            name="verify"
-            options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
-          />
-        </>
-      )}
+      <Stack.Screen name="index" />
     </Stack>
   )
 }

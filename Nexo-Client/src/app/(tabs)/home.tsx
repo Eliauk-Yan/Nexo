@@ -5,7 +5,7 @@ import { artworkApi } from '@/api'
 import { NFTList } from '@/components/business/NFTList'
 import { Header } from '@/components/ui'
 import { colors, spacing, typography } from '@/config/theme'
-import { Artwork } from '@/types'
+import { Artwork } from '@/api/artwork'
 import React, { useCallback, useEffect, useState } from 'react'
 import { RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -27,7 +27,7 @@ const Home = () => {
         pageSize: 10,
         keyword: '',
       })
-      setArtworks(response)
+      setArtworks(Array.isArray(response) ? response : [])
     } catch (error) {
       console.error(error)
     } finally {

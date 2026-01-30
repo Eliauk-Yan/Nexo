@@ -1,11 +1,33 @@
-/**
- * 认证相关 API
- * 封装所有认证相关的 API 请求方法
- */
-
 import { API_ENDPOINTS } from '@/constants/api'
-import { LoginForm, LoginResponse } from '@/types'
 import { request } from '@/utils/request'
+
+/**
+ * 登录表单
+ */
+export interface LoginForm {
+  phone: string
+  verifyCode: string
+  rememberMe: boolean
+}
+
+/**
+ * 用户信息类型
+ */
+export interface UserInfo {
+  id: string
+  nickName: string
+  avatarUrl: string
+  role: string
+}
+
+/**
+ * 登录响应类型
+ */
+export interface LoginResponse {
+  token: string
+  expire: number
+  userInfo: UserInfo
+}
 
 export const authApi = {
   /**

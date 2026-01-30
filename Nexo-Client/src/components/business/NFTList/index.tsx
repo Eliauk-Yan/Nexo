@@ -8,7 +8,7 @@ import {
   RefreshControlProps,
 } from 'react-native'
 import { NFTCard } from '../NFTCard'
-import { Artwork } from '@/types'
+import { Artwork } from '@/api/artwork'
 import { spacing } from '@/config/theme'
 
 interface NFTListProps extends Omit<FlatListProps<Artwork>, 'data' | 'renderItem'> {
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   itemContainer: {
     flex: 1,
     margin: spacing.xs,
-    maxWidth: '48%', 
+    maxWidth: '48%',
   },
   footer: {
     paddingVertical: spacing.md,

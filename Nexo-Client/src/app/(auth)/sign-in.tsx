@@ -15,9 +15,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { authApi } from '@/api'
 import { LiquidGlassButton } from '@/components/ui'
+import { ROUTES } from '@/constants/routes'
 import { borderRadius, colors, spacing, typography } from '@/config/theme'
-import { handleApiError } from '@/utils/errorHandler'
-import { validatePhone } from '@/utils/validation'
 
 const Login = () => {
   const router = useRouter()
@@ -32,15 +31,15 @@ const Login = () => {
     setSending(true)
     try {
       await authApi.sendVerificationCode(phone)
-      router.push({ pathname: '/(tabs)/account/verify', params: { phone } })
+      router.push({ pathname: ROUTES.AUTH.VERIFY, params: { phone } })
     } catch (error) {
-      Alert.alert('错误', handleApiError(error as Error))
+      Alert.alert('错误', error instanceof Error ? error.message : '发送验证码失败')
     } finally {
       setSending(false)
     }
   }
 
-  const isPhoneValid = phone.trim().length === 11 && validatePhone(phone)
+  const isPhoneValid = phone.trim().length === 11 && /^1[3-9]\d{9}$/.test(phone)
   const canSubmit = isPhoneValid && agreed
 
   return (

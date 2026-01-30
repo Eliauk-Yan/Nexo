@@ -6,7 +6,8 @@
 export const ROUTES = {
   // 认证相关
   AUTH: {
-    LOGIN: '/(tabs)/account/sign-in',
+    LOGIN: '/sign-in',
+    VERIFY: '/verify',
     FORGOT_PASSWORD: '/auth/forgot-password',
   },
 

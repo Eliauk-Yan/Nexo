@@ -1,15 +1,32 @@
 import { artworkApi } from '@/api'
 import { LiquidGlassButton } from '@/components/ui'
-import { colors, spacing, typography } from '@/config/theme'
-import { ArtworkDetail } from '@/types'
-import { formatDate, formatPrice } from '@/utils/validation'
+import { borderRadius, colors, spacing, typography } from '@/config/theme'
+import { ArtworkDetail } from '@/api/artwork'
 import { GlassView } from 'expo-glass-effect'
 import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import {
+    ActivityIndicator,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from 'react-native'
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import Feather from '@expo/vector-icons/Feather'
+
+const formatPrice = (price: string | number) => {
+    const num = typeof price === 'string' ? parseFloat(price) : price
+    return isNaN(num) ? '0.0000' : num.toFixed(4)
+}
+
+const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 
 const ArtworkDetailScreen = () => {
     const { id } = useLocalSearchParams<{ id: string }>()
@@ -143,7 +160,7 @@ const ArtworkDetailScreen = () => {
                         {detail.saleTime && (
                             <View style={styles.infoRow}>
                                 <Text style={styles.label}>发售时间</Text>
-                                <Text style={styles.value}>{formatDate(detail.saleTime, 'YYYY-MM-DD HH:mm')}</Text>
+                                <Text style={styles.value}>{formatDate(detail.saleTime)}</Text>
                             </View>
                         )}
                     </View>

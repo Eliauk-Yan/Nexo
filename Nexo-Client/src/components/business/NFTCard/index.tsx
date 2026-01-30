@@ -1,9 +1,14 @@
 import { borderRadius, colors, spacing, typography } from '@/config/theme'
-import { Artwork } from '@/types'
-import { formatPrice } from '@/utils/validation'
+import { Artwork } from '@/api/artwork'
 import { Image } from 'expo-image'
 import React, { memo } from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+
+const formatPrice = (price: string | number) => {
+  const num = typeof price === 'string' ? parseFloat(price) : price
+  return isNaN(num) ? '0.0000' : num.toFixed(4)
+}
+
 
 interface NFTCardProps {
   artwork: Artwork

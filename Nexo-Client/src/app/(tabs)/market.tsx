@@ -6,7 +6,7 @@ import { artworkApi } from '@/api'
 import { NFTList } from '@/components/business/NFTList'
 import { Header } from '@/components/ui'
 import { borderRadius, colors, spacing, typography } from '@/config/theme'
-import { Artwork } from '@/types'
+import { Artwork } from '@/api/artwork'
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -32,7 +32,7 @@ const Market = () => {
         currentPage: 1,
         keyword: '',
       })
-      setArtworks(response)
+      setArtworks(Array.isArray(response) ? response : [])
     } catch (error) {
       console.error('Fetch artwork list error:', error)
     } finally {

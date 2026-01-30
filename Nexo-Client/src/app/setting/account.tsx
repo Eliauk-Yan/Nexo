@@ -1,10 +1,10 @@
-import { userApi } from '@/api'
+import { userApi } from '@/api/user'
 import { LiquidGlassButton } from '@/components/ui'
 import ListItem, { ListItemData } from '@/components/ui/ListItem'
 import { colors, spacing } from '@/config/theme'
-import { useAuthStore } from '@/stores/authState'
-import { authStore } from '@/stores/authStore'
-import { UpdateUserRequest, UserInfo, UserProfile } from '@/types'
+import { UpdateUserRequest, UserProfile } from '@/api/user'
+import { UserInfo } from '@/api/auth'
+import { useSession } from '@/utils/ctx'
 import * as ImagePicker from 'expo-image-picker'
 import { useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
@@ -16,7 +16,7 @@ const AccountSecurity = () => {
   const insets = useSafeAreaInsets()
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
-  const { user, setUser } = useAuthStore()
+  const { session, user, signIn } = useSession()
 
   const fetchProfile = async () => {
     try {
@@ -122,16 +122,16 @@ const AccountSecurity = () => {
                 await userApi.updateNickName(payload)
                 const updated = await userApi.getUserProfile()
                 setProfile(updated)
-                // 同步全局登录态：同时更新持久化存储和内存状态
-                const mergedUser: UserInfo = {
-                  id: updated.id,
-                  nickName: updated.nickName,
-                  avatarUrl: updated.avatarUrl,
-                  role: user?.role ?? '',
+                // 同步全局登录态
+                if (session) {
+                  const mergedUser: UserInfo = {
+                    id: updated.id,
+                    nickName: updated.nickName,
+                    avatarUrl: updated.avatarUrl,
+                    role: user?.role ?? '',
+                  }
+                  signIn(session, mergedUser)
                 }
-                // 先更新持久化存储，再更新内存状态
-                await authStore.setUserInfo(mergedUser)
-                setUser(mergedUser)
               } catch (err) {
                 console.error('更新昵称失败', err)
               }
@@ -210,19 +210,19 @@ const AccountSecurity = () => {
       label: '手机号',
       type: 'text',
       value: phone,
-      onPress: () => {},
+      onPress: () => { },
     },
     {
       label: '支付宝账号',
       type: 'text',
       value: alipayAccount,
-      onPress: () => {},
+      onPress: () => { },
     },
     {
       label: '微信账号',
       type: 'text',
       value: wechatAccount,
-      onPress: () => {},
+      onPress: () => { },
     },
     {
       label: 'AppleID',

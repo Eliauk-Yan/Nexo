@@ -12,13 +12,14 @@ function useAsyncState<T>(initialValue: [boolean, T | null] = [true, null]): Use
   ) as UseStateHook<T>
 }
 
-export async function setStorageItemAsync(key: string, value: string | null) {
+export async function setStorageItemAsync(key: string, value: any | null) {
   if (Platform.OS === 'web') {
     try {
       if (value === null) {
         localStorage.removeItem(key)
       } else {
-        localStorage.setItem(key, value)
+        const stringValue = typeof value === 'string' ? value : JSON.stringify(value)
+        localStorage.setItem(key, stringValue)
       }
     } catch (e) {
       console.error('Local storage is unavailable:', e)
@@ -27,35 +28,45 @@ export async function setStorageItemAsync(key: string, value: string | null) {
     if (value == null) {
       await SecureStore.deleteItemAsync(key)
     } else {
-      await SecureStore.setItemAsync(key, value)
+      const stringValue = typeof value === 'string' ? value : JSON.stringify(value)
+      await SecureStore.setItemAsync(key, stringValue)
     }
   }
 }
 
-export function useStorageState(key: string): UseStateHook<string> {
+export function useStorageState<T = string>(key: string): UseStateHook<T> {
   // Public
-  const [state, setState] = useAsyncState<string>()
+  const [state, setState] = useAsyncState<T>()
 
   // Get
   useEffect(() => {
     if (Platform.OS === 'web') {
       try {
         if (typeof localStorage !== 'undefined') {
-          setState(localStorage.getItem(key))
+          const value = localStorage.getItem(key)
+          try {
+            setState(value ? JSON.parse(value) : null)
+          } catch {
+            setState(value as any)
+          }
         }
       } catch (e) {
         console.error('Local storage is unavailable:', e)
       }
     } else {
       SecureStore.getItemAsync(key).then((value: string | null) => {
-        setState(value)
+        try {
+          setState(value ? JSON.parse(value) : null)
+        } catch {
+          setState(value as any)
+        }
       })
     }
   }, [key])
 
   // Set
   const setValue = useCallback(
-    (value: string | null) => {
+    (value: T | null) => {
       setState(value)
       setStorageItemAsync(key, value)
     },

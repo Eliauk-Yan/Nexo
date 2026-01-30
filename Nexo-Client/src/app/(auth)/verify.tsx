@@ -18,15 +18,12 @@ import { authApi } from '@/api'
 import { LiquidGlassButton } from '@/components/ui'
 import { ROUTES } from '@/constants/routes'
 import { borderRadius, colors, spacing, typography } from '@/config/theme'
-import { useAuthStore } from '@/stores/authState'
 import { useSession } from '@/utils/ctx'
-import { handleApiError } from '@/utils/errorHandler'
 
 const Verify = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { signIn } = useSession()
-  const { setUser, setIsLoading: setStoreLoading } = useAuthStore()
   const { phone } = useLocalSearchParams<{ phone: string }>()
   const [code, setCode] = useState('')
   const [resending, setResending] = useState(false)
@@ -40,7 +37,7 @@ const Verify = () => {
       await authApi.sendVerificationCode(phone)
       Alert.alert('成功', '验证码已重新发送')
     } catch (error) {
-      Alert.alert('错误', handleApiError(error as Error))
+      Alert.alert('错误', error instanceof Error ? error.message : '发送失败')
     } finally {
       setResending(false)
     }
@@ -55,16 +52,14 @@ const Verify = () => {
     setSubmitting(true)
     try {
       const response = await authApi.login({ phone, verifyCode: code, rememberMe: true })
-      // 设置用户信息到 Store (用于 UI 显示)
-      setUser(response.userInfo)
-      // 设置 Session (用于路由保护)
-      signIn(response.token)
+      // 设置 Session (用于路由保护和存储用户信息)
+      signIn(response.token, response.userInfo)
 
       // 这里的跳转通常由路由卫视(Redirect)在 index.tsx 或 _layout.tsx 中自动完成
       // 但为了用户体验，我们也可以手动跳转到主页或之前的页面
       router.replace(ROUTES.TABS.HOME)
     } catch (error) {
-      Alert.alert('登录失败', handleApiError(error as Error))
+      Alert.alert('登录失败', error instanceof Error ? error.message : '登录失败')
     } finally {
       setSubmitting(false)
     }

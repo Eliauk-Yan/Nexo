@@ -1,5 +1,6 @@
 // 路由认证(参考官网): https://docs.expo.dev/router/advanced/authentication/
 import { use, createContext, type PropsWithChildren } from 'react'
+import type { UserInfo } from '@/api/auth'
 
 // 用于将认证状态（如 Token）持久化到手机本地存储中，防止重启 App 后登录失效
 import { useStorageState } from '@/hooks/useStorageState'
@@ -9,15 +10,17 @@ import { useStorageState } from '@/hooks/useStorageState'
  * 用于在整个 App 组件树中共享用户的登录状态和操作方法
  */
 const AuthContext = createContext<{
-  signIn: (token: string) => void // 登录方法：接受一个 token 并保存
-  signOut: () => void // 登出方法：清除本地存储的 token
+  signIn: (token: string, userInfo: UserInfo) => void // 登录方法：接受 token 和用户信息并保存
+  signOut: () => void // 登出方法：清除本地存储的 token 和用户信息
   session?: string | null // 当前会话状态：存储 Token 字符串或 null
+  user?: UserInfo | null // 当前用户信息
   isLoading: boolean // 加载状态：从本地存储读取数据时为 true
 }>({
   // 定义初始值（兜底数据）
   signIn: () => null,
   signOut: () => null,
   session: null,
+  user: null,
   isLoading: false,
 })
 
@@ -50,21 +53,26 @@ export function SessionProvider({ children }: PropsWithChildren) {
    * session: 当前读取到的 token 值
    * setSession: 用于更新本地存储并同步更新状态的函数
    */
-  const [[isLoading, session], setSession] = useStorageState('satoken')
+  const [[isSessionLoading, session], setSession] = useStorageState('satoken')
+  const [[isUserLoading, user], setUser] = useStorageState<UserInfo>('userinfo')
+
+  const isLoading = isSessionLoading || isUserLoading
 
   return (
     <AuthContext.Provider
       value={{
         // 执行登录：调用 setSession 将 token 写入本地存储
-        signIn: (token: string) => {
-          // 这里可以扩展逻辑，比如调用后端接口确认 token 有效性
+        signIn: (token: string, userInfo: UserInfo) => {
           setSession(token)
+          setUser(userInfo)
         },
         // 执行登出：将本地存储的 token 设为 null
         signOut: () => {
           setSession(null)
+          setUser(null)
         },
         session, // 当前 Token 内容
+        user, // 当前用户信息
         isLoading, // 初始化加载状态
       }}
     >

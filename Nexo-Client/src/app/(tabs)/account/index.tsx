@@ -6,6 +6,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Header } from '@/components/ui'
 import { borderRadius, colors, spacing, typography } from '@/config/theme'
+import { ROUTES } from '@/constants/routes'
 
 import { useAuth } from '@/hooks/useAuth'
 
@@ -49,7 +50,7 @@ const Index = () => {
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={
-                  isLogin ? () => router.push('/setting/account') : () => router.push('/(tabs)/account/sign-in')
+                  isLogin ? () => router.push('/setting/account') : () => router.push(ROUTES.AUTH.LOGIN)
                 }
               >
                 <Text style={styles.nickName}>{user?.nickName || '未登录'}</Text>
@@ -88,7 +89,7 @@ const Index = () => {
               <TouchableOpacity
                 style={styles.loginButton}
                 activeOpacity={0.8}
-                onPress={() => router.push('/(tabs)/account/sign-in')}
+                onPress={() => router.push(ROUTES.AUTH.LOGIN)}
               >
                 <Text style={styles.loginButtonText}>立即登录</Text>
               </TouchableOpacity>

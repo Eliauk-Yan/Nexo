@@ -1,11 +1,41 @@
-/**
- * 藏品相关 API
- * 封装藏品列表等请求
- */
-
 import { API_ENDPOINTS } from '@/constants/api'
-import { Artwork, ArtworkDetail, QueryArtWorkRequest } from '@/types'
 import { request } from '@/utils/request'
+
+export interface Artwork {
+  id: number
+  name: string
+  cover: string
+  price: number
+  quantity: number
+  inventory: number | null
+  saleTime: string | null
+  version: number
+  bookStartTime: string | null
+  bookEndTime: string | null
+  canBook: boolean
+  hasBooked: boolean | null
+}
+
+export interface ArtworkDetail {
+  id: number
+  name: string
+  cover: string
+  price: number
+  quantity: number
+  inventory: number | null
+  saleTime: string | null
+  version: number
+  bookStartTime: string | null
+  bookEndTime: string | null
+  canBook: boolean
+  hasBooked: boolean | null
+}
+
+export interface QueryArtWorkRequest {
+  currentPage: number
+  pageSize: number
+  keyword?: string
+}
 
 export const artworkApi = {
   /**

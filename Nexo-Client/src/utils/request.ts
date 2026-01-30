@@ -1,167 +1,117 @@
+// @ts-ignore
+import urlcat from 'urlcat'
+import * as SecureStore from 'expo-secure-store'
+
 /**
- * HTTP 请求工具
- * 基于 fetch 封装，提供统一的请求接口
+ * 请求配置项接口
  */
-
-import { API_BASE_URL, API_TIMEOUT } from '@/config/env'
-import { authStore } from '@/stores/authStore'
-import { ApiError, BaseResponse } from '@/types'
-
-type RequestMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
-
-interface RequestOptions extends RequestInit {
-  timeout?: number
+interface RequestOptions {
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+  params?: Record<string, any>
+  body?: any
+  headers?: Record<string, string>
 }
 
-class Request {
-  private baseURL: string
-  private timeout: number
-
-  constructor() {
-    this.baseURL = API_BASE_URL
-    this.timeout = API_TIMEOUT
-  }
-
-  /**
-   * 获取请求头
-   */
-  private async getHeaders(customHeaders?: HeadersInit, isFormData = false): Promise<HeadersInit> {
-    const headers: Record<string, string> = {
-      ...(!isFormData && { 'Content-Type': 'application/json' }),
-      ...(customHeaders as Record<string, string>),
-    }
-
-    const token = await authStore.getToken()
-    if (token) {
-      headers['satoken'] = token
-    }
-
-    return headers
-  }
-
-  /**
-   * 处理响应
-   */
-  private async handleResponse<T>(response: Response): Promise<T> {
-    const contentType = response.headers.get('content-type')
-    const isJson = contentType?.includes('application/json')
-
-    if (!response.ok) {
-      const error: ApiError = {
-        code: response.status,
-        message: response.statusText,
-      }
-
-      if (isJson) {
-        const data = await response.json()
-        error.message = data.message || error.message
-        error.details = data
-      }
-
-      if (response.status === 401) {
-        await authStore.removeToken()
-        await authStore.removeUserInfo()
-      }
-
-      throw error
-    }
-
-    if (isJson) {
-      const data: BaseResponse<T> = await response.json()
-      if (data.success) {
-        return data.data
-      }
-      throw {
-        code: parseInt(data.code) || 500,
-        message: data.message,
-      } as ApiError
-    }
-
-    return (await response.text()) as T
-  }
-
-  /**
-   * 发送请求
-   */
-  private async request<T>(
-    url: string,
-    method: RequestMethod,
-    data?: any,
-    options?: RequestOptions,
-  ): Promise<T> {
-    const { timeout = this.timeout, headers: customHeaders, ...restOptions } = options || {}
-
-    let fullUrl = url.startsWith('http') ? url : `${this.baseURL}${url}`
-    const isFormData = data instanceof FormData
-    const headers = await this.getHeaders(customHeaders, isFormData)
-
-    const config: RequestInit = {
-      method,
-      headers,
-      ...restOptions,
-    }
-
-    if (data) {
-      if (method === 'GET') {
-        const params = new URLSearchParams(data).toString()
-        if (params) {
-          fullUrl += (fullUrl.includes('?') ? '&' : '?') + params
-        }
-      } else {
-        config.body = isFormData ? data : JSON.stringify(data)
-      }
-    }
-
-    try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), timeout)
-
-      const response = await fetch(fullUrl, { ...config, signal: controller.signal })
-      clearTimeout(timeoutId)
-
-      return await this.handleResponse<T>(response)
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
-        throw { code: 408, message: '请求超时' } as ApiError
-      }
-      throw error
-    }
-  }
-
-  get<T>(url: string, params?: any, options?: RequestOptions): Promise<T> {
-    return this.request<T>(url, 'GET', params, options)
-  }
-
-  post<T>(url: string, data?: any, options?: RequestOptions): Promise<T> {
-    return this.request<T>(url, 'POST', data, options)
-  }
-
-  put<T>(url: string, data?: any, options?: RequestOptions): Promise<T> {
-    return this.request<T>(url, 'PUT', data, options)
-  }
-
-  patch<T>(url: string, data?: any, options?: RequestOptions): Promise<T> {
-    return this.request<T>(url, 'PATCH', data, options)
-  }
-
-  delete<T>(url: string, options?: RequestOptions): Promise<T> {
-    return this.request<T>(url, 'DELETE', undefined, options)
-  }
-
-  async upload<T>(
-    url: string,
-    file: { uri: string; type: string; name: string },
-    options?: RequestOptions,
-  ): Promise<T> {
-    const formData = new FormData()
-    formData.append('file', {
-      uri: file.uri,
-      type: file.type,
-      name: file.name,
-    } as any)
-
-    return this.post<T>(url, formData, options)
-  }
+/**
+ * 自定义错误类型，包含后端返回的业务错误
+ */
+export interface ApiError extends Error {
+  status?: number
+  code?: string | number
+  errors?: any
 }
 
-export const request = new Request()
+const STORAGE_KEYS = {
+  TOKEN: 'satoken',
+}
+
+/**
+ * 基础请求函数
+ */
+const baseRequest = async <T = any>(
+  url: string,
+  { method = 'GET', params, body, headers: customHeaders }: RequestOptions = {},
+): Promise<T> => {
+  // 完整的接口地址
+  const apiUrl = process.env.EXPO_PUBLIC_API_BASE_URL || ''
+  const requestUrl = urlcat(apiUrl, url, params || {})
+
+  // 从存储中获取 token
+  let token = null
+  try {
+    token = await SecureStore.getItemAsync(STORAGE_KEYS.TOKEN)
+  } catch (e) {
+    console.error('Failed to get token from SecureStore', e)
+  }
+
+  // 请求头
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    ...customHeaders,
+  }
+
+  if (token) {
+    headers['satoken'] = token // 根据后端要求可能叫 Authorization 或 satoken
+  }
+
+  const config: RequestInit = {
+    method,
+    headers,
+    ...(body && { body: JSON.stringify(body) }),
+  }
+
+  const response = await fetch(requestUrl, config)
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      // 处理未授权/登录超时
+      // TODO: 可以触发全局退出逻辑或跳转
+      console.warn('Unauthorized request - 401')
+    }
+
+    const errorData = await response.json().catch(() => ({}))
+    const error = new Error(errorData.message || '请求失败') as ApiError
+    error.status = response.status
+    error.errors = errorData.errors
+    throw error
+  }
+
+  const json = await response.json()
+
+  // Business logic error handling (backend returns 200 but success is false)
+  if (json && typeof json === 'object' && 'success' in json) {
+    if (json.success === false) {
+      const error = new Error(json.message || 'API request failed') as ApiError
+      error.status = response.status
+      error.code = json.code
+      throw error
+    }
+    // Return the data field if it exists, otherwise return the whole json
+    return (json.data !== undefined ? json.data : json) as T
+  }
+
+  return json as T
+}
+
+/**
+ * 导出的请求对象，适配现有调用方式
+ */
+export const request = {
+  get: <T = any>(url: string, params?: Record<string, any>) =>
+    baseRequest<T>(url, { method: 'GET', params }),
+
+  post: <T = any>(url: string, body?: any) =>
+    baseRequest<T>(url, { method: 'POST', body }),
+
+  put: <T = any>(url: string, body?: any) =>
+    baseRequest<T>(url, { method: 'PUT', body }),
+
+  patch: <T = any>(url: string, body?: any) =>
+    baseRequest<T>(url, { method: 'PATCH', body }),
+
+  delete: <T = any>(url: string) =>
+    baseRequest<T>(url, { method: 'DELETE' }),
+}
+
+export default request
