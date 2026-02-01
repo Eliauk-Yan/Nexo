@@ -1,6 +1,8 @@
+import { authApi } from '@/api'
 import { LiquidGlassButton, MenuSection, type MenuItem } from '@/components/ui'
 import { colors, spacing, typography } from '@/config/theme'
-import { useAuth } from '@/hooks/useAuth'
+import { ROUTES } from '@/constants/routes'
+import { useSession } from '@/utils/ctx'
 import { useRouter } from 'expo-router'
 import React from 'react'
 import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
@@ -9,7 +11,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 const Setting = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
-  const { logout, isLogin } = useAuth()
+  const { signOut, session } = useSession()
+  const isLogin = !!session
 
   const handleLogout = async () => {
     Alert.alert('退出登录', '确定要退出登录吗？', [
@@ -19,9 +22,12 @@ const Setting = () => {
         style: 'destructive',
         onPress: async () => {
           try {
-            await logout()
+            await authApi.logout()
           } catch (error) {
-            console.error('Logout failed:', error)
+            console.error('退出登录失败：', error)
+          } finally {
+            signOut()
+            router.replace('/(tabs)/account')
           }
         },
       },

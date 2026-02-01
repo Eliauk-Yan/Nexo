@@ -1,5 +1,4 @@
-import { API_ENDPOINTS } from '@/constants/api'
-import { request } from '@/utils/request'
+import { post } from '@/utils/request'
 
 /**
  * 登录表单
@@ -34,15 +33,15 @@ export const authApi = {
    * 发送验证码
    */
   sendVerificationCode: (phone: string) => {
-    const url = `${API_ENDPOINTS.AUTH.SEND_VERIFICATION_CODE}?phone=${encodeURIComponent(phone)}`
-    return request.post<boolean>(url, undefined)
+    const url = `/auth/verifyCode?phone=${encodeURIComponent(phone)}`
+    return post(url, undefined)
   },
 
   /**
    * 登录
    */
   login: (data: LoginForm) => {
-    return request.post<LoginResponse>(API_ENDPOINTS.AUTH.LOGIN, {
+    return post('/auth/login', {
       phone: data.phone,
       verifyCode: data.verifyCode,
       rememberMe: data.rememberMe ?? true,
@@ -53,6 +52,6 @@ export const authApi = {
    * 登出
    */
   logout: () => {
-    return request.post<void>(API_ENDPOINTS.AUTH.LOGOUT)
+    return post('/auth/logout', undefined)
   },
 }

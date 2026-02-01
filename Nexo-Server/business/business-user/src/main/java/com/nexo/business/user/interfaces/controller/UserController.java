@@ -41,7 +41,7 @@ public class UserController {
      * @return 更新结果
      */
     @PutMapping("/avatar")
-    public Result<Boolean> updateAvatar(@RequestParam MultipartFile avatar) {
+    public Result<Boolean> updateAvatar(@RequestPart("avatar") MultipartFile avatar) {
         return Result.success(userService.updateAvatar(avatar));
     }
 

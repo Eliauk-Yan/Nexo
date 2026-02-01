@@ -5,6 +5,7 @@ spring:
       host: 47.99.39.81 # redis 地址
       port: 6379 # redis 端口
       password: B@n@n@_La15_YSJ # redis 密码
+      database: 1 # redis 数据库
       lettuce: # lettuce 连接池
         pool: # 连接池
           max-active: 32 # 连接池最大连接数
@@ -17,6 +18,7 @@ spring:
         singleServerConfig: 
           address: "redis://47.99.39.81:6379"
           password: B@n@n@_La15_YSJ
+          database: 1
           connectionPoolSize: 64
           connectionMinimumIdleSize: 24
           idleConnectionTimeout: 10000

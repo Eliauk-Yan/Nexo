@@ -1,8 +1,7 @@
-import { userApi } from '@/api/user'
 import { LiquidGlassButton } from '@/components/ui'
 import ListItem, { ListItemData } from '@/components/ui/ListItem'
 import { colors, spacing } from '@/config/theme'
-import { UpdateUserRequest, UserProfile } from '@/api/user'
+import { userApi, UpdateUserRequest, UserProfile } from '@/api/user'
 import { UserInfo } from '@/api/auth'
 import { useSession } from '@/utils/ctx'
 import * as ImagePicker from 'expo-image-picker'
@@ -10,25 +9,44 @@ import { useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
 import { Alert, ScrollView, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import Spinner from 'react-native-loading-spinner-overlay'
 
 const AccountSecurity = () => {
+  // 路由
   const router = useRouter()
+  // 安全距离
   const insets = useSafeAreaInsets()
-
-  const [profile, setProfile] = useState<UserProfile | null>(null)
+  // 用户会话
   const { session, user, signIn } = useSession()
-
+  // 加载状态
+  const [loading, setLoading] = useState(false)
+  // 用户信息 状态
+  const [profile, setProfile] = useState<UserProfile>({
+    alipay: '未绑定',
+    appleId: '未绑定',
+    avatarUrl: '',
+    id: '',
+    nickName: '未设置',
+    password: '',
+    phone: '未绑定',
+    realNameAuth: false,
+    wechat: '未绑定',
+  })
   const fetchProfile = async () => {
+    // 设置加载状态
+    setLoading(true)
     try {
-      const data = await userApi.getUserProfile()
-      setProfile(data)
-    } catch (error) {
-      console.error('获取用户信息失败', error)
+      const res = await userApi.getUserProfile()
+      // 设置用户信息状态
+      setProfile(res)
+      return res
+    } finally {
+      setLoading(false)
     }
   }
-
+  // 获取用户信息
   useEffect(() => {
-    void fetchProfile()
+    fetchProfile().catch((err) => console.error(err))
   }, [])
 
   const avatar = profile?.avatarUrl || ''
@@ -78,14 +96,14 @@ const AccountSecurity = () => {
                 { text: '取消', style: 'cancel' },
                 {
                   text: '提交',
-                  onPress: (idCard?: string) => {
+                  onPress: async (idCard?: string) => {
                     if (!idCard) {
                       Alert.alert('提示', '请输入身份证号')
                       return
                     }
                     try {
-                      userApi.realNameAuthentication({ realName: name, idCardNo: idCard })
-                      void fetchProfile()
+                      await userApi.realNameAuthentication({ realName: name, idCardNo: idCard })
+                      await fetchProfile()
                     } catch (err) {
                       console.error('实名认证提交失败', err)
                       Alert.alert('提交失败', '请稍后重试')
@@ -107,7 +125,6 @@ const AccountSecurity = () => {
 
   const updateUsername = () => {
     const current = profile?.nickName || ''
-
     Alert.prompt(
       '修改昵称',
       `当前昵称：${current || '未设置'}`,
@@ -120,17 +137,13 @@ const AccountSecurity = () => {
               try {
                 const payload: UpdateUserRequest = { nickName: text }
                 await userApi.updateNickName(payload)
-                const updated = await userApi.getUserProfile()
-                setProfile(updated)
+                const newProfile = await fetchProfile()
                 // 同步全局登录态
-                if (session) {
-                  const mergedUser: UserInfo = {
-                    id: updated.id,
-                    nickName: updated.nickName,
-                    avatarUrl: updated.avatarUrl,
-                    role: user?.role ?? '',
-                  }
-                  signIn(session, mergedUser)
+                if (session && user && newProfile) {
+                  signIn(session, {
+                    ...user,
+                    nickName: newProfile.nickName,
+                  })
                 }
               } catch (err) {
                 console.error('更新昵称失败', err)
@@ -148,19 +161,40 @@ const AccountSecurity = () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync()
 
     if (!permissionResult.granted) {
-      Alert.alert('Permission required', 'Permission to access the media library is required.')
+      Alert.alert('权限错误', '我们需要访问相册的权限才能继续。')
       return
     }
 
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ['images'], // 只选图片
       allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
+      aspect: [1, 1], // 1:1 裁减
+      quality: 0.8, // 适当压缩质量
     })
 
     if (!result.canceled) {
-      // TODO 调用更新头像接口
+      const asset = result.assets[0]
+      const formData = new FormData()
+      formData.append('avatar', {
+        uri: asset.uri,
+        name: asset.fileName || 'avatar.jpg',
+        type: asset.mimeType || 'image/jpeg',
+      } as any)
+
+      try {
+        await userApi.updateAvatar(formData)
+        const newProfile = await fetchProfile()
+        // 同步全局状态
+        if (session && user && newProfile) {
+          signIn(session, {
+            ...user,
+            avatarUrl: newProfile.avatarUrl,
+          })
+        }
+        Alert.alert('成功', '头像已更新')
+      } catch {
+        Alert.alert('失败', '头像更新失败，请重试')
+      }
     }
   }
 
@@ -253,10 +287,10 @@ const AccountSecurity = () => {
 
   return (
     <View style={styles.container}>
+      <Spinner visible={loading} />
       <View style={[styles.backButton, { top: buttonTop }]}>
         <LiquidGlassButton icon="chevron-left" onPress={() => router.back()} />
       </View>
-
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[styles.scrollContent, { paddingTop: buttonTop + 50 + spacing.lg }]}

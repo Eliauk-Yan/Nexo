@@ -12,6 +12,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useRouter } from 'expo-router'
+import Loading from '@/components/shared/Loading'
 
 const Market = () => {
   const router = useRouter()
@@ -19,7 +20,7 @@ const Market = () => {
   const [sortBy, setSortBy] = useState<'price' | 'date'>('date')
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc')
   const [artworks, setArtworks] = useState<Artwork[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   const notificationButtonHeight = 50
   const contentTopPadding = insets.top + spacing.sm + notificationButtonHeight + spacing.md
@@ -96,11 +97,11 @@ const Market = () => {
   return (
     <View style={styles.container}>
       <Header search={true} />
+      {loading && <Loading />}
       <SafeAreaView style={styles.safeArea} edges={['bottom']}>
         <View style={styles.contentWrapper}>
           <NFTList
             data={sortedArtworks}
-            loading={loading}
             onItemPress={handleArtworkPress}
             numColumns={2}
             ListHeaderComponent={renderHeader}

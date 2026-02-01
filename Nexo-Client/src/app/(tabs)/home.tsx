@@ -11,13 +11,14 @@ import { RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useRouter } from 'expo-router'
+import Loading from '@/components/shared/Loading'
 
 const Home = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const headerHeight = insets.top + 60
   const [artworks, setArtworks] = useState<Artwork[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   const fetchTrending = useCallback(async () => {
     try {
@@ -67,11 +68,11 @@ const Home = () => {
   return (
     <View style={styles.container}>
       <Header search={true} placeholder={'搜索收藏品'} />
+      {loading && <Loading />}
       <SafeAreaView style={styles.safeArea} edges={['bottom']}>
         <View style={[styles.contentWrapper]}>
           <NFTList
             data={artworks}
-            loading={loading}
             onItemPress={handleArtworkPress}
             numColumns={2}
             ListHeaderComponent={renderHeader}

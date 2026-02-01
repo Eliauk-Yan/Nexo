@@ -1,5 +1,4 @@
-import { API_ENDPOINTS } from '@/constants/api'
-import { request } from '@/utils/request'
+import { get, put, post } from '@/utils/request'
 
 export interface UserProfile {
   id: string
@@ -30,7 +29,7 @@ export const userApi = {
    * @returns 账户信息
    */
   getUserProfile: () => {
-    return request.get<UserProfile>(API_ENDPOINTS.USER.PROFILE)
+    return get<UserProfile>('/user/profile')
   },
 
   /**
@@ -39,10 +38,22 @@ export const userApi = {
    * @returns 更新结果
    */
   updateNickName: (data: UpdateUserRequest) => {
-    return request.put<boolean>(API_ENDPOINTS.USER.UPDATE_NICK_NAME, data)
+    return put<boolean>('/user/nickName', data)
   },
 
+  /**
+   * 用户实名认证
+   * @param data
+   */
   realNameAuthentication: (data: RealNameAuthDTO) => {
-    return request.post<boolean>(API_ENDPOINTS.USER.REAL_NAME_AUTH, data)
+    return post<boolean>('/user/realNameAuth', data)
+  },
+
+  /**
+   * 更新用户头像
+   * @param data
+   */
+  updateAvatar: (data: FormData) => {
+    return put<string>('/user/avatar', data)
   },
 }

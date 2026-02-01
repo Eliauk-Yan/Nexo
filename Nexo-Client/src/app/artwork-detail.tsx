@@ -1,11 +1,14 @@
 import { artworkApi } from '@/api'
 import { LiquidGlassButton } from '@/components/ui'
+import Loading from '@/components/shared/Loading'
+import NetworkError from '@/components/shared/Network'
 import { borderRadius, colors, spacing, typography } from '@/config/theme'
 import { ArtworkDetail } from '@/api/artwork'
 import { GlassView } from 'expo-glass-effect'
 import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
+import { useFetchData } from '@/hooks/useFetchData'
 import {
     ActivityIndicator,
     ScrollView,
@@ -32,16 +35,18 @@ const ArtworkDetailScreen = () => {
     const { id } = useLocalSearchParams<{ id: string }>()
     const router = useRouter()
     const insets = useSafeAreaInsets()
-    const [detail, setDetail] = useState<ArtworkDetail | null>(null)
-    const [loading, setLoading] = useState(true)
+
+    const {
+        data: detail,
+        loading,
+        error,
+        reload,
+    } = useFetchData<ArtworkDetail>(async () => {
+        if (!id) throw new Error('No ID provided')
+        return await artworkApi.getDetail(Number(id))
+    }, [id])
 
     const rotateY = useSharedValue(0)
-
-    useEffect(() => {
-        if (id) {
-            fetchDetail(Number(id))
-        }
-    }, [id])
 
     useEffect(() => {
         // Start rotation animation
@@ -63,18 +68,6 @@ const ArtworkDetailScreen = () => {
             ],
         }
     })
-
-    const fetchDetail = async (artworkId: number) => {
-        try {
-            setLoading(true)
-            const data = await artworkApi.getDetail(artworkId)
-            setDetail(data)
-        } catch (error) {
-            console.error(error)
-        } finally {
-            setLoading(false)
-        }
-    }
 
     const handleAction = () => {
         if (detail) {
@@ -103,9 +96,14 @@ const ArtworkDetailScreen = () => {
     )
 
     if (loading) {
+        return <Loading />
+    }
+
+    if (error) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
+            <View style={styles.container}>
+                {renderHeader('藏品详情')}
+                <NetworkError onReload={reload} />
             </View>
         )
     }

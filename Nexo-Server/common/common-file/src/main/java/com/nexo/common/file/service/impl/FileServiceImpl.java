@@ -18,6 +18,7 @@ import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignReques
 import java.io.IOException;
 import java.time.Duration;
 
+import static com.nexo.common.file.constant.FileConstant.SEPARATOR;
 import static com.nexo.common.file.domain.exception.FileErrorCode.*;
 
 /**
@@ -37,6 +38,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public String uploadFile(MultipartFile file, String filePath) {
+        // 1. 上传文件
         try {
             s3Client.putObject(
                     PutObjectRequest.builder()
@@ -54,7 +56,8 @@ public class FileServiceImpl implements FileService {
             log.error("文件上传失败: {}", e.getMessage());
             throw new FileException(FILE_UPLOAD_FAILED);
         }
-        return filePath;
+        // 2. 构造文件访问路径
+        return fileProperties.getEndpoint() + SEPARATOR + fileProperties.getBucketName() + SEPARATOR + filePath;
     }
 
     @Override
@@ -74,7 +77,8 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public void deleteFile(String filePath) {
+    public void deleteFile(String fileURL) {
+        String filePath = fileURL.substring(fileURL.lastIndexOf(SEPARATOR) + 1);
         try {
             s3Client.deleteObject(DeleteObjectRequest.builder()
                     .bucket(fileProperties.getBucketName())

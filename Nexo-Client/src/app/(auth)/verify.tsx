@@ -12,11 +12,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { authApi } from '@/api'
 import { LiquidGlassButton } from '@/components/ui'
-import { ROUTES } from '@/constants/routes'
 import { borderRadius, colors, spacing, typography } from '@/config/theme'
 import { useSession } from '@/utils/ctx'
 
@@ -52,12 +51,10 @@ const Verify = () => {
     setSubmitting(true)
     try {
       const response = await authApi.login({ phone, verifyCode: code, rememberMe: true })
-      // 设置 Session (用于路由保护和存储用户信息)
+      console.log('登录相应：' + response)
       signIn(response.token, response.userInfo)
-
-      // 这里的跳转通常由路由卫视(Redirect)在 index.tsx 或 _layout.tsx 中自动完成
-      // 但为了用户体验，我们也可以手动跳转到主页或之前的页面
-      router.replace(ROUTES.TABS.HOME)
+      console.log('用户信息：' + response.userInfo)
+      router.replace('/(tabs)/account')
     } catch (error) {
       Alert.alert('登录失败', error instanceof Error ? error.message : '登录失败')
     } finally {
@@ -74,73 +71,67 @@ const Verify = () => {
 
   return (
     <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        <View style={[styles.header, { top: insets.top + spacing.md }]}>
-          <LiquidGlassButton icon="chevron-left" size={14} onPress={() => router.back()} />
-        </View>
+      <View style={[styles.header, { top: insets.top + spacing.md }]}>
+        <LiquidGlassButton icon="chevron-left" size={14} onPress={() => router.back()} />
+      </View>
 
-        <KeyboardAvoidingView
-          style={styles.keyboardView}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+          <View style={styles.codeHeader}>
+            <Text style={styles.codeTitle}>输入短信验证码</Text>
+            <Text style={styles.codeSubtitle}>验证码已发送至 {phone || '你的手机号'}</Text>
+          </View>
+
+          <View style={styles.codeInputWrapper}>
+            <TextInput
+              ref={inputRef}
+              style={styles.codeHiddenInput}
+              keyboardType="number-pad"
+              maxLength={6}
+              value={code}
+              onChangeText={handleCodeChange}
+              autoFocus
+              selectionColor={colors.primary}
+            />
+            <TouchableOpacity activeOpacity={1} onPress={() => inputRef.current?.focus()}>
+              <View style={styles.codeBoxes}>
+                {Array.from({ length: 6 }).map((_, idx) => {
+                  const char = code[idx] ?? ''
+                  const isActive = idx === code.length
+                  return (
+                    <View key={idx} style={[styles.codeBox, isActive && styles.codeBoxActive]}>
+                      <Text style={styles.codeBoxText}>{char}</Text>
+                    </View>
+                  )
+                })}
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity style={styles.resendButton} onPress={handleResend} disabled={resending}>
+            <Text style={styles.resendText}>{resending ? '发送中...' : '重新发送验证码'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.confirmBtn, submitting && styles.confirmBtnDisabled]}
+            onPress={handleConfirm}
+            disabled={submitting}
           >
-            <View style={styles.codeHeader}>
-              <Text style={styles.codeTitle}>输入短信验证码</Text>
-              <Text style={styles.codeSubtitle}>验证码已发送至 {phone || '你的手机号'}</Text>
-            </View>
-
-            <View style={styles.codeInputWrapper}>
-              <TextInput
-                ref={inputRef}
-                style={styles.codeHiddenInput}
-                keyboardType="number-pad"
-                maxLength={6}
-                value={code}
-                onChangeText={handleCodeChange}
-                autoFocus
-                selectionColor={colors.primary}
-              />
-              <TouchableOpacity activeOpacity={1} onPress={() => inputRef.current?.focus()}>
-                <View style={styles.codeBoxes}>
-                  {Array.from({ length: 6 }).map((_, idx) => {
-                    const char = code[idx] ?? ''
-                    const isActive = idx === code.length
-                    return (
-                      <View key={idx} style={[styles.codeBox, isActive && styles.codeBoxActive]}>
-                        <Text style={styles.codeBoxText}>{char}</Text>
-                      </View>
-                    )
-                  })}
-                </View>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={styles.resendButton}
-              onPress={handleResend}
-              disabled={resending}
-            >
-              <Text style={styles.resendText}>{resending ? '发送中...' : '重新发送验证码'}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.confirmBtn, submitting && styles.confirmBtnDisabled]}
-              onPress={handleConfirm}
-              disabled={submitting}
-            >
-              {submitting ? (
-                <ActivityIndicator color={colors.text} />
-              ) : (
-                <Text style={styles.confirmBtnText}>确认</Text>
-              )}
-            </TouchableOpacity>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+            {submitting ? (
+              <ActivityIndicator color={colors.text} />
+            ) : (
+              <Text style={styles.confirmBtnText}>确认</Text>
+            )}
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   )
 }
@@ -149,9 +140,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  safeArea: {
-    flex: 1,
   },
   header: {
     position: 'absolute',

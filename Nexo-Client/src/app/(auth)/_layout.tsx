@@ -7,13 +7,7 @@ import React from 'react'
  */
 export default function AuthLayout() {
     return (
-        <Stack
-            screenOptions={{
-                headerShown: false,
-                animation: 'slide_from_right', // 从右侧滑入
-                contentStyle: { backgroundColor: 'transparent' },
-            }}
-        >
+        <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="sign-in" />
             <Stack.Screen name="verify" />
         </Stack>

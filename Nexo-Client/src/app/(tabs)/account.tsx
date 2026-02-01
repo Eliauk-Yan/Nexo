@@ -2,19 +2,20 @@ import Feather from '@expo/vector-icons/Feather'
 import { useRouter } from 'expo-router'
 import React from 'react'
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Header } from '@/components/ui'
 import { borderRadius, colors, spacing, typography } from '@/config/theme'
 import { ROUTES } from '@/constants/routes'
 
-import { useAuth } from '@/hooks/useAuth'
+import { useSession } from '@/utils/ctx'
 
 const Index = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const headerHeight = insets.top + 60
-  const { user, isLogin } = useAuth()
+  const { user, session } = useSession()
+  const isLogin = !!session
 
   const actionList = [
     { label: '订单', icon: 'shopping-bag', color: '#33B5E5', onPress: () => router.push('/order') },
@@ -31,72 +32,72 @@ const Index = () => {
   return (
     <View style={styles.container}>
       <Header />
-      <SafeAreaView style={styles.safeArea} edges={['bottom']}>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={[styles.scrollContent, { paddingTop: headerHeight }]}
-        >
-          <View style={styles.userContainer}>
-            <View style={styles.avatarWrapper}>
-              <View style={styles.avatarPlaceholder}>
-                {isLogin && user?.avatarUrl ? (
-                  <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
-                ) : (
-                  <Feather name="user" size={32} color={colors.textSecondary} />
-                )}
-              </View>
-            </View>
-            <View style={styles.userInfo}>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={
-                  isLogin ? () => router.push('/setting/account') : () => router.push(ROUTES.AUTH.LOGIN)
-                }
-              >
-                <Text style={styles.nickName}>{user?.nickName || '未登录'}</Text>
-              </TouchableOpacity>
-              {!isLogin && <Text style={styles.tip}>登录后可以查看更多功能</Text>}
-              {isLogin && (
-                <View style={styles.addressContainer}>
-                  <Text style={styles.addressText}>0x71C...9A23</Text>
-                  <Feather name="copy" size={12} color={colors.textSecondary} />
-                </View>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: headerHeight }]}
+      >
+        <View style={styles.userContainer}>
+          <View style={styles.avatarWrapper}>
+            <View style={styles.avatarPlaceholder}>
+              {isLogin && user?.avatarUrl ? (
+                <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
+              ) : (
+                <Feather name="user" size={32} color={colors.textSecondary} />
               )}
             </View>
           </View>
-
-          <View style={styles.functionContainer}>
-            {actionList.map((action) => (
-              <TouchableOpacity
-                key={action.label}
-                style={styles.functionItem}
-                activeOpacity={0.8}
-                onPress={action.onPress}
-              >
-                <View style={styles.functionIcon}>
-                  <Feather name={action.icon as any} size={20} color={action.color} />
-                </View>
-                <Text style={styles.functionLabel}>{action.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          {!isLogin && (
-            <View style={styles.emptyState}>
-              <View style={styles.illustration}>
-                <Feather name="box" size={80} color={colors.textSecondary} />
+          <View style={styles.userInfo}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={
+                isLogin
+                  ? () => router.push('/setting/account')
+                  : () => router.push('/(auth)/sign-in')
+              }
+            >
+              <Text style={styles.nickName}>{user?.nickName || '未登录'}</Text>
+            </TouchableOpacity>
+            {!isLogin && <Text style={styles.tip}>登录后可以查看更多功能</Text>}
+            {isLogin && (
+              <View style={styles.addressContainer}>
+                <Text style={styles.addressText}>0x71C...9A23</Text>
+                <Feather name="copy" size={12} color={colors.textSecondary} />
               </View>
-              <Text style={styles.loginPrompt}>请登录以查看你的数字藏品</Text>
-              <TouchableOpacity
-                style={styles.loginButton}
-                activeOpacity={0.8}
-                onPress={() => router.push(ROUTES.AUTH.LOGIN)}
-              >
-                <Text style={styles.loginButtonText}>立即登录</Text>
-              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.functionContainer}>
+          {actionList.map((action) => (
+            <TouchableOpacity
+              key={action.label}
+              style={styles.functionItem}
+              activeOpacity={0.8}
+              onPress={action.onPress}
+            >
+              <View style={styles.functionIcon}>
+                <Feather name={action.icon as any} size={20} color={action.color} />
+              </View>
+              <Text style={styles.functionLabel}>{action.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {!isLogin && (
+          <View style={styles.emptyState}>
+            <View style={styles.illustration}>
+              <Feather name="box" size={80} color={colors.textSecondary} />
             </View>
-          )}
-        </ScrollView>
-      </SafeAreaView>
+            <Text style={styles.loginPrompt}>请登录以查看你的数字藏品</Text>
+            <TouchableOpacity
+              style={styles.loginButton}
+              activeOpacity={0.8}
+              onPress={() => router.push('/(auth)/sign-in')}
+            >
+              <Text style={styles.loginButtonText}>立即登录</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
     </View>
   )
 }
@@ -105,9 +106,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  safeArea: {
-    flex: 1,
   },
   scrollView: {
     flex: 1,

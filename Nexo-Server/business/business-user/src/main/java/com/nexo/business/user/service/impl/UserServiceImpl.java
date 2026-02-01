@@ -96,7 +96,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             fileService.deleteFile(currentUser.getAvatarUrl());
         }
         // 4. 设置文件路径（模块 + 唯一标识 + 功能 + 时间）
-        String filePath = "/user/" + userId + "/avatar/" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String filePath = "user/" + userId + "/avatar/" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         // 5. 上传文件
         String avatarUrl = fileService.uploadFile(avatar, filePath);
         // 5. 更新用户信息

@@ -1,5 +1,5 @@
 import { API_ENDPOINTS } from '@/constants/api'
-import { request } from '@/utils/request'
+import { get } from '@/utils/request'
 
 export interface Artwork {
   id: number
@@ -42,13 +42,13 @@ export const artworkApi = {
    * 获取藏品列表
    */
   list: (param: QueryArtWorkRequest) => {
-    return request.get<Artwork[]>(API_ENDPOINTS.ARTWORK.LIST, param)
+    return get<Artwork[]>(API_ENDPOINTS.ARTWORK.LIST, param)
   },
 
   /**
    * 获取藏品详情
    */
   getDetail: (id: number) => {
-    return request.get<ArtworkDetail>(`${API_ENDPOINTS.ARTWORK.DETAIL}/${id}`)
+    return get<ArtworkDetail>(`${API_ENDPOINTS.ARTWORK.DETAIL}/${id}`)
   },
 }

@@ -1,8 +1,8 @@
 import Feather from '@expo/vector-icons/Feather'
 import { useRouter } from 'expo-router'
+import Loading from '@/components/shared/Loading'
 import React, { useState } from 'react'
 import {
-  ActivityIndicator,
   Alert,
   ScrollView,
   StyleSheet,
@@ -11,31 +11,32 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { authApi } from '@/api'
 import { LiquidGlassButton } from '@/components/ui'
 import { ROUTES } from '@/constants/routes'
 import { borderRadius, colors, spacing, typography } from '@/config/theme'
+import Spinner from 'react-native-loading-spinner-overlay'
 
 const Login = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const [phone, setPhone] = useState('')
-  const [sending, setSending] = useState(false)
+  // 加载状态
+  const [loading, setLoading] = useState(false)
   const [agreed, setAgreed] = useState(false)
 
   const handleSendCode = async () => {
-    if (sending || !canSubmit) return
-
-    setSending(true)
+    if (loading || !canSubmit) return
+    setLoading(true)
     try {
       await authApi.sendVerificationCode(phone)
       router.push({ pathname: ROUTES.AUTH.VERIFY, params: { phone } })
     } catch (error) {
       Alert.alert('错误', error instanceof Error ? error.message : '发送验证码失败')
     } finally {
-      setSending(false)
+      setLoading(false)
     }
   }
 
@@ -44,125 +45,120 @@ const Login = () => {
 
   return (
     <View style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
-        <View style={[styles.header, { top: insets.top }]}>
-          <View>
-            <LiquidGlassButton icon="chevron-left" size={14} onPress={() => router.back()} />
-          </View>
+      <Spinner visible={loading} />
+      <View style={[styles.header, { top: insets.top }]}>
+        <View>
+          <LiquidGlassButton icon="chevron-left" size={14} onPress={() => router.back()} />
+        </View>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.logoBlock}>
+          <Text style={styles.logoTitle}>NEXO</Text>
+          <Text style={styles.logoSubtitle}>开启数字藏品之旅</Text>
         </View>
 
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.logoBlock}>
-            <Text style={styles.logoTitle}>NEXO</Text>
-            <Text style={styles.logoSubtitle}>开启数字藏品之旅</Text>
-          </View>
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>手机号</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="请输入手机号"
+            placeholderTextColor={colors.textSecondary}
+            keyboardType="phone-pad"
+            value={phone}
+            onChangeText={setPhone}
+            selectionColor={colors.primary}
+            autoCapitalize="none"
+            autoCorrect={false}
+            maxLength={11}
+          />
+        </View>
 
-          <View style={styles.fieldGroup}>
-            <Text style={styles.label}>手机号</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="请输入手机号"
-              placeholderTextColor={colors.textSecondary}
-              keyboardType="phone-pad"
-              value={phone}
-              onChangeText={setPhone}
-              selectionColor={colors.primary}
-              autoCapitalize="none"
-              autoCorrect={false}
-              maxLength={11}
-            />
-          </View>
-
-          <View style={styles.agreementRow}>
-            <TouchableOpacity
-              onPress={() => setAgreed(!agreed)}
-              activeOpacity={0.7}
-              style={styles.checkboxContainer}
-            >
-              <Feather
-                name={agreed ? 'check-square' : 'square'}
-                size={20}
-                color={agreed ? colors.primary : colors.border}
-              />
-            </TouchableOpacity>
-            <Text style={styles.agreementText}>
-              同意
-              <Text
-                style={styles.linkText}
-                onPress={() => {
-                  // TODO: 跳转到用户协议页面
-                  console.log('打开用户协议')
-                }}
-              >
-                《用户协议》
-              </Text>
-              与
-              <Text
-                style={styles.linkText}
-                onPress={() => {
-                  // TODO: 跳转到隐私政策页面
-                  console.log('打开隐私政策')
-                }}
-              >
-                《隐私政策》
-              </Text>
-            </Text>
-          </View>
-
+        <View style={styles.agreementRow}>
           <TouchableOpacity
-            style={[styles.submitBtn, (!canSubmit || sending) && styles.submitBtnDisabled]}
-            activeOpacity={0.8}
-            onPress={handleSendCode}
-            disabled={!canSubmit || sending}
+            onPress={() => setAgreed(!agreed)}
+            activeOpacity={0.7}
+            style={styles.checkboxContainer}
           >
-            {sending ? (
-              <ActivityIndicator color={colors.text} />
-            ) : (
-              <Text style={styles.submitBtnText}>发送手机验证码</Text>
-            )}
+            <Feather
+              name={agreed ? 'check-square' : 'square'}
+              size={20}
+              color={agreed ? colors.primary : colors.border}
+            />
           </TouchableOpacity>
+          <Text style={styles.agreementText}>
+            同意
+            <Text
+              style={styles.linkText}
+              onPress={() => {
+                // TODO: 跳转到用户协议页面
+                console.log('打开用户协议')
+              }}
+            >
+              《用户协议》
+            </Text>
+            与
+            <Text
+              style={styles.linkText}
+              onPress={() => {
+                // TODO: 跳转到隐私政策页面
+                console.log('打开隐私政策')
+              }}
+            >
+              《隐私政策》
+            </Text>
+          </Text>
+        </View>
 
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>其他登录方式</Text>
-            <View style={styles.dividerLine} />
-          </View>
+        <TouchableOpacity
+          style={[styles.submitBtn, (!canSubmit || loading) && styles.submitBtnDisabled]}
+          activeOpacity={0.8}
+          onPress={handleSendCode}
+          disabled={!canSubmit || loading}
+        >
+          <Text style={styles.submitBtnText}>发送手机验证码</Text>
+        </TouchableOpacity>
 
-          <View style={styles.otherLoginRow}>
-            <LiquidGlassButton
-              icon="weixin"
-              size={24}
-              color="#07C160"
-              onPress={() => {
-                // TODO: 微信登录
-                console.log('微信登录')
-              }}
-            />
-            <LiquidGlassButton
-              icon="alipay"
-              size={24}
-              color="#1677FF"
-              onPress={() => {
-                // TODO: 支付宝登录
-                console.log('支付宝登录')
-              }}
-            />
-            <LiquidGlassButton
-              icon="apple"
-              size={24}
-              color="#FFFFFF"
-              onPress={() => {
-                // TODO: 苹果登录
-                console.log('苹果登录')
-              }}
-            />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>其他登录方式</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        <View style={styles.otherLoginRow}>
+          <LiquidGlassButton
+            icon="weixin"
+            size={24}
+            color="#07C160"
+            onPress={() => {
+              // TODO: 微信登录
+              console.log('微信登录')
+            }}
+          />
+          <LiquidGlassButton
+            icon="alipay"
+            size={24}
+            color="#1677FF"
+            onPress={() => {
+              // TODO: 支付宝登录
+              console.log('支付宝登录')
+            }}
+          />
+          <LiquidGlassButton
+            icon="apple"
+            size={24}
+            color="#FFFFFF"
+            onPress={() => {
+              // TODO: 苹果登录
+              console.log('苹果登录')
+            }}
+          />
+        </View>
+      </ScrollView>
     </View>
   )
 }

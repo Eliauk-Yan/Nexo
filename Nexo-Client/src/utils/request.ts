@@ -2,116 +2,80 @@
 import urlcat from 'urlcat'
 import * as SecureStore from 'expo-secure-store'
 
-/**
- * 请求配置项接口
- */
+// 定义请求选项接口
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
-  params?: Record<string, any>
+  params?: any
   body?: any
-  headers?: Record<string, string>
 }
-
-/**
- * 自定义错误类型，包含后端返回的业务错误
- */
-export interface ApiError extends Error {
+// 定义 API 错误接口
+interface ApiError extends Error {
   status?: number
-  code?: string | number
   errors?: any
 }
-
+// 定义存储键
 const STORAGE_KEYS = {
   TOKEN: 'satoken',
 }
 
-/**
- * 基础请求函数
- */
-const baseRequest = async <T = any>(
-  url: string,
-  { method = 'GET', params, body, headers: customHeaders }: RequestOptions = {},
-): Promise<T> => {
-  // 完整的接口地址
-  const apiUrl = process.env.EXPO_PUBLIC_API_BASE_URL || ''
-  const requestUrl = urlcat(apiUrl, url, params || {})
-
-  // 从存储中获取 token
-  let token = null
-  try {
-    token = await SecureStore.getItemAsync(STORAGE_KEYS.TOKEN)
-  } catch (e) {
-    console.error('Failed to get token from SecureStore', e)
-  }
-
-  // 请求头
+const request = async (url: string, { method = 'GET', params, body }: RequestOptions) => {
+  // 1. 从环境变量中获取基础 API 地址
+  const apiUrl = process.env.EXPO_PUBLIC_API_BASE_URL
+  // 2. 构建完整的请求 URL
+  const requestUrl = urlcat(apiUrl, url, params)
+  // 3. 设置请求头
   const headers: Record<string, string> = {
     Accept: 'application/json',
-    'Content-Type': 'application/json',
-    ...customHeaders,
   }
 
+  // 如果不是 FormData，则设置 Content-Type 为 application/json
+  if (!(body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json'
+  }
+
+  // 4. 从安全存储中获取 token
+  const token = await SecureStore.getItemAsync(STORAGE_KEYS.TOKEN).catch((e) => {
+    console.error('从安全存储中获取token失败', e)
+    return null // 出错时返回 null
+  })
+  // 5. 如果有 token，则添加到请求头
   if (token) {
-    headers['satoken'] = token // 根据后端要求可能叫 Authorization 或 satoken
+    headers['satoken'] = token
   }
-
+  // 6. 设置请求配置
   const config: RequestInit = {
     method,
     headers,
-    ...(body && { body: JSON.stringify(body) }),
+    body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
   }
-
+  // 7. 发送请求
   const response = await fetch(requestUrl, config)
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      // 处理未授权/登录超时
-      // TODO: 可以触发全局退出逻辑或跳转
-      console.warn('Unauthorized request - 401')
-    }
-
+  const res = await response.json()
+  // 8. 处理响应
+  if (!response.ok || res.success === false) {
+    // 9. 处理错误响应
     const errorData = await response.json().catch(() => ({}))
-    const error = new Error(errorData.message || '请求失败') as ApiError
+    const error = new Error(errorData.message || '未知错误') as ApiError
     error.status = response.status
     error.errors = errorData.errors
     throw error
   }
-
-  const json = await response.json()
-
-  // Business logic error handling (backend returns 200 but success is false)
-  if (json && typeof json === 'object' && 'success' in json) {
-    if (json.success === false) {
-      const error = new Error(json.message || 'API request failed') as ApiError
-      error.status = response.status
-      error.code = json.code
-      throw error
-    }
-    // Return the data field if it exists, otherwise return the whole json
-    return (json.data !== undefined ? json.data : json) as T
-  }
-
-  return json as T
+  // 10. 处理成功响应
+  return res.data
 }
 
-/**
- * 导出的请求对象，适配现有调用方式
- */
-export const request = {
-  get: <T = any>(url: string, params?: Record<string, any>) =>
-    baseRequest<T>(url, { method: 'GET', params }),
+export const get = <T = any>(url: string, params?: any): Promise<T> =>
+  request(url, { method: 'GET', params })
 
-  post: <T = any>(url: string, body?: any) =>
-    baseRequest<T>(url, { method: 'POST', body }),
+export const post = <T = any>(url: string, body?: any): Promise<T> =>
+  request(url, { method: 'POST', body })
 
-  put: <T = any>(url: string, body?: any) =>
-    baseRequest<T>(url, { method: 'PUT', body }),
+export const put = <T = any>(url: string, body?: any): Promise<T> =>
+  request(url, { method: 'PUT', body })
 
-  patch: <T = any>(url: string, body?: any) =>
-    baseRequest<T>(url, { method: 'PATCH', body }),
+export const patch = <T = any>(url: string, body?: any): Promise<T> =>
+  request(url, { method: 'PATCH', body })
 
-  delete: <T = any>(url: string) =>
-    baseRequest<T>(url, { method: 'DELETE' }),
-}
+export const del = <T = any>(url: string): Promise<T> => request(url, { method: 'DELETE' })
 
 export default request
