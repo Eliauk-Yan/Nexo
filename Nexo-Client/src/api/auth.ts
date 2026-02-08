@@ -1,4 +1,4 @@
-import { post } from '@/utils/request'
+import { post, get } from '@/utils/request'
 
 /**
  * 登录表单
@@ -28,6 +28,11 @@ export interface LoginResponse {
   userInfo: UserInfo
 }
 
+export interface TokenRequest {
+  scene: string
+  key: string
+}
+
 export const authApi = {
   /**
    * 发送验证码
@@ -53,5 +58,12 @@ export const authApi = {
    */
   logout: () => {
     return post('/auth/logout', undefined)
+  },
+
+  /**
+   * 获取放重token
+   */
+  getToken: (request: TokenRequest) => {
+    return get<string>('/token/get', request)
   },
 }

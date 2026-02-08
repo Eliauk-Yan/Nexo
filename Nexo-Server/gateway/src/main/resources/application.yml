@@ -25,7 +25,7 @@ spring:
             - id: auth
               uri: lb://auth
               predicates:
-                - Path=/auth/**
+                - Path=/auth/**, /token/**
             # 用户服务路由
             - id: business-user
               uri: lb://business-user

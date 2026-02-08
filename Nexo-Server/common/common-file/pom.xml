@@ -46,7 +46,6 @@
             <artifactId>common-base</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-
         <!--RUSTFS-->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>

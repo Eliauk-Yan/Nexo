@@ -7,10 +7,7 @@ import com.nexo.auth.service.AuthService;
 import com.nexo.common.limiter.annotation.RateLimit;
 import com.nexo.common.web.result.Result;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @classname AuthController

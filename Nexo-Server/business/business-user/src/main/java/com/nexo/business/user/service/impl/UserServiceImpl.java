@@ -70,14 +70,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public UserInfo queryUserByPhone(String phone) {
-        // 1. 根据手机号查询用户信息
-        User user = this.getOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone).eq(User::getDeleted, 0));
-        // 2. 实体转换为DTO
-        return userConverter.userToUserInfo(user);
-    }
-
-    @Override
     public UserProfileVO getUserProfile() {
         // 1. 获取当前登录用户ID
         long userId = StpUtil.getLoginIdAsLong();
@@ -114,6 +106,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         user.setNickName(nickName);
         // 4. 返回更新结果
         return this.updateById(user);
+    }
+
+    @Override
+    public UserInfo queryUserByPhone(String phone) {
+        // 1. 根据手机号查询用户信息
+        User user = this.getOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
+        // 2. 实体转换为DTO
+        return userConverter.userToUserInfo(user);
+    }
+
+    @Override
+    public UserInfo queryUserById(Long id) {
+        // 1. 根据手机号查询用户信息
+        User user = this.getOne(new LambdaQueryWrapper<User>().eq(User::getId, id));
+        // 2. 实体转换为DTO
+        return userConverter.userToUserInfo(user);
     }
 
 }

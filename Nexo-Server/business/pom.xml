@@ -21,6 +21,9 @@
         <module>business-transaction</module>
         <module>business-blockchain</module>
         <module>business-product</module>
+        <module>business-trade</module>
+        <module>business-artwork</module>
+        <module>business-inventory</module>
     </modules>
 
     <properties>

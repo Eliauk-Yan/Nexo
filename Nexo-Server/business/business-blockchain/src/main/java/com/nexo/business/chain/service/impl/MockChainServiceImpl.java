@@ -7,7 +7,7 @@ import com.nexo.business.chain.api.response.ChainProviderResponse;
 import com.nexo.business.chain.domain.enums.ChainType;
 import com.nexo.business.chain.service.ChainOperationLogService;
 import com.nexo.business.chain.service.impl.base.AbstractChainService;
-import com.nexo.common.api.base.response.ResponseCode;
+import com.nexo.common.api.common.response.ResponseCode;
 import com.nexo.common.api.blockchain.request.ChainRequest;
 import com.nexo.common.api.blockchain.response.ChainResponse;
 import com.nexo.common.api.blockchain.response.data.ChainCreateData;

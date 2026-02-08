@@ -1,0 +1,19 @@
+spring:
+  cloud:
+    stream:
+      rocketmq:
+        # RocketMQ Binder（适配器）的具体配置
+        binder:
+          # RocketMQ 的名字服务地址（集群地址用逗号隔开）
+          # StreamBridge 发送消息时，底层会通过这个地址找到 Broker
+          name-server: 47.99.39.81:9876
+
+rocketmq:
+  # 原生 RocketMQ Spring Boot Starter 的配置
+  # 当你在项目中同时引入了 rocketmq-spring-boot-starter 时需要此配置
+  name-server: 47.99.39.81:9876
+
+  broker:
+    # 是否在启动时检查 Broker 的状态
+    # 设置为 false 可以防止在 Broker 未启动或网络波动时导致应用启动失败（常用于开发环境）
+    check: true

@@ -248,3 +248,107 @@ CREATE TABLE `trade_order_stream`
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
 ;
+
+CREATE TABLE `artwork_stream`
+(
+    `id`                 bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID（自增主键）',
+    `name`               varchar(512) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT '藏品名称',
+    `cover`              varchar(512) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT '藏品封面',
+    `class_id`           varchar(128) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT '藏品类目ID',
+    `artwork_id`         bigint                             DEFAULT NULL COMMENT '藏品id',
+    `price`              decimal(18, 6)                     DEFAULT NULL COMMENT '价格',
+    `quantity`           bigint                             DEFAULT NULL COMMENT '藏品数量',
+    `description`        text CHARACTER SET utf8mb4 COMMENT '详情',
+    `state`              varchar(128) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT '状态',
+    `saleable_inventory` bigint                             DEFAULT NULL COMMENT '可售库存',
+    `occupied_inventory` bigint                             DEFAULT NULL COMMENT '已占库存',
+    `frozen_inventory`   bigint                             DEFAULT NULL COMMENT '冻结库存',
+    `create_time`        datetime                           DEFAULT NULL COMMENT '藏品创建时间',
+    `stream_type`        varchar(128) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT '流水类型',
+    `sale_time`          datetime                           DEFAULT NULL COMMENT '藏品发售时间',
+    `sync_chain_time`    datetime                           DEFAULT NULL COMMENT '藏品上链时间',
+    `identifier`         varchar(128)                       DEFAULT NULL COMMENT '幂等号',
+    `deleted`            int                                DEFAULT NULL COMMENT '是否逻辑删除，0为未删除，非0为已删除',
+    `version`            int                                DEFAULT NULL COMMENT '乐观锁版本号',
+    `create_at`          datetime        NOT NULL COMMENT '创建时间',
+    `update_at`          datetime        NOT NULL COMMENT '最后更新时间',
+    PRIMARY KEY (`id`),
+    Unique KEY `uk_cid_type_iden` (`artwork_id`, `stream_type`, `identifier`) USING BTREE
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 209
+  DEFAULT CHARSET = utf8mb4
+  AVG_ROW_LENGTH = 16384
+  ROW_FORMAT = DYNAMIC COMMENT ='藏品流水表'
+;
+
+
+CREATE TABLE `asset_stream`
+(
+    `id`          bigint       NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `asset_id`    bigint       NOT NULL COMMENT '持有藏品的id',
+    `stream_type` varchar(64)  NOT NULL COMMENT '流水类型',
+    `operator`    varchar(64)  NOT NULL COMMENT '操作者',
+    `identifier`  varchar(128) NOT NULL COMMENT '幂等号',
+    `deleted`     int DEFAULT NULL COMMENT '是否逻辑删除，0为未删除，非0为已删除',
+    `version`     int DEFAULT NULL COMMENT '乐观锁版本号',
+    `create_at`   datetime     NOT NULL COMMENT '创建时间',
+    `update_at`   datetime     NOT NULL COMMENT '最后更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_held_id` (`asset_id`) USING BTREE,
+    Unique KEY `uk_held_id_type_iden` (`asset_id`, `stream_type`, `identifier`) USING BTREE
+) ENGINE = InnoDB
+  DEFAULT CHARACTER SET = utf8
+    COMMENT ='资产流水表';
+
+
+CREATE TABLE `artwork_inventory_stream`
+(
+    `id`                 bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID（自增主键）',
+    `artwork_id`      bigint                             DEFAULT NULL COMMENT '藏品id',
+    `changed_quantity`   bigint                             DEFAULT NULL COMMENT '本次变更的数量',
+    `price`              decimal(18, 6)                     DEFAULT NULL COMMENT '价格',
+    `quantity`           bigint                             DEFAULT NULL COMMENT '藏品数量',
+    `state`              varchar(128) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT '状态',
+    `saleable_inventory` bigint                             DEFAULT NULL COMMENT '可售库存',
+    `occupied_inventory` bigint                             DEFAULT NULL COMMENT '已占库存',
+    `frozen_inventory`   bigint                             DEFAULT NULL COMMENT '冻结库存',
+    `stream_type`        varchar(128) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT '流水类型',
+    `identifier`         varchar(128)                       DEFAULT NULL COMMENT '幂等号',
+    `extend_info`        varchar(512)                       DEFAULT NULL COMMENT '扩展信息',
+    `deleted`     int DEFAULT NULL COMMENT '是否逻辑删除，0为未删除，非0为已删除',
+    `version`     int DEFAULT NULL COMMENT '乐观锁版本号',
+    `create_at`   datetime     NOT NULL COMMENT '创建时间',
+    `update_at`   datetime     NOT NULL COMMENT '最后更新时间',
+    PRIMARY KEY (`id`),
+    Unique KEY `uk_cid_ident_type` (`artwork_id`, `identifier`, `stream_type`) USING BTREE
+) ENGINE = InnoDB
+  AUTO_INCREMENT = 246
+  DEFAULT CHARSET = utf8mb4
+  AVG_ROW_LENGTH = 16384
+  ROW_FORMAT = DYNAMIC COMMENT ='藏品库存流水表 '
+;
+
+
+CREATE TABLE `artwork_snapshot`
+(
+    `id`                 bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '主键ID（自增主键）',
+    `artwork_id`      bigint   NOT NULL COMMENT '藏品id',
+    `name`               varchar(512)   DEFAULT NULL COMMENT '藏品名称',
+    `cover`              varchar(512)   DEFAULT NULL COMMENT '藏品封面',
+    `class_id`           varchar(128)   DEFAULT NULL COMMENT '藏品类目ID',
+    `price`              decimal(18, 6) DEFAULT NULL COMMENT '价格',
+    `quantity`           bigint         DEFAULT NULL COMMENT '藏品数量',
+    `detail`             text COMMENT '详情',
+    `saleable_inventory` bigint         DEFAULT NULL COMMENT '可销售库存',
+    `create_time`        datetime       DEFAULT NULL COMMENT '藏品创建时间',
+    `sale_time`          datetime       DEFAULT NULL COMMENT '藏品发售时间',
+    `sync_chain_time`    datetime       DEFAULT NULL COMMENT '藏品上链时间',
+    `creator_id`         varchar(128)   DEFAULT NULL COMMENT '创建者',
+    `update_version`            int            DEFAULT NULL COMMENT '修改版本',
+    `deleted`     int DEFAULT NULL COMMENT '是否逻辑删除，0为未删除，非0为已删除',
+    `version`     int DEFAULT NULL COMMENT '乐观锁版本号',
+    `create_at`   datetime     NOT NULL COMMENT '创建时间',
+    `update_at`   datetime     NOT NULL COMMENT '最后更新时间',
+    PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10017 DEFAULT CHARSET=utf8mb4  COMMENT='藏品快照表'
+;

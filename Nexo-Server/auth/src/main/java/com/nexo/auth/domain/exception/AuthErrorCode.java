@@ -16,7 +16,7 @@ public enum AuthErrorCode implements ErrorCode {
 
     USER_EXIST("USER_EXIST", "用户已存在"),
 
-    TOKEN_KEY_ERROR("TOKEN_KEY_ERROR", "用户 KEY 错误"),
+    TOKEN_KEY_ERROR("TOKEN_KEY_ERROR", "TOKEN KEY 错误"),
 
     USER_NOT_LOGIN("USER_NOT_LOGIN", "用户未登录");
 

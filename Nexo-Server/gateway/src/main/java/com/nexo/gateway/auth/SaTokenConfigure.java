@@ -22,23 +22,23 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @Slf4j
 public class SaTokenConfigure {
+
     // 注册 Sa-Token全局过滤器
     @Bean
     public SaReactorFilter getSaReactorFilter() {
         return new SaReactorFilter()
                 // 拦截地址
-                .addInclude("/**")    /* 拦截全部path */
+                .addInclude("/**")
                 // 开放地址
-                .addExclude("/favicon.ico", "/auth/**")
+                .addExclude("/favicon.ico")
                 // 鉴权方法：每次访问进入
                 .setAuth(obj -> {
-                    // 登录校验 -- 拦截所有路由，排除认证接口
+                    // 登录校验
                     SaRouter.match("/**", "/auth/**", _ -> StpUtil.checkLogin());
-
-                    // 管理端角色校验
+                    // 管理端模块 -> 用户角色校验
                     SaRouter.match("/admin/**", r -> StpUtil.checkRoleOr(UserRole.ADMIN.getCode(), UserRole.ROOT.getCode(), UserRole.GOD.getCode()));
-                    // TODO 后续添加更细粒度的权限认证
-
+                    // 交易模块 -> 认证权限校验（未认证的用户无法下单）
+                    SaRouter.match("/trade/**", r -> StpUtil.checkPermission(UserPermission.AUTHENTICATE.name()));
                 })
                 // 异常处理方法：每次setAuth函数出现异常时进入
                 .setError(this::getSaResult);

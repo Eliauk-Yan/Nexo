@@ -33,13 +33,13 @@ public class WebConfiguration {
      * 注册自定义 Token 过滤器
      */
     @Bean
-    public FilterRegistrationBean<TokenFilter> tokenFilter(RedissonClient redissonClient, StringRedisTemplate stringRedisTemplate) {
+    public FilterRegistrationBean<TokenFilter> tokenFilter(StringRedisTemplate redisTemplate) {
         // 1. 创建过滤器注册对象
         FilterRegistrationBean<TokenFilter> registrationBean = new FilterRegistrationBean<>();
         // 2. 设置过滤器
-        registrationBean.setFilter(new TokenFilter(redissonClient, stringRedisTemplate));
+        registrationBean.setFilter(new TokenFilter(redisTemplate));
         // 3. 设置过滤路径
-        registrationBean.addUrlPatterns("/trade/buy","/trade/newBuy","/trade/normalBuy","/trade/newBuyPlus");
+        registrationBean.addUrlPatterns("/trade/buy");
         // 4. 设置过滤器优先级
         registrationBean.setOrder(10);
         // 5. 返回注册对象

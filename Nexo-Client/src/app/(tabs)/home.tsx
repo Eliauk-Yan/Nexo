@@ -1,22 +1,20 @@
-/**
- * Home screen
- */
 import { artworkApi } from '@/api'
-import { NFTList } from '@/components/business/NFTList'
-import { Header } from '@/components/ui'
+import { NFTCard } from '@/components/ui/NFTCard'
+import LiquidGlassSearchBar from '@/components/ui/LiquidGlassSearch'
 import { colors, spacing, typography } from '@/config/theme'
 import { Artwork } from '@/api/artwork'
 import React, { useCallback, useEffect, useState } from 'react'
-import { RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { RefreshControl, StyleSheet, Text, View, FlatList } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useRouter } from 'expo-router'
-import Loading from '@/components/shared/Loading'
+import Spinner from 'react-native-loading-spinner-overlay'
 
 const Home = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const headerHeight = insets.top + 60
+
   const [artworks, setArtworks] = useState<Artwork[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -37,20 +35,11 @@ const Home = () => {
   }, [])
 
   useEffect(() => {
-    fetchTrending()
+    fetchTrending().catch((err) => console.error(err))
   }, [fetchTrending])
 
   const handleArtworkPress = (artwork: Artwork) => {
-    router.push({ pathname: '/artwork-detail', params: { id: artwork.id } })
-  }
-
-  const handleSearch = (keyword: string) => {
-    console.log('Search:', keyword)
-  }
-
-  const handleViewAll = () => {
-    // router.push(ROUTES.MARKET.LIST)
-    console.log('View all pressed')
+    router.push({ pathname: '/artwork', params: { id: artwork.id } })
   }
 
   const renderHeader = () => (
@@ -59,24 +48,35 @@ const Home = () => {
     </View>
   )
 
-  const renderFooter = () => (
-    <TouchableOpacity style={styles.viewAllButton} onPress={handleViewAll}>
-      <Text style={styles.viewAllText}>查看全部</Text>
-    </TouchableOpacity>
+  const renderItem = ({ item }: { item: Artwork }) => (
+    <View style={styles.itemContainer}>
+      <NFTCard artwork={item} onPress={handleArtworkPress} />
+    </View>
   )
 
   return (
     <View style={styles.container}>
-      <Header search={true} placeholder={'搜索收藏品'} />
-      {loading && <Loading />}
+      <Spinner visible={loading} />
+      <View style={[styles.headerWrap, { paddingTop: insets.top }]}>
+        <LiquidGlassSearchBar
+          placeholder={'搜索收藏品'}
+          onSubmit={(t) => console.log('submit:', t)}
+          onPressAction={() => router.push('/notification')}
+          actionIcon="bell"
+          glassStyle="regular"
+          tintColor="rgba(255,255,255,0.12)"
+          search={true}
+        />
+      </View>
       <SafeAreaView style={styles.safeArea} edges={['bottom']}>
         <View style={[styles.contentWrapper]}>
-          <NFTList
+          <FlatList
             data={artworks}
-            onItemPress={handleArtworkPress}
+            renderItem={renderItem}
+            keyExtractor={(item) => String(item.id)}
             numColumns={2}
+            columnWrapperStyle={styles.row}
             ListHeaderComponent={renderHeader}
-            ListFooterComponent={renderFooter}
             refreshControl={
               <RefreshControl
                 refreshing={loading}
@@ -85,6 +85,7 @@ const Home = () => {
               />
             }
             contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}
+            showsVerticalScrollIndicator={false}
           />
         </View>
       </SafeAreaView>
@@ -104,12 +105,29 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+    padding: spacing.sm,
     paddingBottom: spacing.xl,
+  },
+  row: {
+    justifyContent: 'space-between',
+  },
+  itemContainer: {
+    flex: 1,
+    margin: spacing.xs,
+    maxWidth: '48%',
   },
   header: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
+  },
+  headerWrap: {
+    paddingHorizontal: 16,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
   },
   sectionTitle: {
     fontSize: typography.fontSize.xl,
@@ -131,6 +149,7 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.md,
     color: colors.primary,
     fontWeight: typography.fontWeight.medium,
+    backgroundColor: 'transparent',
   },
 })
 

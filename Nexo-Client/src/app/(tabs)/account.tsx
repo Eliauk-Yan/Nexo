@@ -4,16 +4,14 @@ import React from 'react'
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { Header } from '@/components/ui'
+import LiquidGlassSearchBar from '@/components/ui/LiquidGlassSearch'
 import { borderRadius, colors, spacing, typography } from '@/config/theme'
-import { ROUTES } from '@/constants/routes'
 
 import { useSession } from '@/utils/ctx'
 
 const Index = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
-  const headerHeight = insets.top + 60
   const { user, session } = useSession()
   const isLogin = !!session
 
@@ -25,16 +23,24 @@ const Index = () => {
       color: '#FFFFFF',
       onPress: () => router.push('/setting'),
     },
-    { label: '区块链', icon: 'link', color: '#D4AF37', onPress: () => { } },
-    { label: '批量转赠', icon: 'send', color: '#00C851', onPress: () => { } },
+    { label: '区块链', icon: 'link', color: '#D4AF37', onPress: () => {} },
+    { label: '批量转赠', icon: 'send', color: '#00C851', onPress: () => {} },
   ]
 
   return (
     <View style={styles.container}>
-      <Header />
+      <View style={[styles.headerWrap, { paddingTop: insets.top }]}>
+        <LiquidGlassSearchBar
+          onSubmit={(t) => console.log('submit:', t)}
+          onPressAction={() => router.push('/notification')}
+          actionIcon="bell"
+          glassStyle="regular"
+          tintColor="rgba(255,255,255,0.12)"
+        />
+      </View>
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: headerHeight }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 50 }]}
       >
         <View style={styles.userContainer}>
           <View style={styles.avatarWrapper}>
@@ -106,6 +112,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  headerWrap: {
+    paddingHorizontal: 16,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
   },
   scrollView: {
     flex: 1,

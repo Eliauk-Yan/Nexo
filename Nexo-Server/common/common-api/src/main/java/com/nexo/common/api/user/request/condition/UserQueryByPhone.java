@@ -2,6 +2,7 @@ package com.nexo.common.api.user.request.condition;
 
 
 import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * @classname UserQueryByPhone
@@ -9,7 +10,7 @@ import java.io.Serial;
  * @date 2025/12/03 12:56
  * @created by YanShijie
  */
-public record UserQueryByPhone(String phone) implements UserQueryCondition {
+public record UserQueryByPhone(String phone) implements UserQueryCondition, Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

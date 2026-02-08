@@ -4,6 +4,7 @@ import com.nexo.business.user.service.UserService;
 import com.nexo.common.api.user.UserFacade;
 import com.nexo.common.api.user.request.UserQueryRequest;
 import com.nexo.common.api.user.request.UserRegisterRequest;
+import com.nexo.common.api.user.request.condition.UserQueryById;
 import com.nexo.common.api.user.request.condition.UserQueryByPhone;
 import com.nexo.common.api.user.response.UserQueryResponse;
 import com.nexo.common.api.user.response.UserResponse;
@@ -28,6 +29,7 @@ public class UserFacadeImpl implements UserFacade {
         // 1. 根据条件查询用户信息
         UserInfo info = switch (request.getCondition()) {
             case UserQueryByPhone(String phone) -> userService.queryUserByPhone(phone);
+            case UserQueryById(Long id) -> userService.queryUserById(id);
         };
         // 2. 组装响应结果
         UserQueryResponse<UserInfo> response = new UserQueryResponse<>();

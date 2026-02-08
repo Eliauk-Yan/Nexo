@@ -15,14 +15,6 @@ public interface UserService extends IService<User> {
      */
     void register(String phone, String inviteCode);
 
-
-    /**
-     * 根据手机号查询用户信息
-     * @param phone 手机号
-     * @return 用户信息
-     */
-    UserInfo queryUserByPhone(String phone);
-
     /**
      * 获取用户信息
      * @return 用户信息
@@ -41,5 +33,19 @@ public interface UserService extends IService<User> {
      * @return 昵称
      */
     Boolean updateNickName(String nickName);
+
+    /**
+     * 根据id查询用户信息
+     * @param id id
+     * @return 用户信息
+     */
+    UserInfo queryUserById(Long id);
+
+    /**
+     * 根据手机号查询用户信息
+     * @param phone 手机号
+     * @return 用户信息
+     */
+    UserInfo queryUserByPhone(String phone);
 
 }

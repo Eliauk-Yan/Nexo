@@ -1,0 +1,13 @@
+server:
+  port: 8097
+spring:
+  config:
+    import:
+      - classpath:/datasource.yml
+      - classpath:/rpc.yml
+      - classpath:/config.yml
+      - classpath:/cache.yml
+      - classpath:/file.yml
+      - classpath:/base.yml
+  application:
+    name: business-inventory

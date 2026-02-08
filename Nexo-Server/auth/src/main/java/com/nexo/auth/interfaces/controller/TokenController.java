@@ -10,19 +10,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * @classname TokenController
- * @description TODO
+ * @description 防止订单重复提交
  * @date 2026/01/08 23:03
  */
 @RestController
-@RequestMapping("token")
+@RequestMapping("/token")
 @RequiredArgsConstructor
 public class TokenController {
 
     private final TokenService tokenService;
 
-    @GetMapping("get")
-    public Result<String> getToken(TokenDTO dto) {
-        return Result.success(tokenService.getToken(dto.getKey()));
+    @GetMapping("/get")
+    public Result<String> getToken(TokenDTO tokenDTO) {
+        return Result.success(tokenService.getToken(tokenDTO));
     }
 
 }

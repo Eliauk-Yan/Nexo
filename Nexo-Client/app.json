@@ -47,7 +47,16 @@
         {
           "photosPermission": "The app accesses your photos to let you share them with your friends."
         }
-      ]
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraProguardRules": "-keep class com.tencent.mm.opensdk.** {\n    *;\n}\n\n-keep class com.tencent.wxop.** {\n    *;\n}\n\n-keep class com.tencent.mm.sdk.** {\n    *;\n}"
+          }
+        }
+      ],
+      "expo-wechat"
     ],
     "experiments": {
       "typedRoutes": true,
