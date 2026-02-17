@@ -60,7 +60,7 @@ public class TokenFilter implements Filter {
 
     private boolean checkTokenValid(String token) {
         // 1. 解密加密的token，并转为key
-        token = TokenUtil.getTokenValueByKey(token);
+        token = TokenUtil.getTokenKeyByValue(token);
         // 2. 从 redis 中获取 value
         String value = stringRedisTemplate.opsForValue().getAndDelete(token);
         // 3. 设置到线程本地变量中（创建订单会用到）

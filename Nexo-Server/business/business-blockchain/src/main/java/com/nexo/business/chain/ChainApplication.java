@@ -12,7 +12,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @EnableDubbo
 @SpringBootApplication
 public class ChainApplication {
-    public static void main(String[] args) {
+    static void main(String[] args) {
         SpringApplication.run(ChainApplication.class, args);
     }
 }

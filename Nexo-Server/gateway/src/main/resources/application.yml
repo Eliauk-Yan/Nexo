@@ -41,3 +41,8 @@ spring:
               uri: lb://business-blockchain
               predicates:
                 - Path=/blockchain/**
+            # 交易服务路由
+            - id: business-trade
+              uri: lb://business-trade
+              predicates:
+                - Path=/trade/**

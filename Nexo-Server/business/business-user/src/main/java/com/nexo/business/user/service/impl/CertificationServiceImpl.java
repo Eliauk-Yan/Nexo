@@ -18,6 +18,7 @@ import com.nexo.common.api.blockchain.request.ChainRequest;
 import com.nexo.common.api.blockchain.response.ChainResponse;
 import com.nexo.common.api.blockchain.response.data.ChainCreateData;
 import com.nexo.common.api.user.constant.UserState;
+import com.nexo.common.api.user.response.data.UserInfo;
 import com.nexo.common.base.constant.CommonConstant;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -76,7 +77,14 @@ public class CertificationServiceImpl extends ServiceImpl<CertificationMapper, C
                 // 更新用户状态
                 User currentUser = userService.getById(userId);
                 currentUser.setState(UserState.ACTIVE);
-                return userService.updateById(currentUser);
+                boolean updateResult = userService.updateById(currentUser);
+                if (!updateResult) {
+                    throw new UserException(UserErrorCode.USER_UPDATE_FAILED);
+                }
+                // 更新会话状态
+                UserInfo userInfo = StpUtil.getSessionByLoginId(userId).getModel("userInfo", UserInfo.class);
+                userInfo.setState(UserState.ACTIVE);
+                StpUtil.getSession().set("userInfo", userInfo);
             } else {
                 throw new UserException(UserErrorCode.USER_CREATE_CHAIN_FAIL);
             }

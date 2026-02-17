@@ -2,7 +2,7 @@ package com.nexo.business.artwork.service.impl.base;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nexo.business.artwork.domain.entity.ArtWork;
-import com.nexo.business.artwork.mapper.mybatis.ArtWorkMapper;
+import com.nexo.business.artwork.mapper.mybatis.ArtworkMapper;
 import com.nexo.business.artwork.service.ArtWorkService;
 
 /**
@@ -10,6 +10,6 @@ import com.nexo.business.artwork.service.ArtWorkService;
  * @description 实现 DB 与 ES 的动态切换
  * @date 2025/12/23 21:50
  */
-public abstract class BaseArtWorkServiceImpl extends ServiceImpl<ArtWorkMapper, ArtWork> implements ArtWorkService {
+public abstract class BaseArtWorkServiceImpl extends ServiceImpl<ArtworkMapper, ArtWork> implements ArtWorkService {
 
 }

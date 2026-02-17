@@ -9,4 +9,8 @@ export const API_ENDPOINTS = {
     LIST: `/artwork/list`,
     DETAIL: `/artwork`, // Base path for detail, id will be appended
   },
+  // 交易相关
+  TRADE: {
+    BUY: `/trade/buy`,
+  },
 } as const

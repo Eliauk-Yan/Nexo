@@ -14,4 +14,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class ArtworkInventoryStreamServiceImpl extends ServiceImpl<ArtworkInventoryStreamMapper, ArtworkInventoryStream> implements ArtworkInventoryStreamService {
 
+
+
 }

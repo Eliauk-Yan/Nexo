@@ -1,6 +1,0 @@
-## 配置 sentinel
-#spring:
-#  cloud:
-#    sentinel:
-#      transport:
-#        dashboard: 192.168.147.100:8858

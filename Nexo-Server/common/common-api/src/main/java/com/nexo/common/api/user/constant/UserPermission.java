@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 用户权限枚举
+ * 用户权限枚举 TODO 后续优化结构
  */
 @Getter
 @AllArgsConstructor

@@ -67,4 +67,5 @@ public class ArtWorkDBServiceImpl extends BaseArtWorkServiceImpl {
         return Optional.ofNullable(artWorkConvertor.toDetail(artWork))
                 .orElseThrow(() -> new ArtWorkException(ArtWorkErrorCode.ARTWORK_NOT_FOUND));
     }
+
 }

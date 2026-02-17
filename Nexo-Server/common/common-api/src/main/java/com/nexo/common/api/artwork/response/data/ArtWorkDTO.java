@@ -1,6 +1,8 @@
 package com.nexo.common.api.artwork.response.data;
 
 import com.nexo.common.api.product.response.data.ProductDTO;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -12,6 +14,8 @@ import java.time.LocalDateTime;
  * @description 藏品详情数据
  * @date 2026/01/09 10:31
  */
+@EqualsAndHashCode(callSuper = true)
+@Data
 public class ArtWorkDTO extends ProductDTO implements Serializable {
 
     /**
@@ -65,7 +69,7 @@ public class ArtWorkDTO extends ProductDTO implements Serializable {
     /**
      * 是否预约
      */
-    private Integer canBook;
+    private Boolean canBook;
 
     /**
      * 是否已预约过
@@ -103,7 +107,7 @@ public class ArtWorkDTO extends ProductDTO implements Serializable {
         if (canBook == null) {
             return false;
         }
-        return canBook == 1;
+        return canBook;
     }
 
     @Override

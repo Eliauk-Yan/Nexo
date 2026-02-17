@@ -29,6 +29,13 @@
             <groupId>com.nexo.common.api</groupId>
             <artifactId>common-api</artifactId>
             <version>1.0-SNAPSHOT</version>
+            <!--TODO 排除数据源依赖-->
+            <exclusions>
+                <exclusion>
+                    <groupId>com.nexo.common.datasource</groupId>
+                    <artifactId>common-datasource</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!--RPC服务-->
         <dependency>

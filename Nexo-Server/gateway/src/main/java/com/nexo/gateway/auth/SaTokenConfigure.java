@@ -38,7 +38,7 @@ public class SaTokenConfigure {
                     // 管理端模块 -> 用户角色校验
                     SaRouter.match("/admin/**", r -> StpUtil.checkRoleOr(UserRole.ADMIN.getCode(), UserRole.ROOT.getCode(), UserRole.GOD.getCode()));
                     // 交易模块 -> 认证权限校验（未认证的用户无法下单）
-                    SaRouter.match("/trade/**", r -> StpUtil.checkPermission(UserPermission.AUTHENTICATE.name()));
+                    SaRouter.match("/trade/**", r -> StpUtil.checkPermission(UserPermission.AUTHENTICATE.getCode()));
                 })
                 // 异常处理方法：每次setAuth函数出现异常时进入
                 .setError(this::getSaResult);

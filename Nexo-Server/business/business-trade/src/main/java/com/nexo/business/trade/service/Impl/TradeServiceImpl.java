@@ -8,17 +8,16 @@ import com.nexo.business.trade.domain.exception.TradeException;
 import com.nexo.business.trade.interfaces.dto.BuyDTO;
 import com.nexo.business.trade.service.TradeService;
 import com.nexo.common.api.inventory.InventoryFacade;
-import com.nexo.common.api.inventory.request.InventoryRequest;
-import com.nexo.common.api.order.OrderFacade;
+import com.nexo.common.api.inventory.response.InventoryResponse;
 import com.nexo.common.api.order.request.OrderCreateRequest;
-import com.nexo.common.api.order.response.OrderResponse;
 import com.nexo.common.api.product.ProductFacade;
 import com.nexo.common.api.product.constant.ProductEvent;
 import com.nexo.common.api.product.constant.ProductType;
 import com.nexo.common.api.product.response.ProductResponse;
 import com.nexo.common.api.product.response.data.ProductDTO;
-import com.nexo.common.api.product.response.data.ProductStreamDTO;
+import com.nexo.common.api.product.response.data.ProductIventoryStreamDTO;
 import com.nexo.common.mq.producer.StreamProducer;
+import com.nexo.common.web.filter.TokenFilter;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
@@ -42,18 +41,16 @@ import static com.nexo.business.trade.domain.exception.TradeErrorCode.ORDER_CREA
 @RequiredArgsConstructor
 public class TradeServiceImpl implements TradeService {
 
-    /**
-     * 线程本地变量 用于存储订单的幂等号
-     */
-    public static final ThreadLocal<String> tokenThreadLocal = new ThreadLocal<>();
+    private static final ThreadFactory inventoryBypassVerifyThreadFactory = new ThreadFactoryBuilder()
+            .setNameFormat("inventory-bypass-verify-pool-%d").build();
+
+    private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(10,
+            inventoryBypassVerifyThreadFactory);
 
     /**
      * 生产者
      */
     private final StreamProducer streamProducer;
-
-    @DubboReference(version = "1.0.0")
-    private OrderFacade orderFacade;
 
     @DubboReference(version = "1.0.0")
     private ProductFacade productFacade;
@@ -63,19 +60,17 @@ public class TradeServiceImpl implements TradeService {
 
     @Override
     public String buy(BuyDTO params) {
-        // 1. 创建订单请求
-        String userId = StpUtil.getLoginIdAsString();
-        // 2. 雪花算法生成订单ID
+        // 1. 雪花算法生成订单ID
         String orderId = IdUtil.getSnowflakeNextIdStr();
-        // 3. 构造创建订单请求
+        // 2. 构造创建订单请求
         OrderCreateRequest orderCreateRequest = new OrderCreateRequest();
         orderCreateRequest.setOrderId(orderId); // 设置订单ID
-        orderCreateRequest.setIdentifier(tokenThreadLocal.get()); // 设置幂等号
+        orderCreateRequest.setIdentifier(TokenFilter.tokenThreadLocal.get()); // 设置幂等号
         orderCreateRequest.setBuyerId(StpUtil.getLoginIdAsString()); // 设置买家ID
         orderCreateRequest.setProductId(params.getProductId()); // 设置商品ID
         orderCreateRequest.setProductType(ProductType.ARTWORK); // 设置商品类型
         orderCreateRequest.setItemCount(params.getItemCount()); // 设置商品数量
-        // 2. 调用商品服务填充订单请求
+        // 3. 调用商品服务填充订单请求
         ProductResponse<ProductDTO> response = productFacade.getProduct(params.getProductId(), ProductType.ARTWORK);
         ProductDTO product = response.getData();
         if (product == null || product.available()) {
@@ -86,16 +81,37 @@ public class TradeServiceImpl implements TradeService {
         orderCreateRequest.setProductName(product.getProductName()); // 设置商品名称
         orderCreateRequest.setProductPicUrl(product.getProductPicUrl()); // 设置商品封面
         orderCreateRequest.setSnapshotVersion(product.getVersion()); // 设置快照版本
-        orderCreateRequest.setOrderAmount(orderCreateRequest.getItemPrice().multiply(new BigDecimal(orderCreateRequest.getItemCount()))); // 设置订单总价
-        // 3. 发送MQ消息
-        boolean result = streamProducer.send("buy-out-0", params.getProductType().getCode(), JSON.toJSONString(orderCreateRequest));
+        orderCreateRequest.setOrderAmount(
+                orderCreateRequest.getItemPrice().multiply(new BigDecimal(orderCreateRequest.getItemCount()))); // 设置订单总价
+        // 4. 发送MQ消息,监听并进行Redis库存预扣减
+        boolean result = streamProducer.send("buy-out-0", params.getProductType().getCode(),
+                JSON.toJSONString(orderCreateRequest));
         if (!result) {
             throw new TradeException(ORDER_CREATE_FAILED);
         }
-        // 4. Redis库存预扣减
-        InventoryRequest inventoryRequest = new InventoryRequest();
-
-
-        return "";
+        // 5. 查询Redis库存扣减日志判断是否成功
+        InventoryResponse<String> decreaseLogResponse = inventoryFacade.getInventoryDecreaseLog(orderCreateRequest);
+        if (decreaseLogResponse.getSuccess() && decreaseLogResponse.getData() != null) {
+            // 6. 再检查一下是否有回退库存的流水，如果回退过，则不需要旁路验证
+            InventoryResponse<String> increaseLogResponse = inventoryFacade.getInventoryIncreaseLog(orderCreateRequest);
+            if (increaseLogResponse.getSuccess() && increaseLogResponse.getData() == null) {
+                // 7. 旁路校验
+                scheduler.schedule(() -> {
+                    // 6.1 查询数据库中是否有库存扣减记录
+                    ProductResponse<ProductIventoryStreamDTO> inventoryStream = productFacade.getProductInventoryStream(
+                            orderCreateRequest.getProductId(), orderCreateRequest.getProductType(),
+                            ProductEvent.TRY_SALE, orderCreateRequest.getIdentifier());
+                    // 6.2 校验成功 数据一致
+                    if (inventoryStream.getSuccess() && inventoryStream.getData() != null && Objects.equals(
+                            inventoryStream.getData().getChangedQuantity(), orderCreateRequest.getItemCount())) {
+                        // 6.3 删除Redis库存扣减流水记录 删除无效数据，避免数据库长期存储压力
+                        inventoryFacade.removeInventoryDecreaseLog(orderCreateRequest);
+                    }
+                }, 3, TimeUnit.SECONDS);
+                // 8. 返回订单号
+                return orderCreateRequest.getOrderId();
+            }
+        }
+        throw new TradeException(ORDER_CREATE_FAILED);
     }
 }

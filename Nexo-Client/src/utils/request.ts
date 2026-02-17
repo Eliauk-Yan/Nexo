@@ -7,6 +7,7 @@ interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   params?: any
   body?: any
+  headers?: Record<string, string>
 }
 // 定义 API 错误接口
 interface ApiError extends Error {
@@ -18,7 +19,7 @@ const STORAGE_KEYS = {
   TOKEN: 'satoken',
 }
 
-const request = async (url: string, { method = 'GET', params, body }: RequestOptions) => {
+const request = async (url: string, { method = 'GET', params, body, headers: customHeaders }: RequestOptions) => {
   // 1. 从环境变量中获取基础 API 地址
   const apiUrl = process.env.EXPO_PUBLIC_API_BASE_URL
   // 2. 构建完整的请求 URL
@@ -42,7 +43,11 @@ const request = async (url: string, { method = 'GET', params, body }: RequestOpt
   if (token) {
     headers['satoken'] = token
   }
-  // 6. 设置请求配置
+  // 6. 合并自定义请求头
+  if (customHeaders) {
+    Object.assign(headers, customHeaders)
+  }
+  // 7. 设置请求配置
   const config: RequestInit = {
     method,
     headers,
@@ -54,10 +59,9 @@ const request = async (url: string, { method = 'GET', params, body }: RequestOpt
   // 8. 处理响应
   if (!response.ok || res.success === false) {
     // 9. 处理错误响应
-    const errorData = await response.json().catch(() => ({}))
-    const error = new Error(errorData.message || '未知错误') as ApiError
+    const error = new Error(res.message || '未知错误') as ApiError
     error.status = response.status
-    error.errors = errorData.errors
+    error.errors = res.errors
     throw error
   }
   // 10. 处理成功响应
@@ -67,8 +71,8 @@ const request = async (url: string, { method = 'GET', params, body }: RequestOpt
 export const get = <T = any>(url: string, params?: any): Promise<T> =>
   request(url, { method: 'GET', params })
 
-export const post = <T = any>(url: string, body?: any): Promise<T> =>
-  request(url, { method: 'POST', body })
+export const post = <T = any>(url: string, body?: any, headers?: Record<string, string>): Promise<T> =>
+  request(url, { method: 'POST', body, headers })
 
 export const put = <T = any>(url: string, body?: any): Promise<T> =>
   request(url, { method: 'PUT', body })

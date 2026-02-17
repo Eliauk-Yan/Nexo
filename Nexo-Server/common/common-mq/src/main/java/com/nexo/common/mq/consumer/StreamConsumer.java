@@ -8,11 +8,7 @@ import org.springframework.messaging.Message;
 
 import static com.nexo.common.mq.producer.StreamProducer.*;
 
-/**
- * @classname StreamConsumer
- * @description MQ消费基类 统一处理消息的反序列化、元数据提取以及日志记录。
- * @date 2026/02/09 03:00
- */
+
 @Slf4j
 public class StreamConsumer {
 

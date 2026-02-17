@@ -1,11 +1,9 @@
 package com.nexo.business.artwork.mapper.concert;
 
 import com.nexo.business.artwork.domain.entity.ArtWork;
-import com.nexo.business.artwork.domain.entity.ArtworkInventoryStream;
 import com.nexo.business.artwork.interfaces.vo.ArtWorkInfoVO;
 import com.nexo.business.artwork.interfaces.vo.ArtWorkVO;
 import com.nexo.common.api.artwork.response.data.ArtWorkDTO;
-import com.nexo.common.api.artwork.response.data.ArtworkStreamDTO;
 import org.mapstruct.Mapper;
 
 import java.util.List;

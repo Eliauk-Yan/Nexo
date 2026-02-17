@@ -7,7 +7,22 @@ spring:
       - classpath:/rpc.yml
       - classpath:/config.yml
       - classpath:/cache.yml
-      - classpath:/file.yml
       - classpath:/base.yml
+      - classpath:/stream.yml
   application:
     name: business-trade
+  cloud:
+    function:
+      definition: buy;
+    stream:
+      rocketmq:
+        bindings:
+          buy-out-0: # 这里的 buy-out-0 是为了配置 RocketMQ 特有属性
+            producer:
+              producerType: Trans
+              transactionListener: inventoryDecreaseTransactionListener
+      bindings:
+        buy-out-0: # 这里的 buy-out-0 是通用流配置
+          destination: buy-topic
+          group: trade-group
+          binder: rocketmq

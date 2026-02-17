@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.nexo.common.mq.message.MessageBody;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.rocketmq.common.message.MessageConst; // 建议引入此包处理延迟常量
+import org.apache.rocketmq.common.message.MessageConst;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.messaging.support.MessageBuilder;
 

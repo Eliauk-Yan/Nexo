@@ -7,7 +7,7 @@ spring:
       - classpath:/rpc.yml
       - classpath:/config.yml
       - classpath:/cache.yml
-      - classpath:/file.yml
       - classpath:/base.yml
+      - classpath:/stream.yml
   application:
     name: business-order

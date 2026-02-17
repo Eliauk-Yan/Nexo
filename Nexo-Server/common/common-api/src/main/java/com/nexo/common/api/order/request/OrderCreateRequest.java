@@ -1,5 +1,6 @@
 package com.nexo.common.api.order.request;
 
+import com.nexo.common.api.order.constant.TradeOrderEvent;
 import com.nexo.common.api.product.constant.ProductType;
 import com.nexo.common.api.user.constant.UserType;
 import jakarta.validation.constraints.DecimalMin;
@@ -90,4 +91,8 @@ public class OrderCreateRequest extends OrderBaseRequest {
      */
     private String orderId;
 
+    @Override
+    public TradeOrderEvent getOrderEvent() {
+        return TradeOrderEvent.CREATE;
+    }
 }

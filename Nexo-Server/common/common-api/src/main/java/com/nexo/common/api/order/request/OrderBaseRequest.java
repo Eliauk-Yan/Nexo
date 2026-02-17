@@ -1,6 +1,7 @@
 package com.nexo.common.api.order.request;
 
 import com.nexo.common.api.common.request.BaseRequest;
+import com.nexo.common.api.order.constant.TradeOrderEvent;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,12 +13,17 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class OrderBaseRequest extends BaseRequest {
+public abstract class OrderBaseRequest extends BaseRequest {
 
     /**
      * 幂等号
      */
     @NotNull(message = "identifier 不能为空")
     private String identifier;
+
+    /**
+     * 获取订单事件
+     */
+    public abstract TradeOrderEvent getOrderEvent();
 
 }

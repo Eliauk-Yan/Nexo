@@ -32,4 +32,5 @@ public class ArtWorkESServiceImpl extends BaseArtWorkServiceImpl {
     public ArtWorkInfoVO getArtWorkDetailById(Long id) {
         return null;
     }
+
 }

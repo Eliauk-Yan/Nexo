@@ -15,6 +15,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum UserErrorCode implements ErrorCode {
 
+    USER_UPDATE_FAILED("USER_UPDATE_FAILED", "用户更新失败"),
+
     USER_CREATE_CHAIN_FAIL("USER_CREATE_CHAIN_FAIL", "创建链账户失败"),
 
     USER_NOT_EXIST("USER_NOT_EXIST", "用户不存在"),

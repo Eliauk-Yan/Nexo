@@ -11,7 +11,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public abstract class ProductStreamDTO {
+public abstract class ProductIventoryStreamDTO {
 
     /**
      * '变更数量'

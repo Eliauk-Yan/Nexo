@@ -51,9 +51,7 @@ const Verify = () => {
     setSubmitting(true)
     try {
       const response = await authApi.login({ phone, verifyCode: code, rememberMe: true })
-      console.log('登录相应：' + response)
       signIn(response.token, response.userInfo)
-      console.log('用户信息：' + response.userInfo)
       router.replace('/(tabs)/account')
     } catch (error) {
       Alert.alert('登录失败', error instanceof Error ? error.message : '登录失败')

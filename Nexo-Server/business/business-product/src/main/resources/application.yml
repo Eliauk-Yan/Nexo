@@ -3,9 +3,10 @@ server:
 spring:
   config:
     import:
+      - classpath:/datasource.yml
       - classpath:/rpc.yml
       - classpath:/config.yml
-      - classpath:/file.yml
+      - classpath:/cache.yml
       - classpath:/base.yml
   application:
     name: business-product

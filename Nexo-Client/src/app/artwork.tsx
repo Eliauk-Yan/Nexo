@@ -1,4 +1,4 @@
-import { artworkApi, authApi } from '@/api'
+import { artworkApi, authApi, tradeApi } from '@/api'
 import { LiquidGlassButton } from '@/components/ui'
 import { colors, spacing, typography } from '@/config/theme'
 import { ArtworkDetail } from '@/api/artwork'
@@ -6,7 +6,7 @@ import { GlassView } from 'expo-glass-effect'
 import { Image } from 'expo-image'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Spinner from 'react-native-loading-spinner-overlay'
 
@@ -60,8 +60,20 @@ const Artwork = () => {
    */
   const handleBuy = async () => {
     setLoading(true)
-    // TODO 调用购买接口
-    setLoading(false)
+    try {
+      await tradeApi.buy({
+        productId: String(artwork.id),
+        productType: 'ARTWORK',
+        itemCount: 1,
+      }, token)
+      Alert.alert('提示', '下单成功！', [{ text: '确定' }])
+      // 购买成功后刷新藏品详情（库存等信息可能变化）
+      await fetchData()
+    } catch (e: any) {
+      Alert.alert('购买失败', e?.message || '请稍后再试', [{ text: '确定' }])
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -80,7 +92,7 @@ const Artwork = () => {
       {title && <Text style={styles.headerTitle}>{title}</Text>}
       <LiquidGlassButton
         icon="share-nodes"
-        onPress={() => {}}
+        onPress={() => { }}
         size={20}
         color="#fff"
         glassStyle="regular"

@@ -6,6 +6,7 @@ import com.nexo.common.api.user.constant.UserPermission;
 import com.nexo.common.api.user.constant.UserRole;
 import com.nexo.common.api.user.constant.UserState;
 import com.nexo.common.api.user.response.data.UserInfo;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.List;
  * @date 2025/12/08 20:03
  * @created by YanShijie
  */
+@Slf4j
 @Component
 public class StpInterfaceImpl implements StpInterface {
 
