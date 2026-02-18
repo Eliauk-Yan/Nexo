@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.nexo.business.user.config.encrypt.AesUtil;
 import com.nexo.business.user.domain.entity.User;
 import com.nexo.business.user.service.UserService;
 import com.nexo.business.user.mapper.mybatis.UserMapper;
@@ -121,6 +122,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 1. 根据手机号查询用户信息
         User user = this.getOne(new LambdaQueryWrapper<User>().eq(User::getId, id));
         // 2. 实体转换为DTO
+        return userConverter.userToUserInfo(user);
+    }
+
+    @Override
+    public UserInfo queryUserByPhoneAndPassword(String phone, String password) {
+        // 1. 加密密码
+        String encryptedPassword = AesUtil.encrypt(password);
+        // 2. 对比密码
+        User user = this.getOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone).eq(User::getPassword, encryptedPassword));
+        // 3. 返回结果
         return userConverter.userToUserInfo(user);
     }
 

@@ -13,27 +13,27 @@ public enum UserRole {
     /**
      * 普通收藏者
      */
-    COLLECTOR("collector"),
+    COLLECTOR("COLLECTOR"),
 
     /**
      * 艺术家
      */
-    ARTIST("artist"),
+    ARTIST("ARTIST"),
 
     /**
      * 管理员
      */
-    ADMIN("admin"),
+    ADMIN("ADMIN"),
 
     /**
      * （隐藏用户）菜单
      */
-    ROOT("root"),
+    ROOT("ROOT"),
 
     /**
      * 神
      */
-    GOD("shadow");
+    GOD("GOD");
 
 
     private final String code;

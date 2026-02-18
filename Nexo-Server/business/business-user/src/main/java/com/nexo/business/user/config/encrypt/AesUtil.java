@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 /**
  * AES 加解密工具（Hutool）
  */
-@Component
 public class AesUtil {
 
     private static final AES aes;

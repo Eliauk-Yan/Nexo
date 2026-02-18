@@ -48,4 +48,11 @@ public interface UserService extends IService<User> {
      */
     UserInfo queryUserByPhone(String phone);
 
+    /**
+     * 根据手机号和密码查询用户信息
+      * @param phone 手机号
+     * @param password 密码
+     * @return 用户信息
+     */
+    UserInfo queryUserByPhoneAndPassword(String phone, String password);
 }

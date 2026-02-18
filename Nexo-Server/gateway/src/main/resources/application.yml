@@ -46,3 +46,8 @@ spring:
               uri: lb://business-trade
               predicates:
                 - Path=/trade/**
+            # 管理员模块路由
+            - id: admin
+              uri: lb://admin
+              predicates:
+                - Path=/admin/**

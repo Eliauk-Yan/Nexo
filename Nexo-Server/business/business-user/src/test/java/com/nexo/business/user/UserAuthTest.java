@@ -1,5 +1,6 @@
 package com.nexo.business.user;
 
+import com.nexo.business.user.config.encrypt.AesUtil;
 import com.nexo.business.user.interfaces.dto.RealNameAuthDTO;
 import com.nexo.business.user.service.UserAuthService;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,11 @@ public class UserAuthTest {
         dto.setIdCardNo("152801200501245910");
         boolean result = userAuthService.realNameAuth(dto);
         System.out.println(result);
+    }
+
+    @Test
+    void aesUtilTest() {
+        System.out.println(AesUtil.encrypt("admin"));
     }
 
 }

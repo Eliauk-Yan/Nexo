@@ -30,11 +30,11 @@ public class SaTokenConfigure {
                 // 拦截地址
                 .addInclude("/**")
                 // 开放地址
-                .addExclude("/favicon.ico")
+                .addExclude("/favicon.ico", "/admin/auth/**", "/auth/**")
                 // 鉴权方法：每次访问进入
                 .setAuth(obj -> {
                     // 登录校验
-                    SaRouter.match("/**", "/auth/**", _ -> StpUtil.checkLogin());
+                    SaRouter.match("/**",  _ -> StpUtil.checkLogin());
                     // 管理端模块 -> 用户角色校验
                     SaRouter.match("/admin/**", r -> StpUtil.checkRoleOr(UserRole.ADMIN.getCode(), UserRole.ROOT.getCode(), UserRole.GOD.getCode()));
                     // 交易模块 -> 认证权限校验（未认证的用户无法下单）
