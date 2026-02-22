@@ -1,5 +1,6 @@
 package com.nexo.business.artwork.interfaces.facade;
 
+import cn.hutool.core.lang.UUID;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nexo.business.artwork.domain.entity.ArtWork;
@@ -12,6 +13,7 @@ import com.nexo.business.artwork.mapper.mybatis.ArtworkInventoryStreamMapper;
 import com.nexo.business.artwork.service.ArtWorkService;
 import com.nexo.business.artwork.service.ArtworkInventoryStreamService;
 import com.nexo.common.api.artwork.ArtWorkFacade;
+import com.nexo.common.api.artwork.constant.ArtWorkState;
 import com.nexo.common.api.artwork.request.ArtWorkQueryRequest;
 import com.nexo.common.api.artwork.response.ArtWorkQueryResponse;
 import com.nexo.common.api.artwork.response.data.ArtWorkDTO;
@@ -21,6 +23,7 @@ import com.nexo.common.api.common.response.ResponseCode;
 import com.nexo.common.api.product.request.ProductSaleRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -188,14 +191,12 @@ public class ArtWorkFacadeImpl implements ArtWorkFacade {
     @Override
     public Boolean addNFT(ArtWorkDTO artWorkDTO) {
         ArtWork artWork = new ArtWork();
-        org.springframework.beans.BeanUtils.copyProperties(artWorkDTO, artWork);
-        // Set default values for new NFT
+        BeanUtils.copyProperties(artWorkDTO, artWork);
         artWork.setSaleableInventory(artWorkDTO.getQuantity());
         artWork.setFrozenInventory(0L);
-        artWork.setState(com.nexo.common.api.artwork.constant.ArtWorkState.PENDING);
-        // Identifier is typically generated or provided
+        artWork.setState(ArtWorkState.PENDING);
         if (artWork.getIdentifier() == null) {
-            artWork.setIdentifier("NFT-" + System.currentTimeMillis());
+            artWork.setIdentifier(UUID.randomUUID().toString());
         }
         return artWorkService.save(artWork);
     }

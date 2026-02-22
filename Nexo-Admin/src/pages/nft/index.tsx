@@ -13,7 +13,7 @@ import {
   ProTable,
   TableDropdown,
 } from '@ant-design/pro-components';
-import { Button, Image, Space, Tag, message, Modal, Typography } from 'antd';
+import { Button, Image, Space, Tag, message, Modal, Typography, Popconfirm } from 'antd';
 import { useRef, useState } from 'react';
 import { getNFTList, addNFT, updateNFT, removeNFT } from '@/services/api/nft';
 
@@ -197,19 +197,22 @@ export default () => {
         >
           查看
         </a>,
-        <a
+        <Popconfirm
           key="delete"
-          style={{ color: 'red' }}
-          onClick={async () => {
+          title="删除确认"
+          description="您确定要删除这个藏品吗？此操作无法恢复。"
+          onConfirm={async () => {
             const success = await removeNFT(record.id);
             if (success) {
               message.success('删除成功');
               action?.reload();
             }
           }}
+          okText="确定"
+          cancelText="取消"
         >
-          删除
-        </a>,
+          <a style={{ color: 'red' }}>删除</a>
+        </Popconfirm>,
       ],
     },
   ];

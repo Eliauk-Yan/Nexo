@@ -1,6 +1,7 @@
 package com.nexo.admin.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.nexo.admin.domain.dto.NFTCreateDTO;
 import com.nexo.admin.domain.dto.NFTQueryDTO;
 import com.nexo.admin.domain.exception.AdminException;
 import com.nexo.admin.domain.vo.NFTVO;
@@ -57,7 +58,7 @@ public class NFTServiceImpl implements NFTService {
     }
 
     @Override
-    public Boolean addNFT(com.nexo.admin.domain.dto.NFTCreateDTO dto) {
+    public Boolean addNFT(NFTCreateDTO dto) {
         ArtWorkDTO artWorkDTO = new ArtWorkDTO();
         BeanUtils.copyProperties(dto, artWorkDTO);
         if (dto.getBookStartTime() != null && !dto.getBookStartTime().isEmpty()) {

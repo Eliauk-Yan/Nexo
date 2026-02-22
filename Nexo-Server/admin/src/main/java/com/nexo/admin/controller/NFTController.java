@@ -1,9 +1,13 @@
 package com.nexo.admin.controller;
 
+import com.nexo.admin.domain.dto.NFTCreateDTO;
 import com.nexo.admin.domain.dto.NFTQueryDTO;
+import com.nexo.admin.domain.dto.NFTUpdateDTO;
 import com.nexo.admin.domain.vo.NFTVO;
 import com.nexo.admin.service.NFTService;
 import com.nexo.common.web.result.MultiResult;
+import com.nexo.common.web.result.Result;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,6 +23,11 @@ public class NFTController {
 
     private final NFTService nftService;
 
+    /**
+     * 获取数字藏品列表
+     * @param dto 查询条件
+     * @return 数字藏品列表
+     */
     @GetMapping("/list")
     public MultiResult<NFTVO> list(NFTQueryDTO dto) {
         return nftService.getNFTList(dto);
@@ -30,9 +39,8 @@ public class NFTController {
      * @return 结果
      */
     @PostMapping
-    public com.nexo.common.web.result.Result<Boolean> add(
-            @org.springframework.web.bind.annotation.RequestBody @jakarta.validation.Valid com.nexo.admin.domain.dto.NFTCreateDTO dto) {
-        return com.nexo.common.web.result.Result.success(nftService.addNFT(dto));
+    public Result<Boolean> add(@Valid @RequestBody NFTCreateDTO dto) {
+        return Result.success(nftService.addNFT(dto));
     }
 
     /**
@@ -41,9 +49,8 @@ public class NFTController {
      * @return 结果
      */
     @PutMapping
-    public com.nexo.common.web.result.Result<Boolean> update(
-            @org.springframework.web.bind.annotation.RequestBody @jakarta.validation.Valid com.nexo.admin.domain.dto.NFTUpdateDTO dto) {
-        return com.nexo.common.web.result.Result.success(nftService.updateNFT(dto));
+    public Result<Boolean> update(@Valid @RequestBody NFTUpdateDTO dto) {
+        return Result.success(nftService.updateNFT(dto));
     }
 
     /**
@@ -52,9 +59,8 @@ public class NFTController {
      * @return 结果
      */
     @DeleteMapping("/{id}")
-    public com.nexo.common.web.result.Result<Boolean> delete(
-            @org.springframework.web.bind.annotation.PathVariable Long id) {
-        return com.nexo.common.web.result.Result.success(nftService.deleteNFT(id));
+    public Result<Boolean> delete(@PathVariable Long id) {
+        return Result.success(nftService.deleteNFT(id));
     }
 
     /**
@@ -64,10 +70,8 @@ public class NFTController {
      * @return 结果
      */
     @PutMapping("/{id}/status/{state}")
-    public com.nexo.common.web.result.Result<Boolean> updateState(
-            @org.springframework.web.bind.annotation.PathVariable Long id,
-            @org.springframework.web.bind.annotation.PathVariable String state) {
-        return com.nexo.common.web.result.Result.success(nftService.updateState(id, state));
+    public Result<Boolean> updateState(@PathVariable Long id, @PathVariable String state) {
+        return Result.success(nftService.updateState(id, state));
     }
 
 }
