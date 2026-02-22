@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.DubboService;
 
+import java.util.List;
+
 /**
  * @classname ProductFacadeImpl
  * @description 商品Dubbo实服务实现类

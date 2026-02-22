@@ -6,7 +6,7 @@ import { request } from '@umijs/max';
  * @returns {Promise<API.LoginResult>}
  */
 export async function login(body: API.LoginParams, options?: { [key: string]: any }) {
-    return request<API.LoginResult>('/api/auth/login', {
+    return request<API.LoginResult>('/admin/auth/login', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -25,7 +25,7 @@ export async function login(body: API.LoginParams, options?: { [key: string]: an
  * @returns {Promise<API.LogoutResult>}
  */
 export async function logout(options?: { [key: string]: any }) {
-    return request<API.LogoutResult>('/api/auth/logout', {
+    return request<API.LogoutResult>('/admin/auth/logout', {
         method: 'POST',
         ...(options || {}),
     });

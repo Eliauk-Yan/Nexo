@@ -18,62 +18,32 @@ import java.time.LocalDateTime;
 @Data
 public class ArtWorkDTO extends ProductDTO implements Serializable {
 
-    /**
-     * 主键ID
-     */
     private Long id;
-    /**
-     * '藏品名称'
-     */
+
     private String name;
-    /**
-     * '藏品封面'
-     */
+
     private String cover;
 
-    /**
-     * '价格'
-     */
     private BigDecimal price;
 
-    /**
-     * '藏品数量'
-     */
+    private String description;
+
     private Long quantity;
 
-    /**
-     * '库存'
-     */
-    private Long inventory;
+    private Long saleableInventory;
 
-    /**
-     * '藏品发售时间'
-     */
+    private Long frozenInventory;
+
     private LocalDateTime saleTime;
 
-    /**
-     * 版本
-     */
     private Integer version;
 
-    /**
-     * 预约开始时间
-     */
     private LocalDateTime bookStartTime;
 
-    /**
-     * 预约结束时间
-     */
     private LocalDateTime bookEndTime;
 
-    /**
-     * 是否预约
-     */
     private Boolean canBook;
 
-    /**
-     * 是否已预约过
-     */
     private Boolean hasBooked;
 
     @Override

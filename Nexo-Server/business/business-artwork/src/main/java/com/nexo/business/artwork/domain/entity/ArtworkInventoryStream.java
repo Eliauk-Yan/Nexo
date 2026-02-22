@@ -38,9 +38,6 @@ public class ArtworkInventoryStream extends BaseEntity {
     @TableField("saleable_inventory")
     private Long saleableInventory;
 
-    @TableField("occupied_inventory")
-    private Long occupiedInventory;
-
     @TableField("frozen_inventory")
     private Long frozenInventory;
 

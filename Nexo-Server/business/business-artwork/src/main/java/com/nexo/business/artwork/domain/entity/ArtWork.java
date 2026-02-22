@@ -42,9 +42,6 @@ public class ArtWork extends BaseEntity {
     @TableField(value = "saleable_inventory")
     private Long saleableInventory;
 
-    @TableField(value = "occupied_inventory")
-    private Long occupiedInventory;
-
     @TableField(value = "frozen_inventory")
     private Long frozenInventory;
 

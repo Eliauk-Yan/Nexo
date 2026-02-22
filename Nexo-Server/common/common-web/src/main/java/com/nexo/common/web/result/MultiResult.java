@@ -3,17 +3,22 @@ package com.nexo.common.web.result;
 import com.nexo.common.web.result.enums.ResultCode;
 
 import java.util.List;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * 为什么不直接Result<Page<T>>而是要在写一个统一返回对象呢？
  * 1. Result<Page<T>>破环了分层规则，接口层不应该暴露持久化层
  * 2. 前端只关心 records / total / page / size，不可控。
  * ...分层解耦，接口稳定，ORM替换成本，前端友好，语义清晰，测试Mock方便
+ * 
  * @classname MultiResult
  * @description 多结果统一返回类型
  * @date 2025/12/21 15:12
  */
-public class MultiResult <T> extends Result<List<T>> {
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class MultiResult<T> extends Result<List<T>> {
 
     private long total;
 
@@ -33,7 +38,8 @@ public class MultiResult <T> extends Result<List<T>> {
     }
 
     public static <T> MultiResult<T> multiSuccess(List<T> data, long total, long page, long size) {
-        return new MultiResult<>(true, ResultCode.SUCCESS.getCode(), ResultCode.SUCCESS.getMessage(), data, total, page, size);
+        return new MultiResult<>(true, ResultCode.SUCCESS.getCode(), ResultCode.SUCCESS.getMessage(), data, total, page,
+                size);
     }
 
     public static <T> MultiResult<T> multiError(ResultCode resultCode) {

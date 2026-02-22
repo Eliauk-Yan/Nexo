@@ -9,12 +9,13 @@ import {
   ProFormTextArea,
   ProFormUploadButton,
   ProFormSwitch,
+  ProFormDependency,
   ProTable,
   TableDropdown,
 } from '@ant-design/pro-components';
-import { Button, Image, Space, Tag, message } from 'antd';
+import { Button, Image, Space, Tag, message, Modal, Typography } from 'antd';
 import { useRef, useState } from 'react';
-import { request } from '@umijs/max';
+import { getNFTList, addNFT, updateNFT, removeNFT } from '@/services/api/nft';
 
 // Define the Artwork type based on the database schema provided
 export type Artwork = {
@@ -25,77 +26,24 @@ export type Artwork = {
   price: number;
   quantity: number; // Total quantity issued
   description: string;
-  saleable_inventory: number;
-  occupied_inventory: number;
-  frozen_inventory: number;
-  identifier: string; // Unique identifier/Token ID
-  state: 'pending' | 'success' | 'archived'; // pending: 待上链/待发布, success: 已发布, archived: 已归档
-  sale_time: string;
-  sync_chain_time?: string;
-  book_start_time?: string;
-  book_end_time?: string;
-  can_book: number; // 0: No, 1: Yes
-  created_at: string;
-  updated_at: string;
-};
-
-// Mock Data
-const mockDataSource: Artwork[] = [
-  {
-    id: 1,
-    name: 'Cyberpunk 2077 限定收藏',
-    cover: 'https://gw.alipayobjects.com/zos/antfincdn/xaDPEACOBV/file.png', // Placeholder image
-    class_id: 'CLS-001',
-    price: 99.99,
-    quantity: 1000,
-    description: 'A limited edition cyberpunk style NFT.',
-    saleable_inventory: 800,
-    occupied_inventory: 100,
-    frozen_inventory: 0,
-    identifier: 'NFT-CP-2077-001',
-    state: 'success',
-    sale_time: '2023-11-01 10:00:00',
-    can_book: 0,
-    creator_id: '1001',
-    created_at: '2023-10-25 10:00:00',
-    updated_at: '2023-10-25 10:00:00',
-  },
-  {
-    id: 2,
-    name: 'Future Mecha 02',
-    cover: 'https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg',
-    class_id: 'CLS-002',
-    price: 199.50,
-    quantity: 500,
-    description: 'High detailed mecha design.',
-    saleable_inventory: 500,
-    occupied_inventory: 0,
-    frozen_inventory: 0,
-    identifier: 'NFT-MECHA-002',
-    state: 'pending',
-    sale_time: '2023-12-12 12:00:00',
-    can_book: 1,
-    creator_id: '1002',
-    created_at: '2023-11-15 09:30:00',
-    updated_at: '2023-11-15 09:30:00',
-  },
-];
-
-export const waitTimePromise = async (time: number = 100) => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(true);
-    }, time);
-  });
-};
-
-export const waitTime = async (time: number = 100) => {
-  await waitTimePromise(time);
+  saleableInventory: number;
+  frozenInventory: number;
+  state: 'PENDING' | 'SUCCESS' | 'ARCHIVED';
+  saleTime: string;
+  syncChainTime?: string;
+  bookStartTime?: string;
+  bookEndTime?: string;
+  canBook: boolean;
+  createdAt: string;
+  updatedAt: string;
+  creatorId?: string;
 };
 
 export default () => {
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [createModalVisible, handleModalVisible] = useState<boolean>(false);
+  const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
+  const [currentDetail, setCurrentDetail] = useState<Artwork | null>(null);
 
   const columns: ProColumns<Artwork>[] = [
     {
@@ -136,11 +84,7 @@ export default () => {
         ],
       },
     },
-    {
-      title: '唯一标识',
-      dataIndex: 'identifier',
-      ellipsis: true,
-    },
+
     {
       title: '价格',
       dataIndex: 'price',
@@ -153,8 +97,8 @@ export default () => {
       render: (_, record) => (
         <Space direction="vertical" size={0}>
           <Tag color="geekblue">总量: {record.quantity}</Tag>
-          <Tag color="green">可售: {record.saleable_inventory}</Tag>
-          <Tag color="gold">占用: {record.occupied_inventory}</Tag>
+          <Tag color="green">可售: {record.saleableInventory}</Tag>
+          <Tag color="gold">冻结: {record.frozenInventory}</Tag>
         </Space>
       ),
     },
@@ -165,29 +109,61 @@ export default () => {
       onFilter: true,
       valueType: 'select',
       valueEnum: {
-        pending: {
-          text: '待发布',
+        PENDING: {
+          text: '未处理',
           status: 'Processing',
         },
-        success: {
-          text: '已发布',
+        SUCCESS: {
+          text: '上链成功',
           status: 'Success',
         },
-        archived: {
-          text: '已归档',
+        ARCHIVED: {
+          text: '已下架',
           status: 'Default',
         },
       },
     },
     {
       title: '发售时间',
-      dataIndex: 'sale_time',
+      dataIndex: 'saleTime',
       valueType: 'dateTime',
-      sorter: (a, b) => new Date(a.sale_time).getTime() - new Date(b.sale_time).getTime(),
+      sorter: (a, b) => new Date(a.saleTime).getTime() - new Date(b.saleTime).getTime(),
+    },
+    {
+      title: '上链时间',
+      dataIndex: 'syncChainTime',
+      valueType: 'dateTime',
+      hideInSearch: true,
+    },
+    {
+      title: '可否预约',
+      dataIndex: 'canBook',
+      valueType: 'select',
+      valueEnum: {
+        true: { text: '是', status: 'Success' },
+        false: { text: '否', status: 'Default' },
+      },
+    },
+    {
+      title: '预约开始',
+      dataIndex: 'bookStartTime',
+      valueType: 'dateTime',
+      hideInSearch: true,
+    },
+    {
+      title: '预约结束',
+      dataIndex: 'bookEndTime',
+      valueType: 'dateTime',
+      hideInSearch: true,
+    },
+    {
+      title: '创建者ID',
+      dataIndex: 'creatorId',
+      hideInSearch: true,
     },
     {
       title: '创建时间',
-      dataIndex: 'created_at',
+      dataIndex: 'createdAt',
       valueType: 'dateTime',
       hideInTable: true,
       search: {
@@ -212,17 +188,28 @@ export default () => {
         >
           编辑
         </a>,
-        <a href={`/nft/detail/${record.id}`} key="view">
+        <a
+          key="view"
+          onClick={() => {
+            setCurrentDetail(record);
+            setDetailModalVisible(true);
+          }}
+        >
           查看
         </a>,
-        <TableDropdown
-          key="actionGroup"
-          onSelect={() => action?.reload()}
-          menus={[
-            { key: 'copy', name: '复制' },
-            { key: 'delete', name: '删除' },
-          ]}
-        />,
+        <a
+          key="delete"
+          style={{ color: 'red' }}
+          onClick={async () => {
+            const success = await removeNFT(record.id);
+            if (success) {
+              message.success('删除成功');
+              action?.reload();
+            }
+          }}
+        >
+          删除
+        </a>,
       ],
     },
   ];
@@ -235,28 +222,26 @@ export default () => {
         cardBordered
         request={async (params, sort, filter) => {
           console.log(params, sort, filter);
-          await waitTime(1000);
+          const APIParams = {
+            current: params.current,
+            size: params.pageSize,
+            name: params.name,
 
-          let filteredData = mockDataSource;
-
-          if (params.name) {
-            filteredData = filteredData.filter(item => item.name.includes(params.name!));
-          }
-          if (params.identifier) {
-            filteredData = filteredData.filter(item => item.identifier.includes(params.identifier!));
-          }
-          if (params.state) {
-            filteredData = filteredData.filter(item => item.state === params.state);
-          }
-
+            state: params.state,
+          };
+          const msg = await getNFTList(APIParams);
           return {
-            data: filteredData,
+            data: msg.data,
             success: true,
-            total: filteredData.length,
+            total: msg.total,
           };
         }}
         editable={{
           type: 'multiple',
+          onSave: async (key, row) => {
+            await updateNFT(row);
+            message.success('保存成功');
+          }
         }}
         columnsState={{
           persistenceKey: 'pro-table-nft-list',
@@ -302,23 +287,22 @@ export default () => {
         onFinish={async (value) => {
           console.log('Submitted values:', value);
 
-          // Formats values to match the Artwork type or backend expectation
-          // For now, simple console log and mock success
-
-          // Flatten upload response extracting the url
-          const cover = value.cover && value.cover[0] ? value.cover[0].response?.url || value.cover[0].thumbUrl : '';
+          const cover = value.cover && value.cover[0] ? value.cover[0].response?.url || value.cover[0].thumbUrl || '' : '';
 
           const submitData = {
             ...value,
             cover
           };
 
-          console.log('Data to submit:', submitData);
-
-          message.success('提交成功');
-          handleModalVisible(false);
-          actionRef.current?.reload();
-          return true;
+          const success = await addNFT(submitData);
+          if (success) {
+            message.success('提交成功');
+            handleModalVisible(false);
+            actionRef.current?.reload();
+            return true;
+          }
+          message.error('提交失败');
+          return false;
         }}
       >
         <ProFormText
@@ -328,6 +312,7 @@ export default () => {
           rules={[{ required: true, message: '藏品名称不能为空' }]}
         />
 
+        {/* @ts-ignore */}
         <ProFormUploadButton
           name="cover"
           label="藏品封面"
@@ -387,40 +372,42 @@ export default () => {
         />
 
         {/* Dependent fields: Show DatePickers only if canBook is true */}
-        <ProFormDateTimePicker
-          name="bookStartTime"
-          label="预约开始时间"
-          width="md"
-          dependencies={['canBook']}
-          rules={[
-            ({ getFieldValue }) => ({
-              validator(_, value) {
-                if (!getFieldValue('canBook') || value) {
-                  return Promise.resolve();
-                }
-                return Promise.reject(new Error('预约开始时间不能为空'));
-              },
-            }),
-          ]}
-        />
-        <ProFormDateTimePicker
-          name="bookEndTime"
-          label="预约结束时间"
-          width="md"
-          dependencies={['canBook']}
-          rules={[
-            ({ getFieldValue }) => ({
-              validator(_, value) {
-                if (!getFieldValue('canBook') || value) {
-                  return Promise.resolve();
-                }
-                return Promise.reject(new Error('预约结束时间不能为空'));
-              },
-            }),
-          ]}
-        />
+        <ProFormDependency name={['canBook']}>
+          {({ canBook }) => {
+            if (!canBook) return null;
+            return (
+              <>
+                <ProFormDateTimePicker
+                  name="bookStartTime"
+                  label="预约开始时间"
+                  width="md"
+                  rules={[{ required: true, message: '预约开始时间不能为空' }]}
+                />
+                <ProFormDateTimePicker
+                  name="bookEndTime"
+                  label="预约结束时间"
+                  width="md"
+                  rules={[{ required: true, message: '预约结束时间不能为空' }]}
+                />
+              </>
+            );
+          }}
+        </ProFormDependency>
 
       </ModalForm>
+
+      <Modal
+        title="商品详情"
+        visible={detailModalVisible}
+        onCancel={() => setDetailModalVisible(false)}
+        footer={null}
+      >
+        {currentDetail ? (
+          <Typography.Paragraph>
+            {currentDetail.description || '暂无描述'}
+          </Typography.Paragraph>
+        ) : null}
+      </Modal>
     </>
   );
 };

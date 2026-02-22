@@ -1,6 +1,7 @@
 package com.nexo.business.artwork.interfaces.facade;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nexo.business.artwork.domain.entity.ArtWork;
 import com.nexo.business.artwork.domain.entity.ArtworkInventoryStream;
 import com.nexo.business.artwork.domain.exception.ArtWorkException;
@@ -11,6 +12,7 @@ import com.nexo.business.artwork.mapper.mybatis.ArtworkInventoryStreamMapper;
 import com.nexo.business.artwork.service.ArtWorkService;
 import com.nexo.business.artwork.service.ArtworkInventoryStreamService;
 import com.nexo.common.api.artwork.ArtWorkFacade;
+import com.nexo.common.api.artwork.request.ArtWorkQueryRequest;
 import com.nexo.common.api.artwork.response.ArtWorkQueryResponse;
 import com.nexo.common.api.artwork.response.data.ArtWorkDTO;
 import com.nexo.common.api.artwork.response.data.ArtworkInventoryDTO;
@@ -20,6 +22,8 @@ import com.nexo.common.api.product.request.ProductSaleRequest;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 import static com.nexo.business.artwork.domain.exception.ArtWorkErrorCode.ARTWORK_INVENTORY_STREAM_SAVE_FAILED;
 import static com.nexo.business.artwork.domain.exception.ArtWorkErrorCode.ARTWORK_UPDATE_FAILED;
@@ -147,5 +151,76 @@ public class ArtWorkFacadeImpl implements ArtWorkFacade {
             throw new ArtWorkException(ARTWORK_UPDATE_FAILED);
         }
         return true;
+    }
+
+    @Override
+    public ArtWorkQueryResponse<Page<ArtWorkDTO>> getNFTList(ArtWorkQueryRequest request) {
+        // 1. 查询藏品
+        Page<ArtWork> page = new Page<>(request.getCurrent(), request.getSize());
+
+        LambdaQueryWrapper<ArtWork> wrapper = new LambdaQueryWrapper<>();
+
+        if (request.getName() != null && !request.getName().isEmpty()) {
+            wrapper.like(ArtWork::getName, request.getName());
+        }
+
+        if (request.getState() != null && !request.getState().isEmpty()) {
+            wrapper.eq(ArtWork::getState,
+                    com.nexo.common.api.artwork.constant.ArtWorkState.valueOf(request.getState()));
+        }
+        wrapper.orderByDesc(ArtWork::getSaleTime);
+        Page<ArtWork> artWorkPage = artWorkService.page(page, wrapper);
+        // 2. 转换数据
+        List<ArtWorkDTO> data = artWorkConvertor.toDTOs(artWorkPage.getRecords());
+        // 3. 构造分页数据
+        Page<ArtWorkDTO> artWorkDTOPage = new Page<>(request.getCurrent(), request.getSize());
+        artWorkDTOPage.setRecords(data);
+        artWorkDTOPage.setTotal(artWorkPage.getTotal());
+        // 4. 封装并返回数据
+        ArtWorkQueryResponse<Page<ArtWorkDTO>> response = new ArtWorkQueryResponse<>();
+        response.setSuccess(true);
+        response.setCode(ResponseCode.SUCCESS.name());
+        response.setMessage(ResponseCode.SUCCESS.getMessage());
+        response.setData(artWorkDTOPage);
+        return response;
+    }
+
+    @Override
+    public Boolean addNFT(ArtWorkDTO artWorkDTO) {
+        ArtWork artWork = new ArtWork();
+        org.springframework.beans.BeanUtils.copyProperties(artWorkDTO, artWork);
+        // Set default values for new NFT
+        artWork.setSaleableInventory(artWorkDTO.getQuantity());
+        artWork.setFrozenInventory(0L);
+        artWork.setState(com.nexo.common.api.artwork.constant.ArtWorkState.PENDING);
+        // Identifier is typically generated or provided
+        if (artWork.getIdentifier() == null) {
+            artWork.setIdentifier("NFT-" + System.currentTimeMillis());
+        }
+        return artWorkService.save(artWork);
+    }
+
+    @Override
+    public Boolean updateNFT(ArtWorkDTO artWorkDTO) {
+        ArtWork artWork = artWorkService.getById(artWorkDTO.getId());
+        if (artWork != null) {
+            org.springframework.beans.BeanUtils.copyProperties(artWorkDTO, artWork, "id", "identifier", "state",
+                    "saleableInventory", "occupiedInventory", "frozenInventory", "version");
+            return artWorkService.updateById(artWork);
+        }
+        return false;
+    }
+
+    @Override
+    public Boolean deleteNFT(Long id) {
+        return artWorkService.removeById(id);
+    }
+
+    @Override
+    public Boolean updateState(Long id, String state) {
+        ArtWork artWork = new ArtWork();
+        artWork.setId(id);
+        artWork.setState(com.nexo.common.api.artwork.constant.ArtWorkState.valueOf(state));
+        return artWorkService.updateById(artWork);
     }
 }

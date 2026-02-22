@@ -22,6 +22,8 @@ public interface ArtWorkConvertor {
 
     ArtWorkDTO toDTO(ArtWork artWork);
 
+    List<ArtWorkDTO> toDTOs(List<ArtWork> artWorks);
+
     ArtWorkInfoVO toDetail(ArtWork artWork);
 
 }

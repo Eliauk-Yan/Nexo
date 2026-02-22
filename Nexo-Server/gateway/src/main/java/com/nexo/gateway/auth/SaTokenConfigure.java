@@ -51,7 +51,7 @@ public class SaTokenConfigure {
                 yield SaResult.error("未登录");
             }
             case NotRoleException e -> {
-                if (UserRole.ADMIN.getCode().equals(e.getRole()) || UserRole.ROOT.getCode().equals(e.getRole()) || UserRole.GOD.getCode().equals(e.getRole())) {
+                if (!UserRole.ADMIN.getCode().equals(e.getRole()) && !UserRole.ROOT.getCode().equals(e.getRole()) && !UserRole.GOD.getCode().equals(e.getRole())) {
                     log.error("请勿越权使用");
                     yield SaResult.error("请勿越权使用");
                 }

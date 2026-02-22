@@ -8,6 +8,8 @@ import com.nexo.common.api.product.response.data.ProductDTO;
 import com.nexo.common.api.product.response.data.ProductIventoryStreamDTO;
 import com.nexo.common.api.product.response.data.ProductSaleDTO;
 
+import java.util.List;
+
 /**
  * 商品Dubbo接口
  */

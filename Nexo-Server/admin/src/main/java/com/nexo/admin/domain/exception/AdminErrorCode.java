@@ -8,6 +8,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum AdminErrorCode implements ErrorCode {
 
+    GET_NFT_FAILED("GET_NFT_FAILED", "获取藏品数据失败"),
+
     ADMIN_NOT_FOUND("ADMIN_NOT_FOUND", "管理员不存在");
 
     private final String code;
