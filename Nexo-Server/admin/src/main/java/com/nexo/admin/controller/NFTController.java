@@ -10,6 +10,7 @@ import com.nexo.common.web.result.Result;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * @classname NFTController
@@ -64,14 +65,13 @@ public class NFTController {
     }
 
     /**
-     * 修改数字藏品状态
-     * @param id 数字藏品ID
-     * @param state 状态
-     * @return 结果
+     * 上传数字藏品封面
+     * @param file 数字藏品封面文件
+     * @return URL
      */
-    @PutMapping("/{id}/status/{state}")
-    public Result<Boolean> updateState(@PathVariable Long id, @PathVariable String state) {
-        return Result.success(nftService.updateState(id, state));
+    @PostMapping("/upload")
+    public Result<String> uploadNFT(@RequestParam("file") MultipartFile file) {
+        return Result.success(nftService.uploadNFT(file));
     }
 
 }
