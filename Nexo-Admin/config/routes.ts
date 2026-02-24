@@ -35,6 +35,12 @@ export default [
     component: './nft',
   },
   {
+    name: '用户管理',
+    icon: 'team',
+    path: '/user-manage',
+    component: './user-manage',
+  },
+  {
     path: '/',
     redirect: '/welcome',
   },

@@ -2,10 +2,10 @@ package com.nexo.business.chain.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.nexo.business.chain.domain.entity.ChainOperationLog;
-import com.nexo.business.chain.domain.enums.ChainOperateType;
-import com.nexo.business.chain.domain.enums.ChainOperationBizType;
-import com.nexo.business.chain.domain.enums.ChainOperationState;
-import com.nexo.business.chain.domain.enums.ChainType;
+import com.nexo.common.api.blockchain.constant.ChainOperateType;
+import com.nexo.common.api.blockchain.constant.ChainOperationBizType;
+import com.nexo.common.api.blockchain.constant.ChainOperationState;
+import com.nexo.common.api.blockchain.constant.ChainType;
 
 public interface ChainOperationLogService extends IService<ChainOperationLog> {
 

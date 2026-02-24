@@ -1,5 +1,6 @@
 package com.nexo.admin.domain.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -32,13 +33,16 @@ public class NFTCreateDTO {
     private Long quantity;
 
     @NotNull(message = "藏品发售时间不能为空")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8") // 解析前端传来的格式
     private LocalDateTime saleTime;
 
     @NotNull(message = "藏品是否预约不能为空")
     private Boolean canBook;
 
-    private String bookStartTime;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime bookStartTime;
 
-    private String bookEndTime;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime bookEndTime;
 
 }

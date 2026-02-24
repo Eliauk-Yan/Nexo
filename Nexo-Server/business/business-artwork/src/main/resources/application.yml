@@ -2,6 +2,23 @@ server:
   port: 8092
 
 spring:
+  # 消费者配置
+  cloud:
+    function:
+      definition: chain;
+    stream:
+      rocketmq:
+        bindings:
+          chain-in-0:
+            consumer:
+              subscription:
+                expression: 'ARTWORK' # 关键点：根据发送端的 BizType 按 Tag 过滤消息
+      bindings:
+        chain-in-0: # 对应上面的 function definition (加上 -in-0 构成输入通道)
+          content-type: application/json
+          destination: chain-result-topic             # 这里的 Topic 必须与发送端指定的完全一致
+          group: chain-group                          # 消费者组
+          binder: rocketmq
   application:
     name: business-artwork
   config:
@@ -12,3 +29,4 @@ spring:
       - classpath:/cache.yml
       - classpath:/file.yml
       - classpath:/es.yml
+      - classpath:/stream.yml

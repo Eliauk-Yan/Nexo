@@ -1,35 +1,45 @@
 package com.nexo.business.artwork.interfaces.facade;
 
-import cn.hutool.core.lang.UUID;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nexo.business.artwork.domain.entity.ArtWork;
 import com.nexo.business.artwork.domain.entity.ArtworkInventoryStream;
+import com.nexo.business.artwork.domain.entity.ArtworkSnapshot;
+import com.nexo.business.artwork.domain.entity.ArtworkStream;
 import com.nexo.business.artwork.domain.exception.ArtWorkException;
 import com.nexo.business.artwork.mapper.concert.ArtWorkConvertor;
 import com.nexo.business.artwork.mapper.concert.ArtworkInventoryStreamConvert;
 import com.nexo.business.artwork.mapper.mybatis.ArtworkMapper;
 import com.nexo.business.artwork.mapper.mybatis.ArtworkInventoryStreamMapper;
+import com.nexo.business.artwork.mapper.mybatis.ArtworkSnapshotMapper;
+import com.nexo.business.artwork.mapper.mybatis.ArtworkStreamMapper;
 import com.nexo.business.artwork.service.ArtWorkService;
 import com.nexo.business.artwork.service.ArtworkInventoryStreamService;
 import com.nexo.common.api.artwork.ArtWorkFacade;
 import com.nexo.common.api.artwork.constant.ArtWorkState;
 import com.nexo.common.api.artwork.request.ArtWorkQueryRequest;
+import com.nexo.common.api.artwork.request.NFTCreateRequest;
 import com.nexo.common.api.artwork.response.ArtWorkQueryResponse;
+import com.nexo.common.api.artwork.response.NFTResponse;
 import com.nexo.common.api.artwork.response.data.ArtWorkDTO;
 import com.nexo.common.api.artwork.response.data.ArtworkInventoryDTO;
 import com.nexo.common.api.artwork.response.data.ArtworkInventoryStreamDTO;
+import com.nexo.common.api.blockchain.ChainFacade;
+import com.nexo.common.api.blockchain.constant.ChainOperationBizType;
+import com.nexo.common.api.blockchain.request.ChainRequest;
+import com.nexo.common.api.blockchain.response.ChainResponse;
+import com.nexo.common.api.blockchain.response.data.ChainOperationData;
 import com.nexo.common.api.common.response.ResponseCode;
 import com.nexo.common.api.product.request.ProductSaleRequest;
 import lombok.RequiredArgsConstructor;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-import static com.nexo.business.artwork.domain.exception.ArtWorkErrorCode.ARTWORK_INVENTORY_STREAM_SAVE_FAILED;
-import static com.nexo.business.artwork.domain.exception.ArtWorkErrorCode.ARTWORK_UPDATE_FAILED;
+import static com.nexo.business.artwork.domain.exception.ArtWorkErrorCode.*;
 
 /**
  * @classname ArtWorkFacadeImpl
@@ -39,6 +49,12 @@ import static com.nexo.business.artwork.domain.exception.ArtWorkErrorCode.ARTWOR
 @DubboService(version = "1.0.0")
 @RequiredArgsConstructor
 public class ArtWorkFacadeImpl implements ArtWorkFacade {
+
+    /**
+     * 藏品门面服务
+     */
+    @DubboReference(version = "1.0.0")
+    private ChainFacade chainFacade;
 
     /**
      * 藏品服务
@@ -69,6 +85,16 @@ public class ArtWorkFacadeImpl implements ArtWorkFacade {
      * 藏品Mapper
      */
     private final ArtworkMapper artWorkMapper;
+
+    /**
+     * 藏品快照Mapper
+     */
+    private final ArtworkSnapshotMapper artworkSnapshotMapper;
+
+    /**
+     * 藏品操作流水Mapper
+     */
+    private final ArtworkStreamMapper artworkStreamMapper;
 
     @Override
     public ArtWorkQueryResponse<ArtWorkDTO> getArtWorkById(Long id) {
@@ -151,7 +177,7 @@ public class ArtWorkFacadeImpl implements ArtWorkFacade {
                 // 已售出库存 + 冻结库存（占用） + 变化量 <= 总库存
                 .apply("saleable_inventory + frozen_inventory + {0} <= quantity", saleRequest.getQuantity()));
         if (updateRow <= 0) {
-            throw new ArtWorkException(ARTWORK_UPDATE_FAILED);
+            throw new ArtWorkException(NFT_UPDATE_FAILED);
         }
         return true;
     }
@@ -188,17 +214,53 @@ public class ArtWorkFacadeImpl implements ArtWorkFacade {
         return response;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
-    public Boolean addNFT(ArtWorkDTO artWorkDTO) {
+    public NFTResponse<Boolean> addNFT(NFTCreateRequest request) {
+        // 1. 创建藏品
         ArtWork artWork = new ArtWork();
-        BeanUtils.copyProperties(artWorkDTO, artWork);
-        artWork.setSaleableInventory(artWorkDTO.getQuantity());
+        BeanUtils.copyProperties(request, artWork);
+        artWork.setSaleableInventory(request.getQuantity());
         artWork.setFrozenInventory(0L);
         artWork.setState(ArtWorkState.PENDING);
-        if (artWork.getIdentifier() == null) {
-            artWork.setIdentifier(UUID.randomUUID().toString());
+        // 2. 保存藏品
+        int insertArtworkRow = artWorkMapper.insert(artWork);
+        if (insertArtworkRow != 1) {
+            throw new ArtWorkException(NFT_CREATE_FAILED);
         }
-        return artWorkService.save(artWork);
+        // 3. 保存藏品快照
+        ArtworkSnapshot snapshot = artWorkConvertor.toSnapshot(artWork);
+        snapshot.setArtworkId(artWork.getId());
+        snapshot.setCreatorId(request.getCreatorId());
+        int insertSnapshotRow = artworkSnapshotMapper.insert(snapshot);
+        if (insertSnapshotRow != 1) {
+            throw new ArtWorkException(NFT_CREATE_FAILED);
+        }
+        // 4. 保存藏品操作流水
+        ArtworkStream stream = artWorkConvertor.toStream(artWork);
+        stream.setStreamType(request.getEventType().getCode());
+        stream.setArtworkId(artWork.getId());
+        int insertStreamRow = artworkStreamMapper.insert(stream);
+        if (insertStreamRow != 1) {
+            throw new ArtWorkException(NFT_CREATE_FAILED);
+        }
+        // 5. 藏品上链
+        ChainRequest chainRequest = new ChainRequest();
+        chainRequest.setIdentifier(request.getIdentifier());
+        chainRequest.setClassName(request.getName());
+        chainRequest.setBizType(ChainOperationBizType.ARTWORK.getCode());
+        chainRequest.setBizId(artWork.getId().toString());
+        ChainResponse<ChainOperationData> chainResponse = chainFacade.onChain(chainRequest);
+        if (!chainResponse.getSuccess() || chainResponse.getData() == null) {
+            throw new ArtWorkException(NFT_ON_CHAIN_FAILED);
+        }
+        // 6. 构造响应并返回
+        NFTResponse<Boolean> response = new NFTResponse<>();
+        response.setSuccess(true);
+        response.setCode(ResponseCode.SUCCESS.name());
+        response.setMessage(ResponseCode.SUCCESS.getMessage());
+        response.setData(true);
+        return response;
     }
 
     @Override

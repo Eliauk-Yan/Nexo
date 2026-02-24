@@ -71,23 +71,11 @@
             <artifactId>common-limiter</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-
-        <!--引入百度超级链-->
+        <!--MQ-->
         <dependency>
-            <groupId>com.baidu.xuper</groupId>
-            <artifactId>xasset-sdk-java</artifactId>
-            <version>1.0.7</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>jdk.tools</groupId>
-                    <artifactId>jdk.tools</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.baidu.xuper</groupId>
-            <artifactId>xuper-java-sdk</artifactId>
-            <version>0.2.0</version>
+            <groupId>com.nexo.common.mq</groupId>
+            <artifactId>common-mq</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>

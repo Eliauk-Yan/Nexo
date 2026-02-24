@@ -1,6 +1,6 @@
 package com.nexo.business.chain.service.factory;
 
-import com.nexo.business.chain.domain.enums.ChainType;
+import com.nexo.common.api.blockchain.constant.ChainType;
 import com.nexo.business.chain.domain.exception.ChainErrorCode;
 import com.nexo.business.chain.domain.exception.ChainException;
 import com.nexo.business.chain.service.ChainService;
@@ -19,17 +19,6 @@ import java.util.Map;
 @Component
 public class ChainServiceFactory {
 
-
-    /**
-     * Map 实现类对比：
-     * +-------------------+------------+------------+----------------------------------+
-     * | Map 类型           | 线程安全    | 并发性能    | 说明                              |
-     * +-------------------+------------+------------+----------------------------------+
-     * | HashMap           | 否         | 高         | 需外部保证线程安全                  |
-     * | Hashtable         | 是         | 低         | 方法级 synchronized，已淘汰        |
-     * | ConcurrentHashMap | 是         | 高         | CAS + 局部加锁，适合高并发场景      |
-     * +-------------------+------------+------------+---------------------------------+
-     */
     private final Map<ChainType, ChainService> blockchainServiceMap = new EnumMap<>(ChainType.class);
 
     public ChainServiceFactory(List<ChainService> services) {

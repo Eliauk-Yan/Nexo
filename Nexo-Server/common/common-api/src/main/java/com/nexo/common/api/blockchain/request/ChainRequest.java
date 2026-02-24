@@ -24,8 +24,9 @@ public class ChainRequest extends BaseRequest implements Serializable {
      */
     private String identifier;
 
+
     /**
-     * 藏品类别 ID
+     * 藏品类别ID
      */
     private String classId;
 
@@ -50,18 +51,23 @@ public class ChainRequest extends BaseRequest implements Serializable {
     private String owner;
 
     /**
-     * ntf 唯一id
+     * ntf唯一id
      */
     private String ntfId;
 
     /**
-     * 用户 id
+     * 用户id
      */
     private String userId;
 
     /**
-     * 业务 id
+     * 业务id
      */
     private String bizId;
+
+    /**
+     * 业务类型
+     */
+    private String bizType;
 
 }

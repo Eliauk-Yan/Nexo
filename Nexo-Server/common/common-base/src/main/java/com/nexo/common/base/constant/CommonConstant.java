@@ -17,6 +17,14 @@ public class CommonConstant {
      */
     public static final String SEPARATOR = "_";
 
+    /**
+     * 标准时间格式
+     */
+    public static final String COMMON_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
 
+    /**
+     * 标准日期格式
+     */
+    public static final String COMMON_DATE_PATTERN = "yyyy-MM-dd";
 
 }

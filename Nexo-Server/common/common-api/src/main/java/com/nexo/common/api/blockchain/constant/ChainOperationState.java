@@ -1,4 +1,4 @@
-package com.nexo.business.chain.domain.enums;
+package com.nexo.common.api.blockchain.constant;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
 import lombok.AllArgsConstructor;

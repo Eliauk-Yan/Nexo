@@ -1,4 +1,4 @@
-package com.nexo.business.chain.domain.enums;
+package com.nexo.common.api.blockchain.constant;
 
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
@@ -9,11 +9,7 @@ import lombok.Getter;
 @Getter
 public enum ChainType {
 
-    MOCK("MOCK", "模拟"),
-
-    WEN_CHANG("WEN_CHANG", "文昌链"),
-
-    BAIDU_SUPER("BAIDU_SUPER", "百度超级链");
+    MOCK("MOCK", "模拟");
 
     @EnumValue
     private final String code;

@@ -1,4 +1,4 @@
-package com.nexo.business.chain.domain.enums;
+package com.nexo.common.api.blockchain.constant;
 
 import com.baomidou.mybatisplus.annotation.EnumValue;
 import lombok.AllArgsConstructor;
@@ -12,6 +12,8 @@ import lombok.Getter;
 @AllArgsConstructor
 @Getter
 public enum ChainOperateType {
+
+    NFT_ON_CHAIN("NFT_ON_CHAIN", "NFT上链"),
 
     CREATE_ACCOUNT("CREATE_ACCOUNT", "创建链账户");
 

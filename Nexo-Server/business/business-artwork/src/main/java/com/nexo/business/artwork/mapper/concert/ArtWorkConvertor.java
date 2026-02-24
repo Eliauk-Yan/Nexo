@@ -1,10 +1,13 @@
 package com.nexo.business.artwork.mapper.concert;
 
 import com.nexo.business.artwork.domain.entity.ArtWork;
+import com.nexo.business.artwork.domain.entity.ArtworkSnapshot;
+import com.nexo.business.artwork.domain.entity.ArtworkStream;
 import com.nexo.business.artwork.interfaces.vo.ArtWorkInfoVO;
 import com.nexo.business.artwork.interfaces.vo.ArtWorkVO;
 import com.nexo.common.api.artwork.response.data.ArtWorkDTO;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import java.util.List;
 
@@ -26,4 +29,10 @@ public interface ArtWorkConvertor {
 
     ArtWorkInfoVO toDetail(ArtWork artWork);
 
+    @Mapping(source = "createdAt", target = "createTime")
+    @Mapping(source = "version", target = "updateVersion")
+    ArtworkSnapshot toSnapshot(ArtWork artWork);
+
+    @Mapping(source = "createdAt", target = "createTime")
+    ArtworkStream toStream(ArtWork artWork);
 }

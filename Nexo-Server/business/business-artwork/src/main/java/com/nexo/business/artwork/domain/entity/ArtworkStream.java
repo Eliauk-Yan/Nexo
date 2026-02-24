@@ -2,7 +2,6 @@ package com.nexo.business.artwork.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.nexo.common.api.artwork.constant.ArtWorkState;
 import com.nexo.common.datasource.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -29,6 +28,9 @@ public class ArtworkStream extends BaseEntity {
     @TableField(value = "class_id")
     private String classId;
 
+    @TableField(value = "artwork_id")
+    private Long artworkId;
+
     @TableField(value = "price")
     private BigDecimal price;
 
@@ -44,13 +46,21 @@ public class ArtworkStream extends BaseEntity {
     @TableField(value = "frozen_inventory")
     private Long frozenInventory;
 
-    @TableField(value = "identifier")
-    private String identifier;
+    @TableField(value = "create_time")
+    private LocalDateTime createTime;
 
-    @TableField(value = "state")
-    private ArtWorkState state;
+    @TableField(value = "stream_type")
+    private String streamType;
+
+    @TableField(value = "sale_time")
+    private LocalDateTime saleTime;
 
     @TableField(value = "sync_chain_time")
     private LocalDateTime syncChainTime;
+
+    @TableField(value = "identifier")
+    private String identifier;
+
+
 
 }

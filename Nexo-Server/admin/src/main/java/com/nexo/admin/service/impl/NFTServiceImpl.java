@@ -1,6 +1,7 @@
 package com.nexo.admin.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.lang.UUID;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nexo.admin.domain.dto.NFTCreateDTO;
 import com.nexo.admin.domain.dto.NFTQueryDTO;
@@ -9,7 +10,9 @@ import com.nexo.admin.domain.vo.NFTVO;
 import com.nexo.admin.service.NFTService;
 import com.nexo.common.api.artwork.ArtWorkFacade;
 import com.nexo.common.api.artwork.request.ArtWorkQueryRequest;
+import com.nexo.common.api.artwork.request.NFTCreateRequest;
 import com.nexo.common.api.artwork.response.ArtWorkQueryResponse;
+import com.nexo.common.api.artwork.response.NFTResponse;
 import com.nexo.common.api.artwork.response.data.ArtWorkDTO;
 import com.nexo.common.file.service.FileService;
 import com.nexo.common.web.result.MultiResult;
@@ -17,12 +20,12 @@ import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-import static com.nexo.admin.domain.exception.AdminErrorCode.ADMIN_UPLOAD_IMAGE_FAILED;
-import static com.nexo.admin.domain.exception.AdminErrorCode.GET_NFT_FAILED;
+import static com.nexo.admin.domain.exception.AdminErrorCode.*;
 
 /**
  * @classname NFTServiceImpl
@@ -33,24 +36,25 @@ import static com.nexo.admin.domain.exception.AdminErrorCode.GET_NFT_FAILED;
 @RequiredArgsConstructor
 public class NFTServiceImpl implements NFTService {
 
+    /**
+     * 藏品服务门面
+     */
     @DubboReference(version = "1.0.0")
     private ArtWorkFacade artWorkFacade;
 
+    /**
+     * 文件存储服务
+     */
     private final FileService fileService;
 
     @Override
     public MultiResult<NFTVO> getNFTList(NFTQueryDTO dto) {
         // 1. 调用藏品服务获取藏品列表
         ArtWorkQueryRequest request = new ArtWorkQueryRequest();
-
         request.setCurrent(dto.getCurrent());
-
         request.setSize(dto.getSize());
-
         request.setName(dto.getName());
-
         request.setState(dto.getState());
-
         ArtWorkQueryResponse<Page<ArtWorkDTO>> response = artWorkFacade.getNFTList(request);
         if (!response.getSuccess() || response.getData() == null) {
             throw new AdminException(GET_NFT_FAILED);
@@ -65,17 +69,29 @@ public class NFTServiceImpl implements NFTService {
                 response.getData().getSize());
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public Boolean addNFT(NFTCreateDTO dto) {
-        ArtWorkDTO artWorkDTO = new ArtWorkDTO();
-        BeanUtils.copyProperties(dto, artWorkDTO);
-        if (dto.getCanBook() && dto.getBookStartTime() != null && !dto.getBookStartTime().isEmpty() && dto.getBookEndTime() != null && !dto.getBookEndTime().isEmpty()) {
-            artWorkDTO.setBookStartTime(java.time.LocalDateTime.parse(dto.getBookStartTime(),
-                    java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-            artWorkDTO.setBookEndTime(java.time.LocalDateTime.parse(dto.getBookEndTime(),
-                    java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        // 1. 构造藏品创建请求
+        NFTCreateRequest request = new NFTCreateRequest();
+        request.setName(dto.getName());
+        request.setCover(dto.getCover());
+        request.setPrice(dto.getPrice());
+        request.setQuantity(dto.getQuantity());
+        request.setDescription(dto.getDescription());
+        request.setIdentifier(UUID.randomUUID().toString());
+        request.setSaleTime(dto.getSaleTime());
+        request.setCanBook(dto.getCanBook());
+        request.setBookStartTime(dto.getBookStartTime());
+        request.setBookEndTime(dto.getBookEndTime());
+        request.setCreatorId(StpUtil.getLoginIdAsLong());
+        // 2. 调用藏品服务创建藏品
+        NFTResponse<Boolean> response = artWorkFacade.addNFT(request);
+        if (!response.getSuccess() || response.getData() == null) {
+            throw new AdminException(CREATE_NFT_ERROR);
         }
-        return artWorkFacade.addNFT(artWorkDTO);
+        // 3. 返回结果
+        return response.getData();
     }
 
     @Override
@@ -109,5 +125,6 @@ public class NFTServiceImpl implements NFTService {
         // 3. 上传文件并返回URL
         return fileService.uploadFile(file, filePath);
     }
+
 
 }

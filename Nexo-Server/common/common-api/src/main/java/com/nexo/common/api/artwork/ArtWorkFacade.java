@@ -2,13 +2,14 @@ package com.nexo.common.api.artwork;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nexo.common.api.artwork.request.ArtWorkQueryRequest;
+import com.nexo.common.api.artwork.request.NFTCreateRequest;
 import com.nexo.common.api.artwork.response.ArtWorkQueryResponse;
+import com.nexo.common.api.artwork.response.NFTResponse;
 import com.nexo.common.api.artwork.response.data.ArtWorkDTO;
 import com.nexo.common.api.artwork.response.data.ArtworkInventoryDTO;
 import com.nexo.common.api.artwork.response.data.ArtworkInventoryStreamDTO;
 import com.nexo.common.api.product.request.ProductSaleRequest;
 
-import java.util.List;
 
 public interface ArtWorkFacade {
 
@@ -55,7 +56,7 @@ public interface ArtWorkFacade {
     /**
      * 新增藏品
      */
-    Boolean addNFT(ArtWorkDTO artWorkDTO);
+    NFTResponse<Boolean> addNFT(NFTCreateRequest request);
 
     /**
      * 更新藏品

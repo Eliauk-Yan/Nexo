@@ -1,6 +1,6 @@
 
 import { PlusOutlined } from '@ant-design/icons';
-import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { ActionType, ProColumns, ProFormInstance } from '@ant-design/pro-components';
 import {
   ModalForm,
   ProFormDateTimePicker,
@@ -41,6 +41,7 @@ export type Artwork = {
 
 export default () => {
   const actionRef = useRef<ActionType>(null);
+  const formRef = useRef<ProFormInstance>();
   const [createModalVisible, handleModalVisible] = useState<boolean>(false);
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
   const [currentDetail, setCurrentDetail] = useState<Artwork | null>(null);
@@ -286,11 +287,16 @@ export default () => {
         title="新建 NFT 藏品"
         width="600px"
         visible={createModalVisible}
+        formRef={formRef}
+        dateFormatter="string"
+        modalProps={{
+          destroyOnClose: true,
+        }}
         onVisibleChange={handleModalVisible}
         onFinish={async (value) => {
           console.log('Submitted values:', value);
 
-          const cover = value.cover && value.cover[0] ? value.cover[0].response?.url || value.cover[0].thumbUrl || '' : '';
+          const cover = value.cover && value.cover[0] ? value.cover[0].response?.data || value.cover[0].response?.url || value.cover[0].thumbUrl || '' : '';
 
           const submitData = {
             ...value,
@@ -302,6 +308,7 @@ export default () => {
             message.success('提交成功');
             handleModalVisible(false);
             actionRef.current?.reload();
+            formRef.current?.resetFields();
             return true;
           }
           message.error('提交失败');
@@ -324,8 +331,11 @@ export default () => {
           fieldProps={{
             name: 'file',
             listType: 'picture-card',
+            headers: {
+              satoken: localStorage.getItem('satoken') || '',
+            },
           }}
-          action="/api/upload" // Replace with actual upload API
+          action="/admin/nft/upload" // Replace with actual upload API
           rules={[{ required: true, message: '藏品封面不能为空' }]}
         />
 

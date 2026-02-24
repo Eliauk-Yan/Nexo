@@ -1,6 +1,6 @@
 package com.nexo.business.chain.interfaces.facade;
 
-import com.nexo.business.chain.domain.enums.ChainType;
+import com.nexo.common.api.blockchain.constant.ChainType;
 import com.nexo.business.chain.service.ChainService;
 import com.nexo.business.chain.service.factory.ChainServiceFactory;
 import com.nexo.common.api.blockchain.ChainFacade;
@@ -37,7 +37,7 @@ public class ChainFacadeImpl implements ChainFacade {
 
     @Override
     public ChainResponse<ChainOperationData> onChain(ChainRequest request) {
-        return null;
+        return getChainService().onChain(request);
     }
 
     @Override

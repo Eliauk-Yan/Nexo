@@ -7,6 +7,7 @@ import com.nexo.common.api.artwork.response.ArtWorkQueryResponse;
 import com.nexo.common.api.artwork.response.data.ArtworkInventoryDTO;
 import com.nexo.common.api.common.response.ResponseCode;
 import com.nexo.common.api.inventory.InventoryFacade;
+import com.nexo.common.api.inventory.request.InventoryRequest;
 import com.nexo.common.api.inventory.response.InventoryResponse;
 import com.nexo.common.api.order.request.OrderCreateRequest;
 import com.nexo.common.api.product.constant.ProductType;
@@ -99,7 +100,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
         if (soldOutProductLocalCache.getIfPresent(productType + SEPARATOR + request.getProductId()) != null) {
             response.setSuccess(false);
             response.setData(false);
-            response.setCode(ResponseCode.FAIL.name());
+            response.setCode(ResponseCode.FAIL.getCode());
             response.setMessage("库存不足");
             return response;
         }
@@ -121,7 +122,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
                 log.error("库存扣减错误 , 商品ID = {} , 幂等号 = {} ,", request.getProductId(), request.getIdentifier(), e);
                 response.setSuccess(false);
                 response.setData(false);
-                response.setCode(ResponseCode.FAIL.name());
+                response.setCode(ResponseCode.FAIL.getCode());
                 response.setMessage("库存扣减错误");
                 return response;
             }
@@ -204,6 +205,29 @@ public class InventoryFacadeImpl implements InventoryFacade {
             response.setCode(ResponseCode.SUCCESS.name());
             response.setMessage(ResponseCode.SUCCESS.getMessage());
             return response;
+        }
+        throw new UnsupportedOperationException("不支持商品类型");
+    }
+
+
+    @Override
+    public InventoryResponse<Boolean> init(InventoryRequest request) {
+        // TODO 后续改为模板方法
+        if (request.getProductType() == ProductType.ARTWORK) {
+            // 1. 构造库存响应对象
+            InventoryResponse<Boolean> inventoryResponse = new InventoryResponse<>();
+            // 2. 检查库存是否存在
+            if (redissonClient.getBucket("nft:inventory:" + request.getProductId()).isExists()) {
+                inventoryResponse.setSuccess(true);
+                inventoryResponse.setCode(ResponseCode.DUPLICATED.getCode());
+                return inventoryResponse;
+            }
+            // 3. 初始化库存
+            redissonClient.getBucket("nft:inventory:" + request.getProductId()).set(request.getInventory());
+            inventoryResponse.setSuccess(true);
+            inventoryResponse.setCode(ResponseCode.SUCCESS.getCode());
+            inventoryResponse.setData(true);
+            return inventoryResponse;
         }
         throw new UnsupportedOperationException("不支持商品类型");
     }

@@ -2,6 +2,15 @@ server:
   port: 8093
 
 spring:
+  cloud:
+    stream:
+      # 生产者配置
+      bindings:
+        chain-out-0: # 对应代码里的 "chain-out-0"
+          content-type: application/json
+          destination: chain-result-topic      # 发送到 RocketMQ 的 Topic 名称
+          group: chain-group                   # 发送者所在的 Group
+          binder: rocketmq                     # 指定使用 RocketMQ
   application:
     name: business-blockchain
   profiles:
@@ -12,18 +21,4 @@ spring:
       - classpath:/rpc.yml
       - classpath:/config.yml
       - classpath:/cache.yml
-
-nexo:
-  chain:
-    type: BAIDU_SUPER
-    # 文昌链配置
-    wenchang:
-      host: https://api.wenchang-chain.com
-      api-key: 123456789
-      api-secret: 123456789
-      chain-addr-super: 123456789
-    # 百度超级链配置
-    baidu:
-      app-id: 110973
-      ak: b96b7a6634a8ef1f20e5de3d92ced17f
-      sk: a4d3346d7343e7b411680a6507199702
+      - classpath:/stream.yml

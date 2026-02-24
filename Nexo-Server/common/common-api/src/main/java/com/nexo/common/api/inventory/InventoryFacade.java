@@ -1,5 +1,6 @@
 package com.nexo.common.api.inventory;
 
+import com.nexo.common.api.inventory.request.InventoryRequest;
 import com.nexo.common.api.inventory.response.InventoryResponse;
 import com.nexo.common.api.order.request.OrderCreateRequest;
 import com.nexo.common.api.product.constant.ProductType;
@@ -43,4 +44,11 @@ public interface InventoryFacade {
       * @return 删除结果
      */
     InventoryResponse<Long> removeInventoryDecreaseLog(OrderCreateRequest orderCreateRequest);
+
+    /**
+     * 初始化库存
+     * @param inventoryRequest 库存请求
+      * @return 初始化结果
+     */
+    InventoryResponse<Boolean> init(InventoryRequest inventoryRequest);
 }

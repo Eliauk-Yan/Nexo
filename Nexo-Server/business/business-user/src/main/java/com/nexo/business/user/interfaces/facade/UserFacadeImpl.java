@@ -31,7 +31,8 @@ public class UserFacadeImpl implements UserFacade {
         UserInfo info = switch (request.getCondition()) {
             case UserQueryByPhone(String phone) -> userService.queryUserByPhone(phone);
             case UserQueryById(Long id) -> userService.queryUserById(id);
-            case UserQueryByPhoneAndPassword(String phone, String password) -> userService.queryUserByPhoneAndPassword(phone, password);
+            case UserQueryByPhoneAndPassword(String phone, String password) ->
+                userService.queryUserByPhoneAndPassword(phone, password);
         };
         // 2. 组装响应结果
         UserQueryResponse<UserInfo> response = new UserQueryResponse<>();
@@ -49,5 +50,54 @@ public class UserFacadeImpl implements UserFacade {
         response.setSuccess(true);
         // 3. 返回响应
         return response;
+    }
+
+    @Override
+    public UserQueryResponse<com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.nexo.common.api.user.response.data.UserDTO>> getUserList(
+            com.nexo.common.api.user.request.UserListQueryRequest request) {
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.nexo.business.user.domain.entity.User> page = new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(
+                request.getCurrent(), request.getSize());
+        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.nexo.business.user.domain.entity.User> wrapper = new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+        if (request.getNickName() != null && !request.getNickName().isEmpty()) {
+            wrapper.like(com.nexo.business.user.domain.entity.User::getNickName, request.getNickName());
+        }
+        if (request.getPhone() != null && !request.getPhone().isEmpty()) {
+            wrapper.eq(com.nexo.business.user.domain.entity.User::getPhone, request.getPhone());
+        }
+        wrapper.orderByDesc(com.nexo.business.user.domain.entity.User::getCreatedAt);
+
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.nexo.business.user.domain.entity.User> userPage = userService
+                .page(page, wrapper);
+
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.nexo.common.api.user.response.data.UserDTO> dtoPage = new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(
+                userPage.getCurrent(), userPage.getSize(), userPage.getTotal());
+        dtoPage.setRecords(userPage.getRecords().stream().map(u -> {
+            com.nexo.common.api.user.response.data.UserDTO dto = new com.nexo.common.api.user.response.data.UserDTO();
+            org.springframework.beans.BeanUtils.copyProperties(u, dto);
+            return dto;
+        }).toList());
+
+        UserQueryResponse<com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.nexo.common.api.user.response.data.UserDTO>> response = new UserQueryResponse<>();
+        response.setData(dtoPage);
+        return response;
+    }
+
+    @Override
+    public Boolean addUser(com.nexo.common.api.user.response.data.UserDTO userDTO) {
+        com.nexo.business.user.domain.entity.User user = new com.nexo.business.user.domain.entity.User();
+        org.springframework.beans.BeanUtils.copyProperties(userDTO, user);
+        return userService.save(user);
+    }
+
+    @Override
+    public Boolean updateUser(com.nexo.common.api.user.response.data.UserDTO userDTO) {
+        com.nexo.business.user.domain.entity.User user = new com.nexo.business.user.domain.entity.User();
+        org.springframework.beans.BeanUtils.copyProperties(userDTO, user);
+        return userService.updateById(user);
+    }
+
+    @Override
+    public Boolean deleteUser(Long id) {
+        return userService.removeById(id);
     }
 }
