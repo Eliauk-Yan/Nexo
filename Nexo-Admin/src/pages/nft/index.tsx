@@ -11,13 +11,11 @@ import {
   ProFormSwitch,
   ProFormDependency,
   ProTable,
-  TableDropdown,
 } from '@ant-design/pro-components';
 import { Button, Image, Space, Tag, message, Modal, Typography, Popconfirm } from 'antd';
 import { useRef, useState } from 'react';
 import { getNFTList, addNFT, updateNFT, removeNFT } from '@/services/api/nft';
 
-// Define the Artwork type based on the database schema provided
 export type Artwork = {
   id: number;
   name: string;
@@ -225,15 +223,14 @@ export default () => {
         actionRef={actionRef}
         cardBordered
         request={async (params, sort, filter) => {
-          console.log(params, sort, filter);
           const APIParams = {
             current: params.current,
             size: params.pageSize,
             name: params.name,
-
             state: params.state,
           };
           const msg = await getNFTList(APIParams);
+          console.log(msg.data);
           return {
             data: msg.data,
             success: true,

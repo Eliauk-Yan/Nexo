@@ -9,6 +9,7 @@ import com.nexo.common.api.order.response.OrderResponse;
 import com.nexo.common.web.result.Result;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,7 +28,7 @@ public class TradeController {
     private final TradeService tradeService;
 
     @PostMapping("buy")
-    public Result<String> buy(@RequestBody BuyDTO params) {
+    public Result<String> buy(@Validated @RequestBody BuyDTO params) {
         return Result.success(tradeService.buy(params));
     }
 

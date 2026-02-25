@@ -11,16 +11,17 @@ spring:
       - classpath:/stream.yml
   application:
     name: business-trade
+  # 生产者配置
   cloud:
     function:
-      definition: buy;
+      definition: buy; # 框架会自动在代码中寻找以 buy 为名字的通道映射关系，配合后面的 out-0 或 in-0 来区分是发消息还是收消息。
     stream:
       rocketmq:
         bindings:
           buy-out-0: # 这里的 buy-out-0 是为了配置 RocketMQ 特有属性
             producer:
-              producerType: Trans
-              transactionListener: inventoryDecreaseTransactionListener
+              producerType: Trans # 声明消息类型为事务消息
+              transactionListener: inventoryDecreaseTransactionListener # 声明事务监听器 指定本地事务执行和回查时触发的 Bean 名字
       bindings:
         buy-out-0: # 这里的 buy-out-0 是通用流配置
           destination: buy-topic

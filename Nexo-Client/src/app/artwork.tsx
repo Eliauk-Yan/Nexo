@@ -1,25 +1,54 @@
 import { artworkApi, authApi, tradeApi } from '@/api'
 import { LiquidGlassButton } from '@/components/ui'
-import { colors, spacing, typography } from '@/config/theme'
+import { borderRadius, colors, shadows, spacing, typography } from '@/config/theme'
 import { ArtworkDetail } from '@/api/artwork'
-import { GlassView } from 'expo-glass-effect'
 import { Image } from 'expo-image'
+import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import {
+  Alert,
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Spinner from 'react-native-loading-spinner-overlay'
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window')
+const IMAGE_HEIGHT = SCREEN_WIDTH * 1.15
+
+/**
+ * 格式化时间为正常格式 YYYY-MM-DD HH:mm
+ */
+const formatDateTime = (dateStr: string | null | undefined): string => {
+  if (!dateStr) return '-'
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return dateStr
+  const y = date.getFullYear()
+  const M = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  const h = String(date.getHours()).padStart(2, '0')
+  const m = String(date.getMinutes()).padStart(2, '0')
+  return `${y}-${M}-${d} ${h}:${m}`
+}
+
+/**
+ * 格式化价格为两位小数
+ */
+const formatPrice = (price: number | undefined): string => {
+  if (price === undefined || price === null) return '0.00'
+  return price.toFixed(2)
+}
+
 const Artwork = () => {
-  // 获取路径中的id
   const { id } = useLocalSearchParams<{ id: string }>()
-  // 路由器
   const router = useRouter()
-  // 安全区域
   const insets = useSafeAreaInsets()
-  // 加载中状态
   const [loading, setLoading] = useState(false)
-  // 藏品详情状态
   const [artwork, setArtwork] = useState<ArtworkDetail>({
     id: 0,
     name: '',
@@ -34,40 +63,28 @@ const Artwork = () => {
     canBook: false,
     hasBooked: null,
   })
-  // 令牌状态
   const [token, setToken] = useState('')
 
-  /**
-   * 获取数据方法
-   */
   const fetchData = async () => {
     setLoading(true)
     try {
       const res = await artworkApi.getDetail(Number(id))
-      const token = await authApi.getToken({
-        scene: 'artwork',
-        key: id,
-      })
-      setToken(token)
+      const t = await authApi.getToken({ scene: 'artwork', key: id })
+      setToken(t)
       setArtwork(res)
     } finally {
       setLoading(false)
     }
   }
 
-  /**
-   * 购买藏品方法
-   */
   const handleBuy = async () => {
     setLoading(true)
     try {
-      await tradeApi.buy({
-        productId: String(artwork.id),
-        productType: 'ARTWORK',
-        itemCount: 1,
-      }, token)
+      await tradeApi.buy(
+        { productId: String(artwork.id), productType: 'ARTWORK', itemCount: 1 },
+        token,
+      )
       Alert.alert('提示', '下单成功！', [{ text: '确定' }])
-      // 购买成功后刷新藏品详情（库存等信息可能变化）
       await fetchData()
     } catch (e: any) {
       Alert.alert('购买失败', e?.message || '请稍后再试', [{ text: '确定' }])
@@ -80,126 +97,119 @@ const Artwork = () => {
     fetchData().catch((e) => console.error('获取藏品详情错误：' + e))
   }, [])
 
-  const renderHeader = (title?: string) => (
-    <View style={[styles.header, { paddingTop: insets.top }]}>
-      <LiquidGlassButton
-        icon="chevron-left"
-        onPress={() => router.back()}
-        size={20}
-        color="#fff"
-        glassStyle="regular"
-      />
-      {title && <Text style={styles.headerTitle}>{title}</Text>}
-      <LiquidGlassButton
-        icon="share-nodes"
-        onPress={() => { }}
-        size={20}
-        color="#fff"
-        glassStyle="regular"
-      />
-    </View>
-  )
-
   return (
     <View style={styles.container}>
-      {renderHeader()}
+      {/* ===== 顶部导航 ===== */}
+      <View style={[styles.header, { paddingTop: insets.top }]}>
+        <LiquidGlassButton
+          icon="chevron-left"
+          onPress={() => router.back()}
+          size={20}
+          color="#fff"
+          glassStyle="regular"
+        />
+        <LiquidGlassButton
+          icon="share-nodes"
+          onPress={() => { }}
+          size={20}
+          color="#fff"
+          glassStyle="regular"
+        />
+      </View>
+
       <Spinner visible={loading} />
+
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={{ paddingTop: insets.top + 50 }}
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 120 }}
       >
-        <View style={styles.imageSection}>
-          <View style={styles.imageContainer}>
-            <Image source={artwork?.cover} style={styles.cover} contentFit="cover" />
-          </View>
-          <Text style={styles.artworkName}>{artwork?.name}</Text>
+        {/* ===== 沉浸式大图区域 ===== */}
+        <View style={styles.heroSection}>
+          <Image
+            source={artwork?.cover}
+            style={styles.heroImage}
+            contentFit="cover"
+            transition={300}
+          />
+          {/* 底部渐变遮罩 */}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.6)', colors.background]}
+            style={styles.heroGradient}
+            locations={[0, 0.6, 1]}
+          />
         </View>
 
-        <View style={styles.content}>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>藏品信息</Text>
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>限量</Text>
-              <Text style={styles.value}>{artwork?.quantity} 份</Text>
+        {/* ===== 藏品名称 ===== */}
+        <View style={styles.nameSection}>
+          <Text style={styles.artworkName}>{artwork?.name}</Text>
+          <View style={styles.divider} />
+        </View>
+
+        {/* ===== 信息标签区（竖向） ===== */}
+        <View style={styles.chipSection}>
+          <View style={styles.chip}>
+            <View style={styles.chipIconWrap}>
+              <Text style={styles.chipIcon}>🔒</Text>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>库存</Text>
-              <Text style={styles.value}>{artwork?.inventory ?? '-'} 份</Text>
+            <View style={styles.chipContent}>
+              <Text style={styles.chipLabel}>限量发行</Text>
+              <Text style={styles.chipValue}>{artwork?.quantity} 份</Text>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>版本号</Text>
-              <Text style={styles.value}>#{artwork?.version}</Text>
-            </View>
-            {artwork?.saleTime && (
-              <View style={styles.infoRow}>
-                <Text style={styles.label}>发售时间</Text>
-                <Text style={styles.value}>{artwork?.saleTime}</Text>
-              </View>
-            )}
           </View>
+
+          {artwork?.saleTime && (
+            <View style={styles.chip}>
+              <View style={styles.chipIconWrap}>
+                <Text style={styles.chipIcon}>📅</Text>
+              </View>
+              <View style={styles.chipContent}>
+                <Text style={styles.chipLabel}>发售时间</Text>
+                <Text style={styles.chipValue}>{formatDateTime(artwork?.saleTime)}</Text>
+              </View>
+            </View>
+          )}
         </View>
       </ScrollView>
 
-      <GlassView
-        style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}
-        glassEffectStyle="clear"
-        isInteractive
-      >
-        <View style={styles.priceContainer}>
-          <Text style={styles.priceLabel}>价格</Text>
-          <Text style={styles.bottomPrice}>
-            {artwork?.price} <Text style={styles.currency}>CNY</Text>
-          </Text>
+      {/* ===== 底部操作栏 ===== */}
+      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
+        <View style={styles.bottomInner}>
+          <View style={styles.bottomPriceWrap}>
+            <Text style={styles.bottomPriceLabel}>合计</Text>
+            <View style={styles.bottomPriceRow}>
+              <Text style={styles.bottomPriceSymbol}>¥</Text>
+              <Text style={styles.bottomPriceValue}>{formatPrice(artwork?.price)}</Text>
+              <Text style={styles.bottomCurrency}>CNY</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.buyButton} onPress={handleBuy} activeOpacity={0.85}>
+            <LinearGradient
+              colors={[colors.primary, colors.primaryDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.buyButtonGradient}
+            >
+              <Text style={styles.buyButtonText}>立即购买</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.actionButton} onPress={handleBuy} activeOpacity={0.8}>
-          <Text style={styles.actionButtonText}>立即购买</Text>
-        </TouchableOpacity>
-      </GlassView>
+      </View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
+  /* ===== 容器 ===== */
   container: {
     flex: 1,
     backgroundColor: colors.background,
   },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  errorText: {
-    color: colors.textSecondary,
-    fontSize: typography.fontSize.md,
-  },
   scrollView: {
     flex: 1,
   },
-  imageSection: {
-    width: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: spacing.xl,
-    marginBottom: spacing.md,
-  },
-  imageContainer: {
-    width: 280,
-    height: 380,
-  },
-  cover: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 20,
-  },
-  content: {
-    padding: spacing.lg,
-    backgroundColor: colors.backgroundCard,
-    borderRadius: 24,
-    marginHorizontal: spacing.sm,
-    marginBottom: spacing.lg,
-  },
+
+  /* ===== 顶部导航 ===== */
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -213,89 +223,153 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 100,
   },
-  headerTitle: {
-    fontSize: typography.fontSize.lg,
+
+  /* ===== 沉浸式大图 ===== */
+  heroSection: {
+    width: SCREEN_WIDTH,
+    height: IMAGE_HEIGHT,
+    position: 'relative',
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+  },
+  heroGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: IMAGE_HEIGHT * 0.45,
+  },
+  /* ===== 藏品名称 ===== */
+  nameSection: {
+    paddingHorizontal: spacing.lg,
+    marginTop: -spacing.xl,
+  },
+  artworkName: {
+    fontSize: typography.fontSize.xxl,
     fontWeight: typography.fontWeight.bold,
     color: colors.text,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+    letterSpacing: 0.5,
+    lineHeight: 32,
   },
-  section: {
-    marginBottom: spacing.md,
-    paddingBottom: spacing.sm,
+  divider: {
+    width: 36,
+    height: 3,
+    backgroundColor: colors.primary,
+    borderRadius: 2,
+    marginTop: spacing.md,
+    opacity: 0.8,
   },
-  sectionTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
-    marginBottom: spacing.md,
+
+  /* ===== 信息标签（竖向） ===== */
+  chipSection: {
+    flexDirection: 'column',
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.lg,
+    gap: spacing.sm,
   },
-  infoRow: {
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.backgroundCard,
+    borderRadius: borderRadius.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.borderDark,
+  },
+  chipIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(0, 212, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  chipIcon: {
+    fontSize: 20,
+  },
+  chipContent: {
+    flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.sm,
+    alignItems: 'center',
   },
-  label: {
+  chipLabel: {
     fontSize: typography.fontSize.md,
     color: colors.textSecondary,
   },
-  value: {
+  chipValue: {
     fontSize: typography.fontSize.md,
+    fontWeight: typography.fontWeight.semibold,
     color: colors.text,
-    fontWeight: typography.fontWeight.medium,
   },
+
+  /* ===== 底部操作栏 ===== */
   bottomBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingTop: spacing.md,
-    paddingHorizontal: spacing.lg,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    borderTopWidth: 1,
+    borderTopColor: colors.borderDark,
+  },
+  bottomInner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingTop: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
-  priceContainer: {
+  bottomPriceWrap: {
     justifyContent: 'center',
   },
-  priceLabel: {
+  bottomPriceLabel: {
     fontSize: typography.fontSize.xs,
-    color: colors.textSecondary,
-    marginBottom: 2,
+    color: colors.textTertiary,
+    marginBottom: 4,
   },
-  bottomPrice: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  bottomPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
+  bottomPriceSymbol: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.primary,
+    marginRight: 2,
+  },
+  bottomPriceValue: {
+    fontSize: 26,
+    fontWeight: typography.fontWeight.bold,
     color: colors.text,
     letterSpacing: -0.5,
   },
-  currency: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: 'normal',
-    color: colors.textSecondary,
+  bottomCurrency: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.regular,
+    color: colors.textTertiary,
+    marginLeft: 6,
   },
-  actionButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 32,
+  buyButton: {
     borderRadius: 100,
+    overflow: 'hidden',
+    ...shadows.primary,
+  },
+  buyButtonGradient: {
+    paddingVertical: 16,
+    paddingHorizontal: 40,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  actionButtonText: {
-    color: colors.background,
-    fontSize: typography.fontSize.md,
-    fontWeight: '600',
-  },
-  artworkName: {
-    marginTop: spacing.xl,
-    marginBottom: spacing.xl,
+  buyButtonText: {
+    color: '#000',
     fontSize: typography.fontSize.lg,
-    fontWeight: '500',
-    color: '#ffffff',
-    textAlign: 'center',
+    fontWeight: typography.fontWeight.bold,
     letterSpacing: 1,
-    opacity: 0.9,
   },
 })
 

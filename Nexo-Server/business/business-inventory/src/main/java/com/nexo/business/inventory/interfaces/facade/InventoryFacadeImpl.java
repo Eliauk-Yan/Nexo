@@ -20,6 +20,7 @@ import org.apache.dubbo.config.annotation.DubboService;
 import org.redisson.api.RScript;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.RedisException;
+import org.redisson.client.codec.StringCodec;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.StreamUtils;
 
@@ -108,11 +109,11 @@ public class InventoryFacadeImpl implements InventoryFacade {
         if (productType == ProductType.ARTWORK) {
             try {
                 // 3. 执行Lua脚本 扣减库存
-                Long result = redissonClient.getScript().eval(RScript.Mode.READ_WRITE,
+                Long result = redissonClient.getScript(StringCodec.INSTANCE).eval(RScript.Mode.READ_WRITE,
                         decreaseScript,
                         RScript.ReturnType.LONG,
-                        Arrays.asList("artwork:inventory:" + request.getProductId(),
-                                "artwork:inventory:stream:" + request.getProductId()), // 库存 key 与 流水 key
+                        Arrays.asList("nft:inventory:" + request.getProductId(),
+                                "nft:inventory:stream:" + request.getProductId()), // 库存 key 与 流水 key
                         request.getItemCount(), "DECREASE_" + request.getIdentifier());// 扣减数量与唯一标识
                 // 如果库存为 0，则在本地缓存记录，用于对售罄商品快速决策
                 if (result == 0) {
@@ -148,7 +149,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
                     RScript.Mode.READ_ONLY,
                     luaScript,
                     RScript.ReturnType.VALUE, // ReturnType 为 VALUE 以获取字符串结果
-                    List.of("artwork:inventory:stream:" + request.getProductId()),
+                    List.of("nft:inventory:stream:" + request.getProductId()),
                     "DECREASE_" + request.getIdentifier());
             // 3. 返回结果
             InventoryResponse<String> response = new InventoryResponse<>();
@@ -172,7 +173,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
                     RScript.Mode.READ_ONLY,
                     luaScript,
                     RScript.ReturnType.VALUE, // ReturnType 为 VALUE 以获取字符串结果
-                    List.of("artwork:inventory:stream:" + request.getProductId()),
+                    List.of("nft:inventory:stream:" + request.getProductId()),
                     "INCREASE_" + request.getIdentifier());
             // 3. 返回结果
             InventoryResponse<String> response = new InventoryResponse<>();
@@ -193,11 +194,11 @@ public class InventoryFacadeImpl implements InventoryFacade {
             String luaScript = "return redis.call('hdel', KEYS[1], ARGV[1])";
             // 2. 执行 Lua 脚本
             Long result = redissonClient.getScript().eval(
-                    RScript.Mode.READ_ONLY,
+                    RScript.Mode.READ_WRITE,
                     luaScript,
                     RScript.ReturnType.LONG, // ReturnType 为 LONG 以获取长整型结果
-                    List.of("artwork:inventory:stream:" + request.getProductId()),
-                    "INCREASE_" + request.getIdentifier());
+                    List.of("nft:inventory:stream:" + request.getProductId()),
+                    "DECREASE_" + request.getIdentifier());
             // 3. 返回结果
             InventoryResponse<Long> response = new InventoryResponse<>();
             response.setSuccess(true);
@@ -208,7 +209,6 @@ public class InventoryFacadeImpl implements InventoryFacade {
         }
         throw new UnsupportedOperationException("不支持商品类型");
     }
-
 
     @Override
     public InventoryResponse<Boolean> init(InventoryRequest request) {
@@ -222,8 +222,8 @@ public class InventoryFacadeImpl implements InventoryFacade {
                 inventoryResponse.setCode(ResponseCode.DUPLICATED.getCode());
                 return inventoryResponse;
             }
-            // 3. 初始化库存
-            redissonClient.getBucket("nft:inventory:" + request.getProductId()).set(request.getInventory());
+            // 3. 初始化库存 指定解码器 StringCodec.INSTANCE
+            redissonClient.getBucket("nft:inventory:" + request.getProductId(), StringCodec.INSTANCE).set(request.getInventory());
             inventoryResponse.setSuccess(true);
             inventoryResponse.setCode(ResponseCode.SUCCESS.getCode());
             inventoryResponse.setData(true);

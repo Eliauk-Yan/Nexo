@@ -37,7 +37,7 @@ public class Certification extends BaseEntity {
     private String idCardNo;
 
 
-    @TableField("id_card_front")
+    @TableField("certification")
     private String certification;
 
 }

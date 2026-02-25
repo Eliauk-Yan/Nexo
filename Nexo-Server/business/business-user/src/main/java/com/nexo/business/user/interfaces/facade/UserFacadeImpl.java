@@ -1,6 +1,7 @@
 package com.nexo.business.user.interfaces.facade;
 
 import com.nexo.business.user.service.UserService;
+import com.nexo.common.api.common.response.ResponseCode;
 import com.nexo.common.api.user.UserFacade;
 import com.nexo.common.api.user.request.UserQueryRequest;
 import com.nexo.common.api.user.request.UserRegisterRequest;
@@ -37,6 +38,9 @@ public class UserFacadeImpl implements UserFacade {
         // 2. 组装响应结果
         UserQueryResponse<UserInfo> response = new UserQueryResponse<>();
         response.setData(info);
+        response.setSuccess(true);
+        response.setCode(ResponseCode.SUCCESS.getCode());
+        response.setMessage(ResponseCode.SUCCESS.getMessage());
         // 3. 返回响应
         return response;
     }

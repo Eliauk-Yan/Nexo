@@ -4,6 +4,9 @@ import com.nexo.common.api.common.response.BaseResponse;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 /**
  * @classname NFTResponse
  * @description 藏品响应
@@ -11,7 +14,10 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class NFTResponse<T> extends BaseResponse {
+public class NFTResponse<T> extends BaseResponse implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private T data;
 

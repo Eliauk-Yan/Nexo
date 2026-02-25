@@ -5,6 +5,7 @@ dubbo:
   protocol:
     name: dubbo
     port: -1
+    serialization: fastjson2 # fix 修改BUG Dubbo序列化问题，使用 fastjson2 序列化 （Hessian2 已经老了，对现代 JDK（17+）的支持并不完美）
   registry:
     address: nacos://47.99.39.81:8848
     parameters:

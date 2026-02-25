@@ -1,6 +1,15 @@
 server:
   port: 8095
 spring:
+  cloud:
+    # 消费者配置
+    stream:
+      bindings:
+        buy-in-0:
+          content-type: application/json
+          destination: buy-topic
+          group: trade-group
+          binder: rocketmq
   config:
     import:
       - classpath:/datasource.yml

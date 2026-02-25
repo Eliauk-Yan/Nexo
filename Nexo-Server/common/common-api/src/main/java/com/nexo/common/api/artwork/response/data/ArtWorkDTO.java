@@ -1,5 +1,6 @@
 package com.nexo.common.api.artwork.response.data;
 
+import com.nexo.common.api.artwork.constant.ArtWorkState;
 import com.nexo.common.api.product.response.data.ProductDTO;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -46,6 +47,10 @@ public class ArtWorkDTO extends ProductDTO implements Serializable {
 
     private Boolean hasBooked;
 
+    private ArtWorkState state;
+
+    private LocalDateTime syncChainTime;
+
     @Override
     public String getProductName() {
         return this.name;
@@ -60,6 +65,12 @@ public class ArtWorkDTO extends ProductDTO implements Serializable {
     public String getSellerId() {
         // 藏品持有人默认是平台 使用0表示
         return "0";
+    }
+
+    @Override
+    public Boolean available() {
+        // 藏品上链成功才可售卖
+        return this.state == ArtWorkState.SUCCESS;
     }
 
     @Override

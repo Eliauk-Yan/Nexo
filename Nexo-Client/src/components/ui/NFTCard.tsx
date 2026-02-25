@@ -6,7 +6,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 
 const formatPrice = (price: string | number) => {
   const num = typeof price === 'string' ? parseFloat(price) : price
-  return isNaN(num) ? '0.0000' : num.toFixed(4)
+  return isNaN(num) ? '0.00' : num.toFixed(2)
 }
 
 

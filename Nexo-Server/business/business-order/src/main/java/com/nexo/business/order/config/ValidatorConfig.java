@@ -4,8 +4,8 @@ import com.nexo.business.order.domain.validator.OrderCreateValidator;
 import com.nexo.business.order.domain.validator.ProductValidator;
 import com.nexo.business.order.domain.validator.StockValidator;
 import com.nexo.business.order.domain.validator.UserValidator;
+import com.nexo.common.api.artwork.ArtWorkFacade;
 import com.nexo.common.api.inventory.InventoryFacade;
-import com.nexo.common.api.product.ProductFacade;
 import com.nexo.common.api.user.UserFacade;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.context.annotation.Bean;
@@ -23,7 +23,7 @@ public class ValidatorConfig {
     private UserFacade userFacade;
 
     @DubboReference(version = "1.0.0")
-    private ProductFacade productFacade;
+    private ArtWorkFacade artWorkFacade;
 
     @DubboReference(version = "1.0.0")
     private InventoryFacade inventoryFacade;
@@ -31,7 +31,7 @@ public class ValidatorConfig {
     @Bean
     public OrderCreateValidator getOrderCreateValidator() {
         UserValidator userValidator = new UserValidator(userFacade);
-        ProductValidator productValidator = new ProductValidator(productFacade);
+        ProductValidator productValidator = new ProductValidator(artWorkFacade);
         StockValidator stockValidator = new StockValidator(inventoryFacade);
         productValidator.setNext(stockValidator);
         userValidator.setNext(productValidator);

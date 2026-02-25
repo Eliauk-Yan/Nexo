@@ -1,9 +1,10 @@
 package com.nexo.business.order.domain.validator;
 
 import com.nexo.business.order.domain.exception.OrderException;
+import com.nexo.common.api.artwork.ArtWorkFacade;
+import com.nexo.common.api.artwork.response.ArtWorkQueryResponse;
+import com.nexo.common.api.artwork.response.data.ArtWorkDTO;
 import com.nexo.common.api.order.request.OrderCreateRequest;
-import com.nexo.common.api.product.ProductFacade;
-import com.nexo.common.api.product.response.ProductResponse;
 import com.nexo.common.api.product.response.data.ProductDTO;
 import lombok.RequiredArgsConstructor;
 
@@ -18,12 +19,12 @@ import static com.nexo.business.order.domain.exception.OrderErrorCode.PRODUCT_PR
 @RequiredArgsConstructor
 public class ProductValidator extends BaseOrderCreateValidator {
 
-    private final ProductFacade productFacade;
+    private final ArtWorkFacade artWorkFacade;
 
     @Override
     protected void doValidate(OrderCreateRequest request) throws OrderException {
         // 1. 调用商品服务获取商品信息
-        ProductResponse<ProductDTO> response = productFacade.getProduct(request.getProductId(), request.getProductType());
+        ArtWorkQueryResponse<ArtWorkDTO> response = artWorkFacade.getArtWorkById(Long.parseLong(request.getProductId()));
         ProductDTO productDTO = response.getData();
         // 2. 判断商品是否可用
         if (!productDTO.available()) {

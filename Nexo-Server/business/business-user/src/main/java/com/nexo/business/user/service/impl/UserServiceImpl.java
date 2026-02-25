@@ -5,7 +5,9 @@ import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nexo.business.user.config.encrypt.AesUtil;
+import com.nexo.business.user.domain.entity.Certification;
 import com.nexo.business.user.domain.entity.User;
+import com.nexo.business.user.mapper.mybatis.CertificationMapper;
 import com.nexo.business.user.service.UserService;
 import com.nexo.business.user.mapper.mybatis.UserMapper;
 import com.nexo.business.user.mapper.convert.UserConverter;
@@ -40,6 +42,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private final UserMapper userMapper;
 
     private final FileService fileService;
+
+    /**
+     * 用户认证Mapper
+     */
+    private final CertificationMapper certificationMapper;
 
     @Override
     public void register(String phone, String inviteCode) {
@@ -122,7 +129,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 1. 根据手机号查询用户信息
         User user = this.getOne(new LambdaQueryWrapper<User>().eq(User::getId, id));
         // 2. 实体转换为DTO
-        return userConverter.userToUserInfo(user);
+        UserInfo userInfo = userConverter.userToUserInfo(user);
+        // TODO fix 2月26日 修改 BUG（用户是否实名信息遗漏）
+        Certification certification = certificationMapper.selectOne(new LambdaQueryWrapper<Certification>().eq(Certification::getUserId, id));
+        userInfo.setCertification(certification != null);
+        return userInfo;
     }
 
     @Override

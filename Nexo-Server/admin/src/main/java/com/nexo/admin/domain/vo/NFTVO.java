@@ -1,5 +1,6 @@
 package com.nexo.admin.domain.vo;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.nexo.common.api.artwork.constant.ArtWorkState;
 import lombok.Getter;
 import lombok.Setter;

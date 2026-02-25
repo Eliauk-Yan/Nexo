@@ -34,7 +34,7 @@ public class TradeOrder extends BaseEntity {
     @TableField(value = "seller_id")
     private String sellerId;
 
-    @TableField(value = "seller)type")
+    @TableField(value = "seller_type")
     private UserType sellerType;
 
     @TableField(value = "identifier")
@@ -70,14 +70,14 @@ public class TradeOrder extends BaseEntity {
     @TableField(value = "payment_time")
     private LocalDateTime paymentTime;
 
-    @TableField(value = "confirmedTime")
+    @TableField(value = "confirmed_time")
     private LocalDateTime confirmedTime;
 
     @TableField(value = "completion_time")
     private LocalDateTime completionTime;
 
-    @TableField(value = "cosing_time")
-    private LocalDateTime cosingTime;
+    @TableField(value = "closing_time")
+    private LocalDateTime closingTime;
 
     @TableField(value = "payment_method")
     private String paymentMethod;

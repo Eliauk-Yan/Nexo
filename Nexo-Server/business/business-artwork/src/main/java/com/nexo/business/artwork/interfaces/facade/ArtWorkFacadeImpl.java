@@ -174,8 +174,8 @@ public class ArtWorkFacadeImpl implements ArtWorkFacade {
         artWork.setSaleableInventory(artWork.getSaleableInventory() - saleRequest.getQuantity());
         int updateRow = artWorkMapper.update(artWork, new LambdaQueryWrapper<ArtWork>()
                 .eq(ArtWork::getId, artWork.getId())
-                // 已售出库存 + 冻结库存（占用） + 变化量 <= 总库存
-                .apply("saleable_inventory + frozen_inventory + {0} <= quantity", saleRequest.getQuantity()));
+                // 可售库存必须大于等于扣减数量（乐观锁防止超卖）
+                .apply("saleable_inventory >= {0}", saleRequest.getQuantity()));
         if (updateRow <= 0) {
             throw new ArtWorkException(NFT_UPDATE_FAILED);
         }
