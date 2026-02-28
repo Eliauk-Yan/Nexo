@@ -100,13 +100,13 @@ public class TradeServiceImpl implements TradeService {
         }
         // 5. 查询Redis库存扣减日志判断是否成功（增加重试机制，等待MQ事务完成）
         InventoryResponse<String> decreaseLogResponse = null;
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 5; i++) {
             decreaseLogResponse = inventoryFacade.getInventoryDecreaseLog(orderCreateRequest);
             if (decreaseLogResponse.getSuccess() && decreaseLogResponse.getData() != null) {
                 break;
             }
             try {
-                Thread.sleep(500);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
@@ -115,6 +115,8 @@ public class TradeServiceImpl implements TradeService {
         if (decreaseLogResponse != null && decreaseLogResponse.getSuccess() && decreaseLogResponse.getData() != null) {
             // 6. 再检查一下是否有回退库存的流水，如果回退过，则不需要旁路验证
             InventoryResponse<String> increaseLogResponse = inventoryFacade.getInventoryIncreaseLog(orderCreateRequest);
+            log.info("库存回退日志查询结果, orderId={}, increaseLogData={}", orderCreateRequest.getOrderId(),
+                    increaseLogResponse.getData());
             if (increaseLogResponse.getSuccess() && increaseLogResponse.getData() == null) {
                 // 7. 旁路校验
                 scheduler.schedule(() -> {
@@ -138,6 +140,10 @@ public class TradeServiceImpl implements TradeService {
                 // 8. 返回订单号
                 return orderCreateRequest.getOrderId();
             }
+        } else {
+            log.error("库存扣减日志未查到, orderId={}, identifier={}, response={}",
+                    orderCreateRequest.getOrderId(), orderCreateRequest.getIdentifier(),
+                    decreaseLogResponse != null ? decreaseLogResponse.getData() : "null");
         }
         throw new TradeException(ORDER_CREATE_FAILED);
     }

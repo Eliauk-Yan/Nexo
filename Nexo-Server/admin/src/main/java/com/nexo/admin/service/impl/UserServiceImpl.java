@@ -81,13 +81,14 @@ public class UserServiceImpl implements UserService {
 
     /**
      * 刷新用户信息到session
+     * 
      * @param userId 用户ID
      */
     private void refreshUserInSession(Long userId) {
         UserQueryRequest request = new UserQueryRequest();
         request.setCondition(new UserQueryById(userId));
         UserQueryResponse<UserInfo> userQueryResponse = userFacade.userQuery(request);
-        StpUtil.getSessionByLoginId(userId).set(userId.toString(), userQueryResponse.getData());
+        StpUtil.getSessionByLoginId(userId).set("userInfo", userQueryResponse.getData());
     }
 
     /**

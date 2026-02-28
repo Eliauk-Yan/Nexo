@@ -27,7 +27,7 @@ public class AuthController {
     /**
      * 管理员登录
      * @param params 登录参数
-     * @return 用户西悉尼
+     * @return 用户信息
      */
     @PostMapping("/login")
     public Result<LoginVO> login(@Valid @RequestBody LoginDTO params) {

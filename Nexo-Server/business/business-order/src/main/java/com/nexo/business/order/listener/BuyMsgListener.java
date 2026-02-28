@@ -109,6 +109,7 @@ public class BuyMsgListener {
                 tradeOrder.setUnitPrice(orderCreateAndConfirmRequest.getItemPrice());
                 tradeOrder.setQuantity(orderCreateAndConfirmRequest.getItemCount().intValue());
                 tradeOrder.setTotalPrice(orderCreateAndConfirmRequest.getOrderAmount());
+                tradeOrder.setPaymentAmount(orderCreateAndConfirmRequest.getOrderAmount());
                 tradeOrder.setOrderState(TradeOrderState.CONFIRM);
                 tradeOrder.setSnapshotVersion(orderCreateAndConfirmRequest.getSnapshotVersion());
                 orderService.save(tradeOrder);
