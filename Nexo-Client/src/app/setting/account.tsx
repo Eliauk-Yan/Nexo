@@ -198,31 +198,6 @@ const AccountSecurity = () => {
     }
   }
 
-  const updatePaymentPassword = () => {
-    Alert.prompt(
-      '修改密码',
-      '请输入您的新密码',
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '确认',
-          onPress: async (text?: string) => {
-            const password = text?.trim() ?? ''
-            // 1. 必须是 6 位
-            if (password.length !== 6) {
-              Alert.alert('错误', '支付密码必须是 6 位数字')
-              return
-            }
-            // TODO 调用修改支付密码接口
-          },
-        },
-      ],
-      'plain-text',
-      '',
-      'number-pad',
-    )
-  }
-
   const appleIdAuthentication = () => {
     Alert.alert('提示', '请使用 Apple 账号登录')
   }
@@ -244,19 +219,19 @@ const AccountSecurity = () => {
       label: '手机号',
       type: 'text',
       value: phone,
-      onPress: () => { },
+      onPress: () => {},
     },
     {
       label: '支付宝账号',
       type: 'text',
       value: alipayAccount,
-      onPress: () => { },
+      onPress: () => {},
     },
     {
       label: '微信账号',
       type: 'text',
       value: wechatAccount,
-      onPress: () => { },
+      onPress: () => {},
     },
     {
       label: 'AppleID',
@@ -269,12 +244,6 @@ const AccountSecurity = () => {
       type: 'text',
       value: isRealNameAuth ? '已认证' : '未认证',
       onPress: realNameAuthentication,
-    },
-    {
-      label: '支付密码',
-      type: 'text',
-      value: hasPassword ? '已设置' : '未设置',
-      onPress: updatePaymentPassword,
     },
     {
       label: '账号注销',

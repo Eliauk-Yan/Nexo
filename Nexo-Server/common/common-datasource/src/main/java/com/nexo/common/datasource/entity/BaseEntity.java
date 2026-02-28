@@ -3,6 +3,8 @@ package com.nexo.common.datasource.entity;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -12,7 +14,10 @@ import java.time.LocalDateTime;
  * @created by YanShijie
  */
 @Data
-public class BaseEntity {
+public class BaseEntity implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @TableId(type = IdType.AUTO)
     private Long id;

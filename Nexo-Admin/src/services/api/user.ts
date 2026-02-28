@@ -10,31 +10,22 @@ export async function getUserList(params: any, options?: { [key: string]: any })
     });
 }
 
-export async function addUser(body: any, options?: { [key: string]: any }) {
-    return request<any>('/admin/user', {
+export async function freezeUser(userId: number, options?: { [key: string]: any }) {
+    return request<any>('/admin/user/freeze', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
+        params: {
+            userId,
         },
-        data: body,
         ...(options || {}),
     });
 }
 
-export async function updateUser(body: any, options?: { [key: string]: any }) {
-    return request<any>('/admin/user', {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
+export async function unfreezeUser(userId: number, options?: { [key: string]: any }) {
+    return request<any>('/admin/user/unfreeze', {
+        method: 'POST',
+        params: {
+            userId,
         },
-        data: body,
-        ...(options || {}),
-    });
-}
-
-export async function removeUser(id: number, options?: { [key: string]: any }) {
-    return request<any>(`/admin/user/${id}`, {
-        method: 'DELETE',
         ...(options || {}),
     });
 }

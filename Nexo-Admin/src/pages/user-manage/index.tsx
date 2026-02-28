@@ -1,15 +1,11 @@
-import { PlusOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import {
-    ModalForm,
-    ProFormText,
-    ProFormSelect,
     ProTable,
-    ProFormUploadButton,
 } from '@ant-design/pro-components';
-import { Button, Image, Popconfirm, message } from 'antd';
-import { useRef, useState } from 'react';
-import { getUserList, addUser, updateUser, removeUser } from '@/services/api/user';
+import { Image } from 'antd';
+import { message, Popconfirm } from 'antd';
+import { useRef } from 'react';
+import { getUserList, freezeUser, unfreezeUser } from '@/services/api/user';
 
 export type User = {
     id: number;
@@ -17,7 +13,7 @@ export type User = {
     phone: string;
     email: string;
     role: 'ADMIN' | 'USER';
-    state: 'NORMAL' | 'BANNED';
+    state: 'INIT' | 'AUTHENTICATED' | 'ACTIVE' | 'FROZEN';
     avatarUrl: string;
     loginTime: string;
     createdAt: string;
@@ -25,7 +21,36 @@ export type User = {
 
 export default () => {
     const actionRef = useRef<ActionType>(null);
-    const [createModalVisible, handleModalVisible] = useState<boolean>(false);
+
+    const handleFreeze = async (id: number) => {
+        try {
+            const res = await freezeUser(id);
+            if (res.success) {
+                message.success('冻结成功');
+                return true;
+            }
+            message.error(res.message || '冻结失败');
+            return false;
+        } catch (error) {
+            message.error('冻结失败');
+            return false;
+        }
+    };
+
+    const handleUnfreeze = async (id: number) => {
+        try {
+            const res = await unfreezeUser(id);
+            if (res.success) {
+                message.success('解冻成功');
+                return true;
+            }
+            message.error(res.message || '解冻失败');
+            return false;
+        } catch (error) {
+            message.error('解冻失败');
+            return false;
+        }
+    };
 
     const columns: ProColumns<User>[] = [
         {
@@ -84,8 +109,8 @@ export default () => {
             valueType: 'select',
             search: false,
             valueEnum: {
-                ADMIN: { text: '管理员', status: 'Success' },
-                USER: { text: '普通用户', status: 'Default' },
+                ADMIN: { text: '管理员', status: 'Warning' },
+                COLLECTOR: { text: '收藏家', status: 'Success' },
             },
         },
         {
@@ -94,8 +119,10 @@ export default () => {
             valueType: 'select',
             search: false,
             valueEnum: {
-                NORMAL: { text: '正常', status: 'Success' },
-                BANNED: { text: '封禁', status: 'Error' },
+                INIT: { text: '初始化', status: 'Default' },
+                AUTHENTICATED: { text: '已实名', status: 'Processing' },
+                ACTIVE: { text: '正常', status: 'Success' },
+                FROZEN: { text: '冻结', status: 'Error' },
             },
         },
         {
@@ -114,32 +141,28 @@ export default () => {
             title: '操作',
             valueType: 'option',
             key: 'option',
-            render: (text, record, _, action) => [
-                <a
-                    key="editable"
-                    onClick={() => {
-                        action?.startEditable?.(record.id);
-                    }}
-                >
-                    编辑
-                </a>,
-                <Popconfirm
-                    key="delete"
-                    title="删除确认"
-                    description="您确定要删除这个用户吗？此操作无法恢复。"
-                    onConfirm={async () => {
-                        const success = await removeUser(record.id);
-                        if (success) {
-                            message.success('删除成功');
-                            action?.reload();
-                        }
-                    }}
-                    okText="确定"
-                    cancelText="取消"
-                >
-                    <a style={{ color: 'red' }}>删除</a>
-                </Popconfirm>,
-            ],
+            render: (text, record, _, action) => {
+                // INIT 和 AUTHENTICATED 状态不显示冻结/解冻操作
+                if (record.state === 'INIT' || record.state === 'AUTHENTICATED') {
+                    return [<span key="no-op" style={{ color: '#999' }}>-</span>];
+                }
+                return [
+                    <Popconfirm
+                        key="freeze"
+                        title={record.state === 'ACTIVE' ? '确定冻结该用户吗?' : '确定解冻该用户吗?'}
+                        onConfirm={async () => {
+                            const success = record.state === 'ACTIVE' ? await handleFreeze(record.id) : await handleUnfreeze(record.id);
+                            if (success) {
+                                actionRef.current?.reload();
+                            }
+                        }}
+                    >
+                        <a style={{ color: record.state === 'ACTIVE' ? 'red' : 'green' }}>
+                            {record.state === 'ACTIVE' ? '冻结' : '解冻'}
+                        </a>
+                    </Popconfirm>,
+                ];
+            },
         },
     ];
 
@@ -165,10 +188,7 @@ export default () => {
                 }}
                 editable={{
                     type: 'multiple',
-                    onSave: async (key, row) => {
-                        await updateUser(row);
-                        message.success('保存成功');
-                    }
+
                 }}
                 columnsState={{
                     persistenceKey: 'pro-table-user-list',
@@ -187,97 +207,8 @@ export default () => {
                 dateFormatter="string"
                 headerTitle="用户列表"
                 toolBarRender={() => [
-                    <Button
-                        key="button"
-                        icon={<PlusOutlined />}
-                        onClick={() => {
-                            handleModalVisible(true);
-                        }}
-                        type="primary"
-                    >
-                        新建用户
-                    </Button>,
                 ]}
             />
-
-            <ModalForm
-                title="新建用户"
-                width="500px"
-                visible={createModalVisible}
-                onVisibleChange={handleModalVisible}
-                onFinish={async (value) => {
-                    const avatarUrl = value.avatarUrl && value.avatarUrl[0] ? value.avatarUrl[0].response?.url || value.avatarUrl[0].thumbUrl || '' : '';
-                    const submitData = {
-                        ...value,
-                        avatarUrl
-                    };
-
-                    const success = await addUser(submitData);
-                    if (success) {
-                        message.success('创建成功');
-                        handleModalVisible(false);
-                        actionRef.current?.reload();
-                        return true;
-                    }
-                    message.error('创建失败');
-                    return false;
-                }}
-            >
-                <ProFormText
-                    name="nickName"
-                    label="昵称"
-                    placeholder="请输入昵称"
-                    rules={[{ required: true, message: '昵称不能为空' }]}
-                />
-
-                <ProFormText
-                    name="phone"
-                    label="手机号"
-                    placeholder="请输入手机号"
-                    rules={[{ required: true, message: '手机号不能为空' }]}
-                />
-
-                <ProFormText
-                    name="email"
-                    label="邮箱"
-                    placeholder="请输入邮箱"
-                />
-
-                {/* @ts-ignore */}
-                <ProFormUploadButton
-                    name="avatarUrl"
-                    label="用户头像"
-                    title="上传头像"
-                    max={1}
-                    fieldProps={{
-                        name: 'file',
-                        listType: 'picture-card',
-                    }}
-                    action="/api/upload"
-                />
-
-                <ProFormSelect
-                    name="role"
-                    label="角色"
-                    valueEnum={{
-                        ADMIN: '管理员',
-                        USER: '普通用户',
-                    }}
-                    initialValue="USER"
-                    rules={[{ required: true }]}
-                />
-
-                <ProFormSelect
-                    name="state"
-                    label="状态"
-                    valueEnum={{
-                        NORMAL: '正常',
-                        BANNED: '封禁',
-                    }}
-                    initialValue="NORMAL"
-                    rules={[{ required: true }]}
-                />
-            </ModalForm>
         </>
     );
 };

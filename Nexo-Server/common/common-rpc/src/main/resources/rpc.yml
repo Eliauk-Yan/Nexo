@@ -1,6 +1,6 @@
 dubbo:
   consumer:
-    timeout: 3000
+    timeout: 5000
     check: false
   protocol:
     name: dubbo

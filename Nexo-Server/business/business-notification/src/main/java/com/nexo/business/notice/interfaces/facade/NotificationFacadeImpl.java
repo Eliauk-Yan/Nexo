@@ -44,7 +44,7 @@ public class NotificationFacadeImpl implements NotificationFacade {
         // 4. 保存通知信息
         Notification notification = notificationService.saveSmsNotification(phone, verifyCode);
         // TODO 暂时测试
-        if (!phone.equals("15114785913") || !phone.equals("18888888888")) {
+        if (false) {
             // 5. 异步发送信息
             smsService.sendSmsVerifyCode(notification.getTarget(), notification.getContent())
                     .whenCompleteAsync((response, throwable) -> {

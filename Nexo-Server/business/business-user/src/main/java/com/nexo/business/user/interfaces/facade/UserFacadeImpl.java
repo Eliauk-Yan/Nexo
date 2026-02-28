@@ -1,8 +1,12 @@
 package com.nexo.business.user.interfaces.facade;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.nexo.business.user.domain.entity.User;
 import com.nexo.business.user.service.UserService;
 import com.nexo.common.api.common.response.ResponseCode;
 import com.nexo.common.api.user.UserFacade;
+import com.nexo.common.api.user.request.UserListQueryRequest;
 import com.nexo.common.api.user.request.UserQueryRequest;
 import com.nexo.common.api.user.request.UserRegisterRequest;
 import com.nexo.common.api.user.request.condition.UserQueryById;
@@ -10,9 +14,11 @@ import com.nexo.common.api.user.request.condition.UserQueryByPhone;
 import com.nexo.common.api.user.request.condition.UserQueryByPhoneAndPassword;
 import com.nexo.common.api.user.response.UserQueryResponse;
 import com.nexo.common.api.user.response.UserResponse;
+import com.nexo.common.api.user.response.data.UserDTO;
 import com.nexo.common.api.user.response.data.UserInfo;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.beans.BeanUtils;
 
 /**
  * @classname UserFacadeImpl
@@ -33,7 +39,7 @@ public class UserFacadeImpl implements UserFacade {
             case UserQueryByPhone(String phone) -> userService.queryUserByPhone(phone);
             case UserQueryById(Long id) -> userService.queryUserById(id);
             case UserQueryByPhoneAndPassword(String phone, String password) ->
-                userService.queryUserByPhoneAndPassword(phone, password);
+                    userService.queryUserByPhoneAndPassword(phone, password);
         };
         // 2. 组装响应结果
         UserQueryResponse<UserInfo> response = new UserQueryResponse<>();
@@ -57,51 +63,53 @@ public class UserFacadeImpl implements UserFacade {
     }
 
     @Override
-    public UserQueryResponse<com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.nexo.common.api.user.response.data.UserDTO>> getUserList(
-            com.nexo.common.api.user.request.UserListQueryRequest request) {
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.nexo.business.user.domain.entity.User> page = new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(
-                request.getCurrent(), request.getSize());
-        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<com.nexo.business.user.domain.entity.User> wrapper = new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+    public UserQueryResponse<Page<UserDTO>> getUserList(UserListQueryRequest request) {
+        Page<User> page = new Page<>(request.getCurrent(), request.getSize());
+
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
         if (request.getNickName() != null && !request.getNickName().isEmpty()) {
-            wrapper.like(com.nexo.business.user.domain.entity.User::getNickName, request.getNickName());
+            wrapper.like(User::getNickName, request.getNickName());
         }
         if (request.getPhone() != null && !request.getPhone().isEmpty()) {
-            wrapper.eq(com.nexo.business.user.domain.entity.User::getPhone, request.getPhone());
+            wrapper.eq(User::getPhone, request.getPhone());
         }
-        wrapper.orderByDesc(com.nexo.business.user.domain.entity.User::getCreatedAt);
+        wrapper.orderByDesc(User::getCreatedAt);
 
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.nexo.business.user.domain.entity.User> userPage = userService
-                .page(page, wrapper);
+        Page<User> userPage = userService.page(page, wrapper);
 
-        com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.nexo.common.api.user.response.data.UserDTO> dtoPage = new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(
-                userPage.getCurrent(), userPage.getSize(), userPage.getTotal());
+        Page<UserDTO> dtoPage = new Page<>(userPage.getCurrent(), userPage.getSize(), userPage.getTotal());
         dtoPage.setRecords(userPage.getRecords().stream().map(u -> {
-            com.nexo.common.api.user.response.data.UserDTO dto = new com.nexo.common.api.user.response.data.UserDTO();
-            org.springframework.beans.BeanUtils.copyProperties(u, dto);
+            UserDTO dto = new com.nexo.common.api.user.response.data.UserDTO();
+                BeanUtils.copyProperties(u, dto);
             return dto;
         }).toList());
 
-        UserQueryResponse<com.baomidou.mybatisplus.extension.plugins.pagination.Page<com.nexo.common.api.user.response.data.UserDTO>> response = new UserQueryResponse<>();
+        UserQueryResponse<Page<UserDTO>> response = new UserQueryResponse<>();
         response.setData(dtoPage);
         return response;
     }
 
     @Override
-    public Boolean addUser(com.nexo.common.api.user.response.data.UserDTO userDTO) {
-        com.nexo.business.user.domain.entity.User user = new com.nexo.business.user.domain.entity.User();
-        org.springframework.beans.BeanUtils.copyProperties(userDTO, user);
-        return userService.save(user);
+    public UserResponse freeze(Long userId) {
+        // 1. 冻结用户
+        Boolean result = userService.freeze(userId);
+        // 2. 组装响应结果
+        UserResponse response = new UserResponse();
+        response.setSuccess(result);
+        response.setMessage(result ? ResponseCode.SUCCESS.getMessage(): ResponseCode.FAIL.getMessage());
+        response.setCode(result ? ResponseCode.SUCCESS.getCode(): ResponseCode.FAIL.getCode());
+        return response;
     }
 
     @Override
-    public Boolean updateUser(com.nexo.common.api.user.response.data.UserDTO userDTO) {
-        com.nexo.business.user.domain.entity.User user = new com.nexo.business.user.domain.entity.User();
-        org.springframework.beans.BeanUtils.copyProperties(userDTO, user);
-        return userService.updateById(user);
-    }
-
-    @Override
-    public Boolean deleteUser(Long id) {
-        return userService.removeById(id);
+    public UserResponse unfreeze(Long userId) {
+        // 1. 解冻用户
+        Boolean result = userService.unfreeze(userId);
+        // 2. 组装响应结果
+        UserResponse response = new UserResponse();
+        response.setSuccess(result);
+        response.setMessage(result ? ResponseCode.SUCCESS.getMessage(): ResponseCode.FAIL.getMessage());
+        response.setCode(result ? ResponseCode.SUCCESS.getCode(): ResponseCode.FAIL.getCode());
+        return response;
     }
 }

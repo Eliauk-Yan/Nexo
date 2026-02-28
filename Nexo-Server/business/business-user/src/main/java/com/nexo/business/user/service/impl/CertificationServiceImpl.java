@@ -8,11 +8,11 @@ import com.nexo.business.user.domain.entity.User;
 import com.nexo.business.user.domain.exception.UserErrorCode;
 import com.nexo.business.user.domain.exception.UserException;
 import com.nexo.business.user.interfaces.dto.RealNameAuthDTO;
+import com.nexo.business.user.mapper.mybatis.AccountMapper;
 import com.nexo.business.user.mapper.mybatis.CertificationMapper;
-import com.nexo.business.user.service.AccountService;
+import com.nexo.business.user.mapper.mybatis.UserMapper;
 import com.nexo.business.user.service.CertificationService;
 import com.nexo.business.user.service.UserAuthService;
-import com.nexo.business.user.service.UserService;
 import com.nexo.common.api.blockchain.ChainFacade;
 import com.nexo.common.api.blockchain.request.ChainRequest;
 import com.nexo.common.api.blockchain.response.ChainResponse;
@@ -36,9 +36,12 @@ public class CertificationServiceImpl extends ServiceImpl<CertificationMapper, C
 
     private final UserAuthService userAuthService;
 
-    private final UserService userService;
+    private final UserMapper userMapper;
 
-    private final AccountService accountService;
+    /**
+     * 账户Mapper
+     */
+    private final AccountMapper accountMapper;
 
     @DubboReference(version = "1.0.0")
     private ChainFacade chainFacade;
@@ -73,12 +76,15 @@ public class CertificationServiceImpl extends ServiceImpl<CertificationMapper, C
                 account.setUserId(userId);
                 account.setAddress(responseData.getAccount());
                 account.setPlatform(responseData.getPlatform());
-                accountService.save(account);
+                int insert = accountMapper.insert(account);
+                if (insert != 1) {
+                    throw new UserException(UserErrorCode.USER_CREATE_CHAIN_FAIL);
+                }
                 // 更新用户状态
-                User currentUser = userService.getById(userId);
+                User currentUser = userMapper.selectById(userId);
                 currentUser.setState(UserState.ACTIVE);
-                boolean updateResult = userService.updateById(currentUser);
-                if (!updateResult) {
+                int update = userMapper.updateById(currentUser);
+                if (update != 1) {
                     throw new UserException(UserErrorCode.USER_UPDATE_FAILED);
                 }
                 // 更新会话状态

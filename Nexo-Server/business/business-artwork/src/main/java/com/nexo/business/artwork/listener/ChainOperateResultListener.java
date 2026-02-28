@@ -74,7 +74,6 @@ public class ChainOperateResultListener extends StreamConsumer {
                     break;
                 default:
                     throw new IllegalStateException("Unexpected value: " + chainOperateBody.getBizType().name());
-
             }
         };
     }

@@ -55,4 +55,9 @@ public interface UserService extends IService<User> {
      * @return 用户信息
      */
     UserInfo queryUserByPhoneAndPassword(String phone, String password);
+
+    
+    Boolean freeze(Long userId);
+
+    Boolean unfreeze(Long userId);
 }

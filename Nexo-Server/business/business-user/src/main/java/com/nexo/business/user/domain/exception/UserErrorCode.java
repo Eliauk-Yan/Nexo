@@ -15,6 +15,10 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum UserErrorCode implements ErrorCode {
 
+    USER_STATUS_IS_NOT_FROZEN("USER_STATUS_IS_NOT_FROZEN", "用户状态非FROZEN状态"),
+
+    USER_STATUS_IS_NOT_ACTIVE("USER_STATUS_IS_NOT_ACTIVE", "用户状态非ACTIVE状态"),
+
     USER_UPDATE_FAILED("USER_UPDATE_FAILED", "用户更新失败"),
 
     USER_CREATE_CHAIN_FAIL("USER_CREATE_CHAIN_FAIL", "创建链账户失败"),
