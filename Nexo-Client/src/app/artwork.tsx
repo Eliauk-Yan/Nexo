@@ -84,10 +84,9 @@ const Artwork = () => {
         { productId: String(artwork.id), productType: 'ARTWORK', itemCount: 1 },
         token,
       )
-      Alert.alert('提示', '下单成功！', [{ text: '确定' }])
       await fetchData()
     } catch (e: any) {
-      Alert.alert('购买失败', e?.message || '请稍后再试', [{ text: '确定' }])
+      // 错误弹窗已在request工具类中统一处理
     } finally {
       setLoading(false)
     }

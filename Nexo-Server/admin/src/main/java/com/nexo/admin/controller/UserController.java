@@ -24,16 +24,31 @@ public class UserController {
 
     private final UserService userService;
 
+    /**
+     * 获取用户列表
+     * @param dto 用户查询参数
+     * @return 用户列表
+     */
     @GetMapping("/list")
     public MultiResult<UserVO> list(@Valid UserQueryDTO dto) {
         return userService.getUserList(dto);
     }
 
+    /**
+     * 冻结用户
+     * @param userId 用户ID
+     * @return 操作结果
+     */
     @PostMapping("/freeze")
     public Result<Boolean> freeze(@Valid Long userId) {
         return Result.success(userService.freeze(userId));
     }
 
+    /**
+     * 解冻用户
+      * @param userId 用户ID
+      * @return 操作结果
+     */
     @PostMapping("/unfreeze")
     public Result<Boolean> unfreeze(@Valid Long userId) {
         return Result.success(userService.unfreeze(userId));

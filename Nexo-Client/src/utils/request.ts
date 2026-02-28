@@ -1,6 +1,7 @@
 // @ts-ignore
 import urlcat from 'urlcat'
 import * as SecureStore from 'expo-secure-store'
+import { Alert } from 'react-native'
 
 // 定义请求选项接口
 interface RequestOptions {
@@ -57,9 +58,12 @@ const request = async (url: string, { method = 'GET', params, body, headers: cus
   const response = await fetch(requestUrl, config)
   const res = await response.json()
   // 8. 处理响应
-  if (!response.ok || res.success === false) {
+  const isSaTokenError = typeof res.code === 'number' && res.code !== 200
+  if (!response.ok || res.success === false || isSaTokenError) {
     // 9. 处理错误响应
-    const error = new Error(res.message || '未知错误') as ApiError
+    const errMsg = res.msg || res.message || '未知错误'
+    Alert.alert('提示', errMsg)
+    const error = new Error(errMsg) as ApiError
     error.status = response.status
     error.errors = res.errors
     throw error
