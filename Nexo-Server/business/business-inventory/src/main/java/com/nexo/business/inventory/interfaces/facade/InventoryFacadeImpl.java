@@ -58,6 +58,9 @@ public class InventoryFacadeImpl implements InventoryFacade {
      */
     private final RedissonClient redissonClient;
 
+    /**
+     * 扣减库存的 Lua 脚本
+     */
     private String decreaseScript;
 
     @PostConstruct
@@ -90,6 +93,28 @@ public class InventoryFacadeImpl implements InventoryFacade {
             }
             case BLIND_BOX -> null;
         };
+    }
+
+    @Override
+        public InventoryResponse<Long> getInventory(InventoryRequest request) {
+        // 1. 构造响应对象
+        InventoryResponse<Long> response = new InventoryResponse<>();
+        response.setSuccess(true);
+        response.setCode(ResponseCode.SUCCESS.name());
+        response.setMessage(ResponseCode.SUCCESS.getMessage());
+        // 2. 获取商品类型
+        ProductType productType = request.getProductType();
+        // 3. 检查本地缓存商品是否售罄
+        if (soldOutProductLocalCache.getIfPresent(productType + SEPARATOR + request.getProductId()) != null) {
+            // 3.1 已售罄直接返回
+            response = new InventoryResponse<>();
+            response.setData(0L);
+            return response;
+        }
+        // 4. 从 Redis 获取库存并返回
+        Long stock = (Long) redissonClient.getBucket("nft:inventory:" + request.getProductId(), StringCodec.INSTANCE).get();
+        response.setData(stock);
+        return response;
     }
 
     @Override

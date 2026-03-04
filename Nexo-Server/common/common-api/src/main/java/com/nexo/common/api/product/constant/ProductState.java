@@ -1,5 +1,6 @@
 package com.nexo.common.api.product.constant;
 
+import com.alibaba.fastjson2.annotation.JSONField;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -35,6 +36,7 @@ public enum ProductState {
      */
     WAIT_FOR_SALE("WAIT_FOR_SALE", "等待开售");
 
+    @JSONField
     private final String code;
 
     private final String description;

@@ -5,6 +5,6 @@ import com.nexo.business.artwork.domain.entity.ArtWork;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface ArtworkMapper extends BaseMapper<ArtWork> {
+public interface NFTMapper extends BaseMapper<ArtWork> {
 
 }

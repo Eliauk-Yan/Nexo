@@ -105,14 +105,9 @@ public class TradeServiceImpl implements TradeService {
             if (decreaseLogResponse.getSuccess() && decreaseLogResponse.getData() != null) {
                 break;
             }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
         }
-        if (decreaseLogResponse != null && decreaseLogResponse.getSuccess() && decreaseLogResponse.getData() != null) {
+
+        if (decreaseLogResponse.getSuccess() && decreaseLogResponse.getData() != null) {
             // 6. 再检查一下是否有回退库存的流水，如果回退过，则不需要旁路验证
             InventoryResponse<String> increaseLogResponse = inventoryFacade.getInventoryIncreaseLog(orderCreateRequest);
             log.info("库存回退日志查询结果, orderId={}, increaseLogData={}", orderCreateRequest.getOrderId(),

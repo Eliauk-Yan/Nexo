@@ -63,7 +63,7 @@ public class InventoryDecreaseTransactionListener implements TransactionListener
     }
 
     /**
-     * 兜底处理
+     * broker 发现消息超过6秒没有提交事务状态
      * 
      * @param message 消息
      * @return 消息结果状态枚举

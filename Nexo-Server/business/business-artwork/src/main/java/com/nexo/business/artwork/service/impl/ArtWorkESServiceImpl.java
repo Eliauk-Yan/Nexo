@@ -3,7 +3,7 @@ package com.nexo.business.artwork.service.impl;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nexo.business.artwork.domain.entity.ArtWork;
 import com.nexo.business.artwork.interfaces.dto.ArtWorkQueryDTO;
-import com.nexo.business.artwork.interfaces.vo.ArtWorkInfoVO;
+import com.nexo.business.artwork.interfaces.vo.NFTDetailVO;
 import com.nexo.business.artwork.interfaces.vo.ArtWorkVO;
 import com.nexo.business.artwork.service.impl.base.BaseArtWorkServiceImpl;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -29,7 +29,7 @@ public class ArtWorkESServiceImpl extends BaseArtWorkServiceImpl {
     }
 
     @Override
-    public ArtWorkInfoVO getArtWorkDetailById(Long id) {
+    public NFTDetailVO getNFTDetailById(Long id) {
         return null;
     }
 

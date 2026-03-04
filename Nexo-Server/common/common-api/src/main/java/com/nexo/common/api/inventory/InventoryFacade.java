@@ -17,6 +17,8 @@ public interface InventoryFacade {
      */
     InventoryResponse<ProductInventoryDTO> getInventory(String productId, ProductType productType);
 
+    InventoryResponse<Long> getInventory(InventoryRequest inventoryRequest);
+
     /**
      * 扣减库存 TODO 参数待优化暂时耦合
      * @param request 请求

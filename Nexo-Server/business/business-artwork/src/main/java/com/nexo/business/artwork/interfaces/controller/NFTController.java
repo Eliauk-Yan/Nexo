@@ -2,7 +2,7 @@ package com.nexo.business.artwork.interfaces.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nexo.business.artwork.interfaces.dto.ArtWorkQueryDTO;
-import com.nexo.business.artwork.interfaces.vo.ArtWorkInfoVO;
+import com.nexo.business.artwork.interfaces.vo.NFTDetailVO;
 import com.nexo.business.artwork.interfaces.vo.ArtWorkVO;
 import com.nexo.business.artwork.service.ArtWorkService;
 import com.nexo.common.web.result.MultiResult;
@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/artwork")
-public class ArtWorkController {
+public class NFTController {
 
     private final ArtWorkService artWorkService;
 
@@ -43,8 +43,8 @@ public class ArtWorkController {
      * @return 藏品信息
      */
     @GetMapping("/{id}")
-    public Result<ArtWorkInfoVO> getArtWorkDetail(@PathVariable Long id) {
-        return Result.success(artWorkService.getArtWorkDetailById(id));
+    public Result<NFTDetailVO> getArtWorkDetail(@PathVariable Long id) {
+        return Result.success(artWorkService.getNFTDetailById(id));
     }
 
 

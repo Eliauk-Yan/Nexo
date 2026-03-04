@@ -9,7 +9,7 @@ import com.nexo.business.artwork.domain.entity.ArtworkStream;
 import com.nexo.business.artwork.domain.exception.ArtWorkException;
 import com.nexo.business.artwork.mapper.concert.ArtWorkConvertor;
 import com.nexo.business.artwork.mapper.concert.ArtworkInventoryStreamConvert;
-import com.nexo.business.artwork.mapper.mybatis.ArtworkMapper;
+import com.nexo.business.artwork.mapper.mybatis.NFTMapper;
 import com.nexo.business.artwork.mapper.mybatis.ArtworkInventoryStreamMapper;
 import com.nexo.business.artwork.mapper.mybatis.ArtworkSnapshotMapper;
 import com.nexo.business.artwork.mapper.mybatis.ArtworkStreamMapper;
@@ -84,7 +84,7 @@ public class ArtWorkFacadeImpl implements ArtWorkFacade {
     /**
      * 藏品Mapper
      */
-    private final ArtworkMapper artWorkMapper;
+    private final NFTMapper artWorkMapper;
 
     /**
      * 藏品快照Mapper
