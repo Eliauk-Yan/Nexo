@@ -36,13 +36,14 @@ spring:
               uri: lb://business-artwork
               predicates:
                 - Path=/artwork/**
-            # 区块链服务路由
-            - id: business-blockchain
-              uri: lb://business-blockchain
-              predicates:
-                - Path=/blockchain/**
             # 交易服务路由
             - id: business-trade
               uri: lb://business-trade
               predicates:
                 - Path=/trade/**
+            # 订单服务路由
+            - id: business-order
+              uri: lb://business-order
+              predicates:
+                - Path=/order/**
+

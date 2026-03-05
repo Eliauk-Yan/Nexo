@@ -1,14 +1,9 @@
 package com.nexo.business.trade.interfaces.controller;
 
-import cn.dev33.satoken.stp.StpUtil;
 import com.nexo.business.trade.interfaces.dto.BuyDTO;
 import com.nexo.business.trade.service.TradeService;
-import com.nexo.common.api.order.OrderFacade;
-import com.nexo.common.api.order.request.OrderCreateRequest;
-import com.nexo.common.api.order.response.OrderResponse;
 import com.nexo.common.web.result.Result;
 import lombok.RequiredArgsConstructor;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;

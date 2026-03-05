@@ -112,8 +112,8 @@ public class InventoryFacadeImpl implements InventoryFacade {
             return response;
         }
         // 4. 从 Redis 获取库存并返回
-        Long stock = (Long) redissonClient.getBucket("nft:inventory:" + request.getProductId(), StringCodec.INSTANCE).get();
-        response.setData(stock);
+        String stock = (String) redissonClient.getBucket("nft:inventory:" + request.getProductId(), StringCodec.INSTANCE).get();
+        response.setData(Long.parseLong(stock));
         return response;
     }
 

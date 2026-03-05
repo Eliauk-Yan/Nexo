@@ -20,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -69,7 +68,6 @@ public class NFTServiceImpl implements NFTService {
                 response.getData().getSize());
     }
 
-    @Transactional(rollbackFor = Exception.class)
     @Override
     public Boolean addNFT(NFTCreateDTO dto) {
         // 1. 构造藏品创建请求
@@ -125,6 +123,5 @@ public class NFTServiceImpl implements NFTService {
         // 3. 上传文件并返回URL
         return fileService.uploadFile(file, filePath);
     }
-
 
 }

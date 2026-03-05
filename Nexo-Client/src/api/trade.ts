@@ -1,4 +1,3 @@
-import { API_ENDPOINTS } from '@/constants/api'
 import { post } from '@/utils/request'
 
 /**
@@ -21,7 +20,7 @@ export const tradeApi = {
    * @padata: BuyRequest, token: string入 Authorization 请求头
    */
   buy: (data: BuyRequest, token: string) => {
-    return post<string>(API_ENDPOINTS.TRADE.BUY, data, {
+    return post<string>('/trade/buy', data, {
       Authorization: token,
     })
   },

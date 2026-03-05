@@ -1,5 +1,6 @@
 package com.nexo.common.api.user.constant;
 
+import com.alibaba.fastjson2.annotation.JSONField;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -11,6 +12,7 @@ public enum UserType {
 
     PLATFORM("PLATFORM", "平台");
 
+    @JSONField
     private final String code;
 
     private final String description;

@@ -44,6 +44,17 @@ const formatPrice = (price: number | undefined): string => {
   return price.toFixed(2)
 }
 
+const getStatusMap = (state?: string) => {
+  switch (state) {
+    case 'NOT_FOR_SALE': return { text: '不可售卖', color: colors.textSecondary }
+    case 'SELLING': return { text: '售卖中', color: colors.primary }
+    case 'SOLD_OUT': return { text: '已售空', color: colors.error }
+    case 'COMING_SOON': return { text: '即将开售', color: colors.warning }
+    case 'WAIT_FOR_SALE': return { text: '等待开售', color: colors.info }
+    default: return { text: '获取中...', color: colors.textTertiary }
+  }
+}
+
 const Artwork = () => {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
@@ -57,11 +68,11 @@ const Artwork = () => {
     quantity: 0,
     inventory: 0,
     saleTime: '',
-    version: 0,
     bookStartTime: '',
     bookEndTime: '',
     canBook: false,
     hasBooked: null,
+    productState: 'WAIT_FOR_SALE',
   })
   const [token, setToken] = useState('')
 
@@ -123,19 +134,13 @@ const Artwork = () => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
       >
-        {/* ===== 沉浸式大图区域 ===== */}
-        <View style={styles.heroSection}>
+        {/* ===== 图片显示区域（小图带边框） ===== */}
+        <View style={styles.imageContainer}>
           <Image
             source={artwork?.cover}
-            style={styles.heroImage}
+            style={styles.artworkImage}
             contentFit="cover"
             transition={300}
-          />
-          {/* 底部渐变遮罩 */}
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.6)', colors.background]}
-            style={styles.heroGradient}
-            locations={[0, 0.6, 1]}
           />
         </View>
 
@@ -157,6 +162,30 @@ const Artwork = () => {
             </View>
           </View>
 
+          <View style={styles.chip}>
+            <View style={styles.chipIconWrap}>
+              <Text style={styles.chipIcon}>✨</Text>
+            </View>
+            <View style={styles.chipContent}>
+              <Text style={styles.chipLabel}>当前状态</Text>
+              <Text style={[styles.chipValue, { color: getStatusMap(artwork?.productState).color }]}>
+                {getStatusMap(artwork?.productState).text}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.chip}>
+            <View style={styles.chipIconWrap}>
+              <Text style={styles.chipIcon}>📦</Text>
+            </View>
+            <View style={styles.chipContent}>
+              <Text style={styles.chipLabel}>当前库存</Text>
+              <Text style={styles.chipValue}>{artwork?.inventory} 份</Text>
+            </View>
+          </View>
+
+
+
           {artwork?.saleTime && (
             <View style={styles.chip}>
               <View style={styles.chipIconWrap}>
@@ -165,6 +194,30 @@ const Artwork = () => {
               <View style={styles.chipContent}>
                 <Text style={styles.chipLabel}>发售时间</Text>
                 <Text style={styles.chipValue}>{formatDateTime(artwork?.saleTime)}</Text>
+              </View>
+            </View>
+          )}
+
+          {artwork?.bookStartTime && (
+            <View style={styles.chip}>
+              <View style={styles.chipIconWrap}>
+                <Text style={styles.chipIcon}>⏳</Text>
+              </View>
+              <View style={styles.chipContent}>
+                <Text style={styles.chipLabel}>预定开始时间</Text>
+                <Text style={styles.chipValue}>{formatDateTime(artwork?.bookStartTime)}</Text>
+              </View>
+            </View>
+          )}
+
+          {artwork?.bookEndTime && (
+            <View style={styles.chip}>
+              <View style={styles.chipIconWrap}>
+                <Text style={styles.chipIcon}>⌛</Text>
+              </View>
+              <View style={styles.chipContent}>
+                <Text style={styles.chipLabel}>预定结束时间</Text>
+                <Text style={styles.chipValue}>{formatDateTime(artwork?.bookEndTime)}</Text>
               </View>
             </View>
           )}
@@ -182,14 +235,30 @@ const Artwork = () => {
               <Text style={styles.bottomCurrency}>CNY</Text>
             </View>
           </View>
-          <TouchableOpacity style={styles.buyButton} onPress={handleBuy} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={[styles.buyButton, artwork?.productState !== 'SELLING' && { opacity: 0.6 }]}
+            onPress={handleBuy}
+            activeOpacity={0.85}
+            disabled={artwork?.productState !== 'SELLING'}
+          >
             <LinearGradient
-              colors={[colors.primary, colors.primaryDark]}
+              colors={
+                artwork?.productState === 'SELLING'
+                  ? [colors.primary, colors.primaryDark]
+                  : [colors.border, colors.borderDark]
+              }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.buyButtonGradient}
             >
-              <Text style={styles.buyButtonText}>立即购买</Text>
+              <Text
+                style={[
+                  styles.buyButtonText,
+                  artwork?.productState !== 'SELLING' && { color: colors.textSecondary }
+                ]}
+              >
+                {artwork?.productState === 'SELLING' ? '立即购买' : getStatusMap(artwork?.productState).text}
+              </Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -223,27 +292,25 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
 
-  /* ===== 沉浸式大图 ===== */
-  heroSection: {
-    width: SCREEN_WIDTH,
-    height: IMAGE_HEIGHT,
-    position: 'relative',
-  },
-  heroImage: {
+  /* ===== 小图带边框 ===== */
+  imageContainer: {
     width: '100%',
-    height: '100%',
+    alignItems: 'center',
+    paddingTop: 80, // 上方留给绝对定位的导航栏
+    paddingBottom: spacing.lg,
   },
-  heroGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: IMAGE_HEIGHT * 0.45,
+  artworkImage: {
+    width: SCREEN_WIDTH * 0.65,
+    height: SCREEN_WIDTH * 0.65,
+    borderRadius: borderRadius.md,
+    borderWidth: 4,
+    borderColor: 'rgba(255,255,255,0.1)',
+    ...shadows.primary,
   },
   /* ===== 藏品名称 ===== */
   nameSection: {
     paddingHorizontal: spacing.lg,
-    marginTop: -spacing.xl,
+    marginTop: spacing.md,
   },
   artworkName: {
     fontSize: typography.fontSize.xxl,

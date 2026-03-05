@@ -22,7 +22,7 @@
         <module>business-blockchain</module>
         <module>business-product</module>
         <module>business-trade</module>
-        <module>business-artwork</module>
+        <module>business-collection</module>
         <module>business-inventory</module>
     </modules>
 

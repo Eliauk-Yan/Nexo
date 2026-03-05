@@ -11,3 +11,8 @@ spring:
       - classpath:/config.yml
       - classpath:/cache.yml
       - classpath:/file.yml
+ # fix 解决图片过大问题
+  servlet:
+    multipart:
+      max-file-size: 15MB      # 单个文件大小限制
+      max-request-size: 15MB   # 整个请求大小限制

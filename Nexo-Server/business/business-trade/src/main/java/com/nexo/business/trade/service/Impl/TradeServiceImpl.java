@@ -99,13 +99,7 @@ public class TradeServiceImpl implements TradeService {
             throw new TradeException(ORDER_CREATE_FAILED);
         }
         // 5. 查询Redis库存扣减日志判断是否成功（增加重试机制，等待MQ事务完成）
-        InventoryResponse<String> decreaseLogResponse = null;
-        for (int i = 0; i < 5; i++) {
-            decreaseLogResponse = inventoryFacade.getInventoryDecreaseLog(orderCreateRequest);
-            if (decreaseLogResponse.getSuccess() && decreaseLogResponse.getData() != null) {
-                break;
-            }
-        }
+        InventoryResponse<String> decreaseLogResponse = decreaseLogResponse = inventoryFacade.getInventoryDecreaseLog(orderCreateRequest);
 
         if (decreaseLogResponse.getSuccess() && decreaseLogResponse.getData() != null) {
             // 6. 再检查一下是否有回退库存的流水，如果回退过，则不需要旁路验证
