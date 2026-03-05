@@ -1,19 +1,33 @@
 import { LiquidGlassButton } from '@/components/ui'
 import { colors, spacing, borderRadius, typography, shadows } from '@/config/theme'
 import { Stack, useRouter } from 'expo-router'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
+  Animated,
+  Dimensions,
   FlatList,
   Image,
+  Modal,
   RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { orderApi, OrderVO, OrderState } from '@/api/order'
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window')
+
+/** 支付方式配置 */
+const PAYMENT_METHODS = [
+  { id: 'wechat', label: '微信支付', icon: 'weixin', color: '#07C160', desc: '推荐使用' },
+  { id: 'alipay', label: '支付宝', icon: 'alipay', color: '#1677FF', desc: '' },
+  { id: 'applepay', label: 'Apple Pay', icon: 'apple-pay', color: '#FFFFFF', desc: '' },
+]
 
 /**
  * Tab 配置
@@ -25,7 +39,7 @@ import { orderApi, OrderVO, OrderState } from '@/api/order'
  */
 const TABS: { id: string; label: string; state?: OrderState }[] = [
   { id: 'all', label: '全部' },
-  { id: 'pending', label: '待付款', state: 'CREATE' },
+  { id: 'pending', label: '待付款', state: 'CONFIRM' },
   { id: 'paid', label: '已付款', state: 'PAID' },
   { id: 'finished', label: '已完成', state: 'FINISH' },
   { id: 'closed', label: '已关闭', state: 'CLOSED' },
@@ -68,6 +82,12 @@ const OrderPage = () => {
   const [loading, setLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
 
+  // 支付弹窗状态
+  const [payModalVisible, setPayModalVisible] = useState(false)
+  const [selectedPayMethod, setSelectedPayMethod] = useState<string>('alipay')
+  const [payingOrder, setPayingOrder] = useState<OrderVO | null>(null)
+  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current
+
   const HEADER_HEIGHT = 44
 
   /** 根据当前选中 tab 获取订单列表 */
@@ -86,7 +106,6 @@ const OrderPage = () => {
           params.state = tabConfig.state
         }
         const response = await orderApi.list(params)
-        console.log(response)
         setOrders(Array.isArray(response) ? response : [])
       } catch (error) {
         console.error('获取订单列表失败:', error)
@@ -118,6 +137,39 @@ const OrderPage = () => {
   }
 
   /** 获取订单状态显示信息 */
+  /** 打开支付弹窗 */
+  const openPayModal = (order: OrderVO) => {
+    setPayingOrder(order)
+    setSelectedPayMethod('wechat')
+    setPayModalVisible(true)
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 65,
+      friction: 11,
+    }).start()
+  }
+
+  /** 关闭支付弹窗 */
+  const closePayModal = () => {
+    Animated.timing(slideAnim, {
+      toValue: SCREEN_HEIGHT,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      setPayModalVisible(false)
+      setPayingOrder(null)
+    })
+  }
+
+  /** 确认支付 */
+  const handleConfirmPay = () => {
+    if (!payingOrder) return
+    // TODO: 调用后端支付接口
+    console.log('确认支付', payingOrder.orderId, '方式:', selectedPayMethod)
+    closePayModal()
+  }
+
   const getStateInfo = (state: string) => {
     return ORDER_STATE_MAP[state] || { label: state, color: colors.textSecondary }
   }
@@ -179,7 +231,7 @@ const OrderPage = () => {
             <TouchableOpacity style={styles.btnSecondary}>
               <Text style={styles.btnSecondaryText}>取消订单</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.btnPrimary}>
+            <TouchableOpacity style={styles.btnPrimary} onPress={() => openPayModal(item)}>
               <Text style={styles.btnPrimaryText}>去付款</Text>
             </TouchableOpacity>
           </View>
@@ -257,6 +309,91 @@ const OrderPage = () => {
           />
         )}
       </View>
+
+      {/* ===== 支付弹窗 ===== */}
+      <Modal
+        visible={payModalVisible}
+        transparent
+        animationType="none"
+        onRequestClose={closePayModal}
+      >
+        <TouchableWithoutFeedback onPress={closePayModal}>
+          <View style={styles.modalOverlay} />
+        </TouchableWithoutFeedback>
+
+        <Animated.View
+          style={[
+            styles.modalContainer,
+            { transform: [{ translateY: slideAnim }], paddingBottom: insets.bottom + 16 },
+          ]}
+        >
+          {/* 顶部拖拽条 */}
+          <View style={styles.modalDragBar} />
+
+          {/* 金额区域 */}
+          <View style={styles.modalAmountSection}>
+            <Text style={styles.modalAmountLabel}>支付金额</Text>
+            <View style={styles.modalAmountRow}>
+              <Text style={styles.modalCurrency}>¥</Text>
+              <Text style={styles.modalAmountValue}>
+                {formatPrice(payingOrder?.totalPrice)}
+              </Text>
+            </View>
+            <Text style={styles.modalOrderHint}>
+              订单号: {payingOrder?.orderId}
+            </Text>
+          </View>
+
+          {/* 分割线 */}
+          <View style={styles.modalDivider} />
+
+          {/* 选择支付方式标题 */}
+          <Text style={styles.modalSectionTitle}>选择支付方式</Text>
+
+          {/* 支付方式列表 */}
+          {PAYMENT_METHODS.map((method) => {
+            const isSelected = selectedPayMethod === method.id
+            return (
+              <TouchableOpacity
+                key={method.id}
+                style={[
+                  styles.payMethodItem,
+                  isSelected && styles.payMethodItemActive,
+                ]}
+                onPress={() => setSelectedPayMethod(method.id)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.payMethodLeft}>
+                  <FontAwesome6 name={method.icon} size={22} color={method.color} style={styles.payMethodIcon} />
+                  <View>
+                    <Text style={styles.payMethodLabel}>{method.label}</Text>
+                    {method.desc ? (
+                      <Text style={styles.payMethodDesc}>{method.desc}</Text>
+                    ) : null}
+                  </View>
+                </View>
+                <View
+                  style={[
+                    styles.radioOuter,
+                    isSelected && styles.radioOuterActive,
+                  ]}
+                >
+                  {isSelected && <View style={styles.radioInner} />}
+                </View>
+              </TouchableOpacity>
+            )
+          })}
+
+          {/* 确认支付按钮 */}
+          <TouchableOpacity
+            style={styles.confirmPayBtn}
+            onPress={handleConfirmPay}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.confirmPayText}>确认支付</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      </Modal>
     </View>
   )
 }
@@ -468,6 +605,140 @@ const styles = StyleSheet.create({
   emptyText: {
     color: colors.textSecondary,
     fontSize: typography.fontSize.md,
+  },
+  /* ---- Payment Modal ---- */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  modalContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#141414',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+  },
+  modalDragBar: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignSelf: 'center',
+    marginBottom: spacing.lg,
+  },
+  modalAmountSection: {
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+  },
+  modalAmountLabel: {
+    fontSize: typography.fontSize.md,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+  },
+  modalAmountRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+  },
+  modalCurrency: {
+    fontSize: typography.fontSize.xl,
+    color: colors.text,
+    fontWeight: typography.fontWeight.bold,
+    marginRight: 2,
+    marginBottom: 4,
+  },
+  modalAmountValue: {
+    fontSize: 36,
+    color: colors.text,
+    fontWeight: typography.fontWeight.bold,
+  },
+  modalOrderHint: {
+    fontSize: typography.fontSize.xs,
+    color: colors.textTertiary,
+    marginTop: spacing.sm,
+  },
+  modalDivider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    marginVertical: spacing.md,
+  },
+  modalSectionTitle: {
+    fontSize: typography.fontSize.md,
+    color: colors.textSecondary,
+    fontWeight: typography.fontWeight.medium,
+    marginBottom: spacing.md,
+  },
+  payMethodItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.sm,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  payMethodItemActive: {
+    borderColor: colors.primary,
+    backgroundColor: 'rgba(0, 212, 255, 0.06)',
+  },
+  payMethodLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  payMethodIcon: {
+    fontSize: 24,
+    marginRight: spacing.md,
+  },
+  payMethodLabel: {
+    fontSize: typography.fontSize.lg,
+    color: colors.text,
+    fontWeight: typography.fontWeight.medium,
+  },
+  payMethodDesc: {
+    fontSize: typography.fontSize.xs,
+    color: colors.primary,
+    marginTop: 2,
+  },
+  radioOuter: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  radioOuterActive: {
+    borderColor: colors.primary,
+  },
+  radioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.primary,
+  },
+  confirmPayBtn: {
+    marginTop: spacing.lg,
+    backgroundColor: colors.primary,
+    borderRadius: borderRadius.xl,
+    paddingVertical: 16,
+    alignItems: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  confirmPayText: {
+    fontSize: typography.fontSize.lg,
+    color: '#000',
+    fontWeight: typography.fontWeight.bold,
   },
 })
 

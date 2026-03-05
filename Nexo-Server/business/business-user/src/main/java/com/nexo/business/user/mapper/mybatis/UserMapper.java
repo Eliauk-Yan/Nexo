@@ -1,15 +1,11 @@
 package com.nexo.business.user.mapper.mybatis;
 
-import com.alicp.jetcache.anno.CacheRefresh;
-import com.alicp.jetcache.anno.CacheType;
-import com.alicp.jetcache.anno.Cached;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.nexo.business.user.domain.entity.User;
 import com.nexo.business.user.interfaces.vo.UserProfileVO;
 import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Repository;
 
-import java.util.concurrent.TimeUnit;
 
 @Repository
 public interface UserMapper extends BaseMapper<User> {
@@ -20,8 +16,6 @@ public interface UserMapper extends BaseMapper<User> {
      * @param userId 用户 ID
      * @return 账户信息
      */
-    @Cached(name = ":user:cache:id:", cacheType = CacheType.BOTH, key = "#userId", cacheNullValue = true) // 缓存空值防止缓存穿透
-    @CacheRefresh(refresh = 60, timeUnit = TimeUnit.MINUTES)
     @Select("""
             select
               u.avatar_url as avatarUrl,
