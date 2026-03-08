@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 
 /**
  * @classname OrderCreateAndConfirmRequest
@@ -16,7 +15,7 @@ import java.util.Date;
  */
 @Getter
 @Setter
-public class OrderCreateAndConfirmRequest extends OrderCreateRequest {
+public class CreateAndConfirmOrderBaseRequest extends CreateOrderBaseRequest {
 
     /**
      * 操作时间
