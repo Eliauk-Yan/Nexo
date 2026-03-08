@@ -352,3 +352,36 @@ CREATE TABLE `artwork_snapshot`
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=10017 DEFAULT CHARSET=utf8mb4  COMMENT='藏品快照表'
 ;
+
+CREATE TABLE `pay_order`
+(
+    `id`                       BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `pay_order_id`             varchar(32)    NOT NULL COMMENT '支付单号',
+    `payer_id`                 varchar(32)    NOT NULL COMMENT '付款方ID',
+    `payer_type`               varchar(32)    NOT NULL COMMENT '付款方类型',
+    `payee_id`                 varchar(32)    NOT NULL COMMENT '收款方ID',
+    `payee_type`               varchar(32)    NOT NULL COMMENT '收款方类型',
+    `biz_no`                   varchar(128)   NOT NULL COMMENT '业务单号',
+    `biz_type`                 varchar(32)    NOT NULL COMMENT '业务单类型',
+    `order_amount`             decimal(18, 6) NOT NULL COMMENT '订单金额',
+    `paid_amount`              decimal(18, 6) DEFAULT NULL COMMENT '已支付金额',
+    `channel_stream_id`        varchar(64)    DEFAULT NULL COMMENT '渠道流水号',
+    `pay_url`                  varchar(512)   DEFAULT NULL COMMENT '支付地址',
+    `pay_channel`              varchar(64)    NOT NULL COMMENT '支付渠道',
+    `memo`                     varchar(512)   DEFAULT NULL COMMENT '备注',
+    `order_state`              varchar(64)    NOT NULL COMMENT '支付单状态',
+    `pay_succeed_time`         datetime       DEFAULT NULL COMMENT '支付成功时间',
+    `pay_expire_time`          datetime       DEFAULT NULL COMMENT '支付超时时间',
+    `refunded_amount`          decimal(18, 6) DEFAULT NULL COMMENT '退款金额',
+    `refund_channel_stream_id` varchar(64)    DEFAULT NULL COMMENT '退款流水号',
+    `deleted`                  TINYINT(1)              DEFAULT 0 COMMENT '是否逻辑删除，0为未删除，非0为已删除',
+    `version`                  INT                     DEFAULT 1 COMMENT '乐观锁版本号',
+    `created_at`               DATETIME(3)    NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+    `updated_at`               DATETIME(3)    NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_pay_order_id` (`pay_order_id`),
+    KEY `idx_biz_no` (`biz_no`),
+    KEY `idx_payer_id` (`payer_id`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4
+  COMMENT ='支付单表';

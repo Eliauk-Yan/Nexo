@@ -1,19 +1,46 @@
 import Feather from '@expo/vector-icons/Feather'
 import { useRouter } from 'expo-router'
-import React from 'react'
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import React, { useCallback, useEffect, useState } from 'react'
+import { Image, StyleSheet, Text, TouchableOpacity, View, FlatList, RefreshControl } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import LiquidGlassSearchBar from '@/components/ui/LiquidGlassSearch'
+import { AssetCard } from '@/components/ui/AssetCard'
 import { borderRadius, colors, spacing, typography } from '@/config/theme'
-
+import { artworkApi, Asset } from '@/api/artwork'
 import { useSession } from '@/utils/ctx'
+import Spinner from 'react-native-loading-spinner-overlay'
 
 const Index = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { user, session } = useSession()
   const isLogin = !!session
+
+  const [assets, setAssets] = useState<Asset[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const fetchMyAssets = useCallback(async () => {
+    if (!isLogin) return
+    try {
+      setLoading(true)
+      const response = await artworkApi.getMyAssets(1, 20)
+      const items = (response as any).records || response || []
+      setAssets(Array.isArray(items) ? items : [])
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }, [isLogin])
+
+  useEffect(() => {
+    if (isLogin) {
+      fetchMyAssets()
+    } else {
+      setAssets([])
+    }
+  }, [isLogin, fetchMyAssets])
 
   const actionList = [
     { label: '订单', icon: 'shopping-bag', color: '#33B5E5', onPress: () => router.push('/order') },
@@ -23,12 +50,91 @@ const Index = () => {
       color: '#FFFFFF',
       onPress: () => router.push('/setting'),
     },
-    { label: '区块链', icon: 'link', color: '#D4AF37', onPress: () => {} },
-    { label: '批量转赠', icon: 'send', color: '#00C851', onPress: () => {} },
+    { label: '区块链', icon: 'link', color: '#D4AF37', onPress: () => { } },
+    { label: '批量转赠', icon: 'send', color: '#00C851', onPress: () => { } },
   ]
+
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <View style={styles.userContainer}>
+        <View style={styles.avatarWrapper}>
+          <View style={styles.avatarPlaceholder}>
+            {isLogin && user?.avatarUrl ? (
+              <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
+            ) : (
+              <Feather name="user" size={32} color={colors.textSecondary} />
+            )}
+          </View>
+        </View>
+        <View style={styles.userInfo}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={
+              isLogin
+                ? () => router.push('/setting/account')
+                : () => router.push('/(auth)/sign-in')
+            }
+          >
+            <Text style={styles.nickName}>{user?.nickName || '未登录'}</Text>
+          </TouchableOpacity>
+          {!isLogin && <Text style={styles.tip}>登录后可以查看更多功能</Text>}
+          {isLogin && (
+            <View style={styles.addressContainer}>
+              <Text style={styles.addressText}>0x71C...9A23</Text>
+              <Feather name="copy" size={12} color={colors.textSecondary} />
+            </View>
+          )}
+        </View>
+      </View>
+
+      <View style={styles.functionContainer}>
+        {actionList.map((action) => (
+          <TouchableOpacity
+            key={action.label}
+            style={styles.functionItem}
+            activeOpacity={0.8}
+            onPress={action.onPress}
+          >
+            <View style={styles.functionIcon}>
+              <Feather name={action.icon as any} size={20} color={action.color} />
+            </View>
+            <Text style={styles.functionLabel}>{action.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      {!isLogin && (
+        <View style={styles.emptyState}>
+          <View style={styles.illustration}>
+            <Feather name="box" size={80} color={colors.textSecondary} />
+          </View>
+          <Text style={styles.loginPrompt}>请登录以查看你的数字藏品</Text>
+          <TouchableOpacity
+            style={styles.loginButton}
+            activeOpacity={0.8}
+            onPress={() => router.push('/(auth)/sign-in')}
+          >
+            <Text style={styles.loginButtonText}>立即登录</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {isLogin && (
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>我的数字资产</Text>
+        </View>
+      )}
+    </View>
+  )
+
+  const renderItem = ({ item }: { item: Asset }) => (
+    <View style={styles.itemContainer}>
+      <AssetCard asset={item} />
+    </View>
+  )
 
   return (
     <View style={styles.container}>
+      <Spinner visible={loading} />
       <View style={[styles.headerWrap, { paddingTop: insets.top }]}>
         <LiquidGlassSearchBar
           onSubmit={(t) => console.log('submit:', t)}
@@ -38,72 +144,32 @@ const Index = () => {
           tintColor="rgba(255,255,255,0.12)"
         />
       </View>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 50 }]}
-      >
-        <View style={styles.userContainer}>
-          <View style={styles.avatarWrapper}>
-            <View style={styles.avatarPlaceholder}>
-              {isLogin && user?.avatarUrl ? (
-                <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
-              ) : (
-                <Feather name="user" size={32} color={colors.textSecondary} />
-              )}
-            </View>
-          </View>
-          <View style={styles.userInfo}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={
-                isLogin
-                  ? () => router.push('/setting/account')
-                  : () => router.push('/(auth)/sign-in')
-              }
-            >
-              <Text style={styles.nickName}>{user?.nickName || '未登录'}</Text>
-            </TouchableOpacity>
-            {!isLogin && <Text style={styles.tip}>登录后可以查看更多功能</Text>}
-            {isLogin && (
-              <View style={styles.addressContainer}>
-                <Text style={styles.addressText}>0x71C...9A23</Text>
-                <Feather name="copy" size={12} color={colors.textSecondary} />
-              </View>
-            )}
-          </View>
-        </View>
 
-        <View style={styles.functionContainer}>
-          {actionList.map((action) => (
-            <TouchableOpacity
-              key={action.label}
-              style={styles.functionItem}
-              activeOpacity={0.8}
-              onPress={action.onPress}
-            >
-              <View style={styles.functionIcon}>
-                <Feather name={action.icon as any} size={20} color={action.color} />
-              </View>
-              <Text style={styles.functionLabel}>{action.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        {!isLogin && (
-          <View style={styles.emptyState}>
-            <View style={styles.illustration}>
-              <Feather name="box" size={80} color={colors.textSecondary} />
+      <FlatList
+        data={assets}
+        renderItem={renderItem}
+        keyExtractor={(item) => String(item.id)}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={
+          isLogin && !loading ? (
+            <View style={styles.emptyAssetContainer}>
+              <Feather name="inbox" size={48} color={colors.textSecondary} />
+              <Text style={styles.emptyAssetText}>暂无数字资产</Text>
             </View>
-            <Text style={styles.loginPrompt}>请登录以查看你的数字藏品</Text>
-            <TouchableOpacity
-              style={styles.loginButton}
-              activeOpacity={0.8}
-              onPress={() => router.push('/(auth)/sign-in')}
-            >
-              <Text style={styles.loginButtonText}>立即登录</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </ScrollView>
+          ) : null
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={loading}
+            onRefresh={fetchMyAssets}
+            tintColor={colors.primary}
+          />
+        }
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 50 }]}
+        showsVerticalScrollIndicator={false}
+      />
     </View>
   )
 }
@@ -121,12 +187,42 @@ const styles = StyleSheet.create({
     right: 0,
     zIndex: 100,
   },
-  scrollView: {
-    flex: 1,
+  headerContainer: {
+    gap: spacing.lg,
+    paddingBottom: spacing.lg,
   },
   scrollContent: {
     paddingBottom: spacing.xl,
     gap: spacing.lg,
+  },
+  row: {
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.sm,
+  },
+  itemContainer: {
+    flex: 1,
+    margin: spacing.xs,
+    maxWidth: '48%',
+  },
+  sectionHeader: {
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  sectionTitle: {
+    fontSize: typography.fontSize.xl,
+    fontWeight: typography.fontWeight.bold,
+    color: colors.text,
+  },
+  emptyAssetContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyAssetText: {
+    marginTop: spacing.sm,
+    fontSize: typography.fontSize.md,
+    color: colors.textSecondary,
   },
   userContainer: {
     marginHorizontal: spacing.md,

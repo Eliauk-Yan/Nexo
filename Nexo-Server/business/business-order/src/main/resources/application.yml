@@ -2,13 +2,26 @@ server:
   port: 8095
 spring:
   cloud:
-    # 消费者配置
+    cloud:
+      function:
+        definition: orderClose; # 框架会自动在代码中寻找以 orderClose 为名字的通道映射关系，配合后面的 out-0 或 in-0 来区分是发消息还是收消息。
     stream:
+      rocketmq:
+        bindings:
+          orderClose-out-0:
+            producer:
+              producerType: Trans
+              transactionListener: orderCloseTransactionListener
       bindings:
         buy-in-0:
           content-type: application/json
           destination: buy-topic
           group: trade-group
+          binder: rocketmq
+        orderClose-out-0:
+          content-type: application/json
+          destination: order-close-topic
+          group: order-group
           binder: rocketmq
   config:
     import:

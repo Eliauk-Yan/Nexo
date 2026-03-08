@@ -1,13 +1,15 @@
 package com.nexo.business.order.interfaces.controller;
 
+import cn.dev33.satoken.stp.StpUtil;
+import com.nexo.business.order.domain.entity.TradeOrder;
 import com.nexo.business.order.interfaces.vo.OrderVO;
+import com.nexo.business.order.mapper.convert.OrderConvertor;
 import com.nexo.business.order.service.OrderService;
 import com.nexo.common.api.order.constant.TradeOrderState;
 import com.nexo.common.web.result.MultiResult;
+import com.nexo.common.web.result.Result;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @classname OrderController
@@ -20,12 +22,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderController {
 
     private final OrderService orderService;
+    private final OrderConvertor orderConvertor;
 
     /**
      * 获取订单列表
-     * @param state 订单状态
+     * 
+     * @param state   订单状态
      * @param current 当前页码
-     * @param size 页大小
+     * @param size    页大小
      * @return 订单列表
      */
     @GetMapping("/list")
@@ -33,5 +37,36 @@ public class OrderController {
         return orderService.getOrderList(state, current, size);
     }
 
+    /**
+     * 获取单个订单详情
+     * 
+     * @param orderId 订单号
+     * @return 订单详情
+     */
+    @GetMapping("/get")
+    public Result<OrderVO> getOrder(@RequestParam String orderId) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        TradeOrder order = orderService.getOrder(orderId, userId);
+        if (order == null) {
+            return Result.error("ORDER_NOT_FOUND", "订单不存在");
+        }
+        return Result.success(orderConvertor.toVO(order));
+    }
+
+    /**
+     * 取消订单
+     * 
+     * @param orderId 订单号
+     * @return 是否成功
+     */
+    @PostMapping("/cancel")
+    public Result<Boolean> cancelOrder(@RequestParam String orderId) {
+        Long userId = StpUtil.getLoginIdAsLong();
+        boolean result = orderService.cancelOrder(orderId, userId);
+        if (result) {
+            return Result.success(true);
+        }
+        return Result.error("ORDER_CANCEL_FAILED", "订单取消失败");
+    }
 
 }

@@ -14,18 +14,29 @@ public interface ProductFacade {
 
     /**
      * 获取商品库存流水信息
-     * @param productId 商品ID
-     * @param productType 商品类型
+     * 
+     * @param productId    商品ID
+     * @param productType  商品类型
      * @param productEvent 商品事件
-     * @param identifier 幂等号
+     * @param identifier   幂等号
      * @return 商品库存流水信息
      */
-    ProductResponse<ProductInventoryStreamDTO> getProductInventoryStream(String productId, ProductType productType, ProductEvent productEvent, String identifier);
+    ProductResponse<ProductInventoryStreamDTO> getProductInventoryStream(String productId, ProductType productType,
+            ProductEvent productEvent, String identifier);
 
     /**
      * 商品售卖
+     * 
      * @param saleRequest 商品售卖请求
      * @return 商品售卖响应
      */
     ProductResponse<ProductSaleDTO> sale(ProductSaleRequest saleRequest);
+
+    /**
+     * 取消售卖 (回滚库存)
+     * 
+     * @param saleRequest 商品售卖请求
+     * @return 商品回复响应
+     */
+    ProductResponse<ProductSaleDTO> unsale(ProductSaleRequest saleRequest);
 }

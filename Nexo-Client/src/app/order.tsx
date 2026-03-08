@@ -4,6 +4,7 @@ import { Stack, useRouter } from 'expo-router'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Dimensions,
   FlatList,
@@ -18,9 +19,17 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { orderApi, OrderVO, OrderState } from '@/api/order'
+import { tradeApi, PaymentType } from '@/api/trade'
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window')
+
+/** 前端 ID → 后端 PaymentType 映射 */
+const PAYMENT_METHOD_MAP: Record<string, PaymentType> = {
+  wechat: 'WECHAT',
+  alipay: 'ALIPAY',
+  applepay: 'APPLE_PAY',
+}
 
 /** 支付方式配置 */
 const PAYMENT_METHODS = [
@@ -84,9 +93,12 @@ const OrderPage = () => {
 
   // 支付弹窗状态
   const [payModalVisible, setPayModalVisible] = useState(false)
-  const [selectedPayMethod, setSelectedPayMethod] = useState<string>('alipay')
+  const [selectedPayMethod, setSelectedPayMethod] = useState<string>('wechat')
   const [payingOrder, setPayingOrder] = useState<OrderVO | null>(null)
+  const [paying, setPaying] = useState(false)
+  const [paySuccess, setPaySuccess] = useState(false)
   const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const HEADER_HEIGHT = 44
 
@@ -152,6 +164,11 @@ const OrderPage = () => {
 
   /** 关闭支付弹窗 */
   const closePayModal = () => {
+    // 清理轮询
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current)
+      pollingRef.current = null
+    }
     Animated.timing(slideAnim, {
       toValue: SCREEN_HEIGHT,
       duration: 250,
@@ -159,15 +176,103 @@ const OrderPage = () => {
     }).start(() => {
       setPayModalVisible(false)
       setPayingOrder(null)
+      setPaying(false)
+      setPaySuccess(false)
     })
   }
 
+  /** 轮询订单状态（等待MockPay异步回调后订单变PAID） */
+  const pollOrderStatus = (orderId: string) => {
+    let attempts = 0
+    const maxAttempts = 20 // 最多轮询20次（约40秒）
+
+    pollingRef.current = setInterval(async () => {
+      attempts++
+      try {
+        const order = await orderApi.getOrder(orderId)
+        if (order && order.orderState === 'PAID') {
+          // 支付成功
+          if (pollingRef.current) {
+            clearInterval(pollingRef.current)
+            pollingRef.current = null
+          }
+          setPaySuccess(true)
+          setPaying(false)
+          // 刷新订单列表
+          setTimeout(() => {
+            closePayModal()
+            fetchOrders(activeTab)
+          }, 1500)
+        }
+      } catch (e) {
+        console.error('轮询订单状态失败:', e)
+      }
+      if (attempts >= maxAttempts) {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current)
+          pollingRef.current = null
+        }
+        setPaying(false)
+        Alert.alert('提示', '支付处理中，请稍后在订单列表查看结果')
+      }
+    }, 2000)
+  }
+
   /** 确认支付 */
-  const handleConfirmPay = () => {
-    if (!payingOrder) return
-    // TODO: 调用后端支付接口
-    console.log('确认支付', payingOrder.orderId, '方式:', selectedPayMethod)
-    closePayModal()
+  const handleConfirmPay = async () => {
+    if (!payingOrder || paying) return
+
+    const backendPayType = PAYMENT_METHOD_MAP[selectedPayMethod]
+    if (!backendPayType) {
+      Alert.alert('提示', '不支持的支付方式')
+      return
+    }
+
+    setPaying(true)
+    try {
+      // 调用后端支付接口
+      const result = await tradeApi.pay({
+        orderId: payingOrder.orderId,
+        paymentType: backendPayType,
+      })
+
+      console.log('支付创建成功:', result)
+
+      // 开始轮询订单状态（等待Mock支付回调）
+      pollOrderStatus(payingOrder.orderId)
+    } catch (error: any) {
+      console.error('发起支付失败:', error)
+      setPaying(false)
+    }
+  }
+
+  // 组件卸载时清理轮询
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current)
+      }
+    }
+  }, [])
+
+  /** 取消订单 */
+  const handleCancelOrder = (order: OrderVO) => {
+    Alert.alert('提示', '确定要取消该订单吗？', [
+      { text: '暂时不要', style: 'cancel' },
+      {
+        text: '取消订单',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await orderApi.cancel(order.orderId)
+            Alert.alert('提示', '订单已取消')
+            fetchOrders(activeTab)
+          } catch (error) {
+            console.error('取消订单失败:', error)
+          }
+        },
+      },
+    ])
   }
 
   const getStateInfo = (state: string) => {
@@ -228,7 +333,7 @@ const OrderPage = () => {
         {/* 待付款状态显示操作按钮 */}
         {(item.orderState === 'CREATE' || item.orderState === 'CONFIRM') && (
           <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.btnSecondary}>
+            <TouchableOpacity style={styles.btnSecondary} onPress={() => handleCancelOrder(item)}>
               <Text style={styles.btnSecondaryText}>取消订单</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.btnPrimary} onPress={() => openPayModal(item)}>
@@ -386,11 +491,28 @@ const OrderPage = () => {
 
           {/* 确认支付按钮 */}
           <TouchableOpacity
-            style={styles.confirmPayBtn}
+            style={[styles.confirmPayBtn, paying && styles.confirmPayBtnDisabled]}
             onPress={handleConfirmPay}
             activeOpacity={0.8}
+            disabled={paying}
           >
-            <Text style={styles.confirmPayText}>确认支付</Text>
+            {paying ? (
+              <View style={styles.payingRow}>
+                {paySuccess ? (
+                  <>
+                    <FontAwesome6 name="circle-check" size={18} color="#000" solid />
+                    <Text style={[styles.confirmPayText, { marginLeft: 8 }]}>支付成功</Text>
+                  </>
+                ) : (
+                  <>
+                    <ActivityIndicator size="small" color="#000" />
+                    <Text style={[styles.confirmPayText, { marginLeft: 8 }]}>支付处理中...</Text>
+                  </>
+                )}
+              </View>
+            ) : (
+              <Text style={styles.confirmPayText}>确认支付</Text>
+            )}
           </TouchableOpacity>
         </Animated.View>
       </Modal>
@@ -734,6 +856,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 10,
     elevation: 8,
+  },
+  confirmPayBtnDisabled: {
+    opacity: 0.7,
+  },
+  payingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   confirmPayText: {
     fontSize: typography.fontSize.lg,

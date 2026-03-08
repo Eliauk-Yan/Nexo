@@ -2,6 +2,7 @@ package com.nexo.business.order.mapper.convert;
 
 import com.nexo.business.order.domain.entity.TradeOrder;
 import com.nexo.business.order.interfaces.vo.OrderVO;
+import com.nexo.common.api.order.response.data.OrderDTO;
 import org.mapstruct.Mapper;
 
 import java.util.List;
@@ -15,5 +16,9 @@ public interface OrderConvertor {
     OrderVO toVO(TradeOrder order);
 
     List<OrderVO> toVOs(List<TradeOrder> orders);
+
+    OrderDTO toDTO(TradeOrder order);
+
+    List<OrderDTO> toDTOs(List<TradeOrder> orders);
 
 }

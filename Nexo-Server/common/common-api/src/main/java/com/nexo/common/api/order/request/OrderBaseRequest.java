@@ -6,6 +6,9 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 /**
  * @classname OrderBaseRequest
  * @description 订单模块请求基类
@@ -13,7 +16,10 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public abstract class OrderBaseRequest extends BaseRequest {
+public abstract class OrderBaseRequest extends BaseRequest implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     /**
      * 幂等号

@@ -6,7 +6,7 @@ import com.nexo.business.order.domain.exception.OrderException;
 import com.nexo.business.order.domain.validator.OrderCreateValidator;
 import com.nexo.business.order.service.OrderService;
 import com.nexo.common.api.order.constant.TradeOrderState;
-import com.nexo.common.api.order.request.OrderCreateAndConfirmRequest;
+import com.nexo.common.api.order.request.AndConfirmOrderCreateRequest;
 import com.nexo.common.api.order.request.OrderCreateRequest;
 import com.nexo.common.api.product.ProductFacade;
 import com.nexo.common.api.product.request.ProductSaleRequest;
@@ -64,7 +64,7 @@ public class BuyMsgListener {
             log.info("消息已接收 主题:{} 消息ID:{}, 消息内容:{}, 标签:{}", topic, messageId, JSON.toJSONString(orderCreateRequest),
                     tag);
             // 2. 订单创建并提交
-            OrderCreateAndConfirmRequest orderCreateAndConfirmRequest = new OrderCreateAndConfirmRequest();
+            AndConfirmOrderCreateRequest orderCreateAndConfirmRequest = new AndConfirmOrderCreateRequest();
             BeanUtils.copyProperties(orderCreateRequest, orderCreateAndConfirmRequest);
             orderCreateAndConfirmRequest.setOperator(UserType.PLATFORM.name());
             orderCreateAndConfirmRequest.setOperatorType(UserType.PLATFORM);

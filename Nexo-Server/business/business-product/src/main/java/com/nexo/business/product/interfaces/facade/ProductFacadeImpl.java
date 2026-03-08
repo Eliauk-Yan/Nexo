@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.DubboService;
 
-
 /**
  * @classname ProductFacadeImpl
  * @description 商品Dubbo实服务实现类
@@ -27,13 +26,14 @@ public class ProductFacadeImpl implements ProductFacade {
     @DubboReference(version = "1.0.0")
     private ArtWorkFacade artWorkFacade;
 
-
     @Override
-    public ProductResponse<ProductInventoryStreamDTO> getProductInventoryStream(String productId, ProductType productType, ProductEvent productEvent, String identifier) {
+    public ProductResponse<ProductInventoryStreamDTO> getProductInventoryStream(String productId,
+            ProductType productType, ProductEvent productEvent, String identifier) {
         return switch (productType) {
             case ARTWORK -> {
                 // 1. 获取藏品库存流水数据 TODO
-                ArtworkInventoryStreamDTO artworkInventoryStream = artWorkFacade.getArtworkInventoryStream(Long.parseLong(productId), identifier);
+                ArtworkInventoryStreamDTO artworkInventoryStream = artWorkFacade
+                        .getArtworkInventoryStream(Long.parseLong(productId), identifier);
                 // 2. 构造响应体并返回
                 ProductResponse<ProductInventoryStreamDTO> productResponse = new ProductResponse<>();
                 productResponse.setSuccess(true);
@@ -51,8 +51,21 @@ public class ProductFacadeImpl implements ProductFacade {
         // TODO 后续优化为模板那方法模式
         ProductResponse<ProductSaleDTO> response = new ProductResponse<>();
         if (saleRequest.getProductType() == ProductType.ARTWORK) {
-            Boolean trySaleResult =  artWorkFacade.sale(saleRequest);
+            Boolean trySaleResult = artWorkFacade.sale(saleRequest);
             response.setSuccess(trySaleResult);
+            return response;
+        } else {
+            throw new UnsupportedOperationException("不支持商品类型");
+        }
+    }
+
+    @Override
+    public ProductResponse<ProductSaleDTO> unsale(ProductSaleRequest saleRequest) {
+        // TODO 后续优化为模板那方法模式
+        ProductResponse<ProductSaleDTO> response = new ProductResponse<>();
+        if (saleRequest.getProductType() == ProductType.ARTWORK) {
+            Boolean unsaleResult = artWorkFacade.unsale(saleRequest);
+            response.setSuccess(unsaleResult);
             return response;
         } else {
             throw new UnsupportedOperationException("不支持商品类型");

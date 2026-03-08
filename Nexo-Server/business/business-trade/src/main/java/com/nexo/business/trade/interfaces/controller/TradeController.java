@@ -1,6 +1,8 @@
 package com.nexo.business.trade.interfaces.controller;
 
 import com.nexo.business.trade.interfaces.dto.BuyDTO;
+import com.nexo.business.trade.interfaces.dto.PayDTO;
+import com.nexo.business.trade.interfaces.vo.PayVO;
 import com.nexo.business.trade.service.TradeService;
 import com.nexo.common.web.result.Result;
 import lombok.RequiredArgsConstructor;
@@ -22,9 +24,25 @@ public class TradeController {
 
     private final TradeService tradeService;
 
-    @PostMapping("buy")
-    public Result<String> buy(@Validated @RequestBody BuyDTO params) {
-        return Result.success(tradeService.buy(params));
+    /**
+     * 购买藏品
+     * @param buyParams 购买参数
+     * @return 订单号
+     */
+    @PostMapping("/buy")
+    public Result<String> buy(@Validated @RequestBody BuyDTO buyParams) {
+        return Result.success(tradeService.buy(buyParams));
     }
+
+    /**
+     * 支付
+     * @param payParams 支付参数
+     * @return 支付情况
+     */
+    @PostMapping("/pay")
+    public Result<PayVO> pay(@Validated @RequestBody PayDTO payParams) {
+        return Result.success(tradeService.pay(payParams));
+    }
+
 
 }

@@ -4,6 +4,8 @@ import com.nexo.common.api.common.response.BaseResponse;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serial;
+
 /**
  * @classname OrderResponse
  * @description 订单模块响应
@@ -11,10 +13,11 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class OrderResponse extends BaseResponse {
+public class OrderResponse<T> extends BaseResponse {
 
-    private String orderId;
+    @Serial
+    private static final long serialVersionUID = 1L;
 
-    private String streamId;
+    private T data;
 
 }

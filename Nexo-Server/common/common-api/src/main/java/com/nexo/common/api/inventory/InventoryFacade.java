@@ -21,13 +21,23 @@ public interface InventoryFacade {
 
     /**
      * 扣减库存 TODO 参数待优化暂时耦合
+     * 
      * @param request 请求
      * @return 返回结果
      */
     InventoryResponse<Boolean> decreaseInventory(OrderCreateRequest request);
 
     /**
+     * 回滚(增加)库存
+     * 
+     * @param request 请求
+     * @return 返回结果
+     */
+    InventoryResponse<Boolean> increaseInventory(OrderCreateRequest request);
+
+    /**
      * 获取库存扣减日志 TODO 参数待优化暂时耦合
+     * 
      * @param request 请求
      * @return 库存扣减日志
      */
@@ -35,22 +45,25 @@ public interface InventoryFacade {
 
     /**
      * 获取库存增加日志 TODO 参数待优化暂时耦合
+     * 
      * @param orderCreateRequest 请求
-      * @return 库存增加日志
+     * @return 库存增加日志
      */
     InventoryResponse<String> getInventoryIncreaseLog(OrderCreateRequest orderCreateRequest);
 
     /**
      * 删除库存扣减日志 TODO 参数待优化暂时耦合
-      * @param orderCreateRequest 请求
-      * @return 删除结果
+     * 
+     * @param orderCreateRequest 请求
+     * @return 删除结果
      */
     InventoryResponse<Long> removeInventoryDecreaseLog(OrderCreateRequest orderCreateRequest);
 
     /**
      * 初始化库存
+     * 
      * @param inventoryRequest 库存请求
-      * @return 初始化结果
+     * @return 初始化结果
      */
     InventoryResponse<Boolean> init(InventoryRequest inventoryRequest);
 }

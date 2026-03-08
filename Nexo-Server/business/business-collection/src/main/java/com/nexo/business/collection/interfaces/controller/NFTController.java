@@ -4,15 +4,17 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nexo.business.collection.interfaces.dto.ArtWorkQueryDTO;
 import com.nexo.business.collection.interfaces.vo.NFTDetailVO;
 import com.nexo.business.collection.interfaces.vo.ArtWorkVO;
+import com.nexo.business.collection.interfaces.vo.AssetVO;
 import com.nexo.business.collection.service.ArtWorkService;
+import com.nexo.business.collection.service.AssetService;
 import com.nexo.common.web.result.MultiResult;
 import com.nexo.common.web.result.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
 
 /**
  * @classname ArtWorkController
@@ -25,9 +27,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class NFTController {
 
     private final ArtWorkService artWorkService;
+    private final AssetService assetService;
 
     /**
      * 获取藏品列表
+     * 
      * @param queryDTO 查询条件
      * @return 藏品列表
      */
@@ -39,6 +43,7 @@ public class NFTController {
 
     /**
      * 根据藏品 ID 获取藏品信息
+     * 
      * @param id 藏品 ID
      * @return 藏品信息
      */
@@ -47,6 +52,18 @@ public class NFTController {
         return Result.success(artWorkService.getNFTDetailById(id));
     }
 
-
-
+    /**
+     * 获取我的数字资产列表
+     * 
+     * @param current 当前页
+     * @param size    每页大小
+     * @return 资产列表
+     */
+    @GetMapping("/myAssets")
+    public MultiResult<AssetVO> getMyAssets(
+            @RequestParam(defaultValue = "1") Long current,
+            @RequestParam(defaultValue = "10") Long size) {
+        Page<AssetVO> page = assetService.getMyAssets(current, size);
+        return MultiResult.multiSuccess(page.getRecords(), page.getTotal(), page.getCurrent(), page.getSize());
+    }
 }

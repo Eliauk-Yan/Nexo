@@ -13,6 +13,10 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum TradeErrorCode implements ErrorCode {
 
+    ORDER_IS_CANNOT_PAY("ORDER_IS_CANNOT_PAY", "订单不可支付"),
+
+    ORDER_NOT_EXIST("ORDER_NOT_EXIST", "订单不存在"),
+
     GOODS_NOT_FOR_SALE("GOODS_NOT_FOR_SALE", "商品不可售卖"),
 
     ORDER_CREATE_FAILED("ORDER_CREATE_FAILED", "订单创建失败");

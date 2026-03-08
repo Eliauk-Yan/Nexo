@@ -63,6 +63,11 @@ public class InventoryFacadeImpl implements InventoryFacade {
      */
     private String decreaseScript;
 
+    /**
+     * 回滚(增加)库存的 Lua 脚本
+     */
+    private String increaseScript;
+
     @PostConstruct
     public void init() throws IOException {
         // 初始化本地缓存
@@ -71,8 +76,11 @@ public class InventoryFacadeImpl implements InventoryFacade {
                 .maximumSize(3000) // 2. 设置缓存最大容量为 3000
                 .build();
         // 读取扣减库存的 Lua 脚本
-        ClassPathResource resource = new ClassPathResource("decrease.lua");
-        decreaseScript = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
+        ClassPathResource decreaseResource = new ClassPathResource("decrease.lua");
+        decreaseScript = StreamUtils.copyToString(decreaseResource.getInputStream(), StandardCharsets.UTF_8);
+        // 读取回滚库存的 Lua 脚本
+        ClassPathResource increaseResource = new ClassPathResource("increase.lua");
+        increaseScript = StreamUtils.copyToString(increaseResource.getInputStream(), StandardCharsets.UTF_8);
     }
 
     @Override
@@ -96,7 +104,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
     }
 
     @Override
-        public InventoryResponse<Long> getInventory(InventoryRequest request) {
+    public InventoryResponse<Long> getInventory(InventoryRequest request) {
         // 1. 构造响应对象
         InventoryResponse<Long> response = new InventoryResponse<>();
         response.setSuccess(true);
@@ -112,7 +120,8 @@ public class InventoryFacadeImpl implements InventoryFacade {
             return response;
         }
         // 4. 从 Redis 获取库存并返回
-        String stock = (String) redissonClient.getBucket("nft:inventory:" + request.getProductId(), StringCodec.INSTANCE).get();
+        String stock = (String) redissonClient
+                .getBucket("nft:inventory:" + request.getProductId(), StringCodec.INSTANCE).get();
         response.setData(Long.parseLong(stock));
         return response;
     }
@@ -164,18 +173,63 @@ public class InventoryFacadeImpl implements InventoryFacade {
     }
 
     @Override
+    public InventoryResponse<Boolean> increaseInventory(OrderCreateRequest request) {
+        InventoryResponse<Boolean> response = new InventoryResponse<>();
+        ProductType productType = request.getProductType();
+
+        // 如果本地缓存命中说明之前售罄过，现在有库存了可以清理掉本地售罄标识
+        soldOutProductLocalCache.invalidate(productType + SEPARATOR + request.getProductId());
+
+        if (productType == ProductType.ARTWORK) {
+            try {
+                // 执行Lua脚本 增加库存
+                Long result = redissonClient.getScript(StringCodec.INSTANCE).eval(RScript.Mode.READ_WRITE,
+                        increaseScript,
+                        RScript.ReturnType.LONG,
+                        Arrays.asList("nft:inventory:" + request.getProductId(),
+                                "nft:inventory:stream:" + request.getProductId()), // 库存 key 与 流水 key
+                        request.getItemCount(), "INCREASE_" + request.getIdentifier());// 加回数量与唯一标识
+
+                log.info("Redis库存回滚成功, 商品ID = {}, 当前库存 = {}", request.getProductId(), result);
+            } catch (RedisException e) {
+                // 如果是 Lua 中的 redis.error_reply 返回的 OPERATION_ALREADY_EXECUTED，属于正常幂等现象
+                if (e.getMessage() != null && e.getMessage().contains("OPERATION_ALREADY_EXECUTED")) {
+                    log.info("库存回滚幂等, 商品ID = {} , 幂等号 = {}", request.getProductId(), request.getIdentifier());
+                } else {
+                    log.error("库存回滚错误 , 商品ID = {} , 幂等号 = {} ,", request.getProductId(), request.getIdentifier(), e);
+                    response.setSuccess(false);
+                    response.setData(false);
+                    response.setCode(ResponseCode.FAIL.getCode());
+                    response.setMessage("库存回滚错误");
+                    return response;
+                }
+            }
+        } else {
+            throw new UnsupportedOperationException("不支持商品类型");
+        }
+
+        response.setSuccess(true);
+        response.setData(true);
+        response.setCode(ResponseCode.SUCCESS.name());
+        response.setMessage(ResponseCode.SUCCESS.getMessage());
+        return response;
+    }
+
+    @Override
     public InventoryResponse<String> getInventoryDecreaseLog(OrderCreateRequest request) {
         // TODO 后续改为模板方法
         if (request.getProductType() == ProductType.ARTWORK) {
-            // 1. 编写 Lua 脚本
-            String luaScript = "return redis.call('hget', KEYS[1], ARGV[1])";
-            // 2. 执行 Lua 脚本
-            String result = redissonClient.getScript().eval(
-                    RScript.Mode.READ_ONLY,
-                    luaScript,
-                    RScript.ReturnType.VALUE, // ReturnType 为 VALUE 以获取字符串结果
-                    List.of("nft:inventory:stream:" + request.getProductId()),
-                    "DECREASE_" + request.getIdentifier());
+            String hashKey = "nft:inventory:stream:" + request.getProductId();
+            String field = "DECREASE_" + request.getIdentifier();
+
+            org.redisson.api.RMap<String, String> map = redissonClient.getMap(hashKey, StringCodec.INSTANCE);
+            String result = map.get(field);
+
+            if (result == null) {
+                log.warn("检查库存日志为空, hashKey={}, field={}, mapSize={}, availableKeys={}",
+                        hashKey, field, map.size(), map.keySet());
+            }
+
             // 3. 返回结果
             InventoryResponse<String> response = new InventoryResponse<>();
             response.setSuccess(true);
@@ -194,7 +248,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
             // 1. 编写 Lua 脚本
             String luaScript = "return redis.call('hget', KEYS[1], ARGV[1])";
             // 2. 执行 Lua 脚本
-            String result = redissonClient.getScript().eval(
+            String result = redissonClient.getScript(StringCodec.INSTANCE).eval(
                     RScript.Mode.READ_ONLY,
                     luaScript,
                     RScript.ReturnType.VALUE, // ReturnType 为 VALUE 以获取字符串结果
@@ -218,7 +272,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
             // 1. 编写 Lua 脚本
             String luaScript = "return redis.call('hdel', KEYS[1], ARGV[1])";
             // 2. 执行 Lua 脚本
-            Long result = redissonClient.getScript().eval(
+            Long result = redissonClient.getScript(StringCodec.INSTANCE).eval(
                     RScript.Mode.READ_WRITE,
                     luaScript,
                     RScript.ReturnType.LONG, // ReturnType 为 LONG 以获取长整型结果
@@ -248,7 +302,8 @@ public class InventoryFacadeImpl implements InventoryFacade {
                 return inventoryResponse;
             }
             // 3. 初始化库存 指定解码器 StringCodec.INSTANCE
-            redissonClient.getBucket("nft:inventory:" + request.getProductId(), StringCodec.INSTANCE).set(request.getInventory());
+            redissonClient.getBucket("nft:inventory:" + request.getProductId(), StringCodec.INSTANCE)
+                    .set(request.getInventory());
             inventoryResponse.setSuccess(true);
             inventoryResponse.setCode(ResponseCode.SUCCESS.getCode());
             inventoryResponse.setData(true);

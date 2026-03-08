@@ -2,6 +2,7 @@ package com.nexo.common.api.artwork;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nexo.common.api.artwork.request.ArtWorkQueryRequest;
+import com.nexo.common.api.artwork.request.AssetAllocateRequest;
 import com.nexo.common.api.artwork.request.NFTCreateRequest;
 import com.nexo.common.api.artwork.response.ArtWorkQueryResponse;
 import com.nexo.common.api.artwork.response.NFTResponse;
@@ -9,7 +10,6 @@ import com.nexo.common.api.artwork.response.data.ArtWorkDTO;
 import com.nexo.common.api.artwork.response.data.ArtworkInventoryDTO;
 import com.nexo.common.api.artwork.response.data.ArtworkInventoryStreamDTO;
 import com.nexo.common.api.product.request.ProductSaleRequest;
-
 
 public interface ArtWorkFacade {
 
@@ -47,6 +47,14 @@ public interface ArtWorkFacade {
     Boolean sale(ProductSaleRequest saleRequest);
 
     /**
+     * 取消售卖 (回滚库存)
+     * 
+     * @param saleRequest 请求
+     * @return 是否成功
+     */
+    Boolean unsale(ProductSaleRequest saleRequest);
+
+    /**
      * 获取藏品列表
      * 
      * @return 藏品列表
@@ -72,4 +80,12 @@ public interface ArtWorkFacade {
      * 更新状态
      */
     Boolean updateState(Long id, String state);
+
+    /**
+     * 购买成功后分发资产并上链
+     *
+     * @param request 分发请求
+     * @return 结果
+     */
+    Boolean allocateAsset(AssetAllocateRequest request);
 }

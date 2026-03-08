@@ -6,13 +6,24 @@ import com.alibaba.fastjson.JSON;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.nexo.business.trade.domain.exception.TradeException;
 import com.nexo.business.trade.interfaces.dto.BuyDTO;
+import com.nexo.business.trade.interfaces.dto.PayDTO;
+import com.nexo.business.trade.interfaces.vo.PayVO;
 import com.nexo.business.trade.service.TradeService;
 import com.nexo.common.api.artwork.ArtWorkFacade;
 import com.nexo.common.api.artwork.response.ArtWorkQueryResponse;
 import com.nexo.common.api.artwork.response.data.ArtWorkDTO;
 import com.nexo.common.api.inventory.InventoryFacade;
 import com.nexo.common.api.inventory.response.InventoryResponse;
+import com.nexo.common.api.order.OrderFacade;
+import com.nexo.common.api.order.constant.TradeOrderState;
 import com.nexo.common.api.order.request.OrderCreateRequest;
+import com.nexo.common.api.order.request.OrderTimeoutRequest;
+import com.nexo.common.api.order.response.OrderResponse;
+import com.nexo.common.api.order.response.data.OrderDTO;
+import com.nexo.common.api.pay.PayFacade;
+import com.nexo.common.api.pay.request.PayCreateRequest;
+import com.nexo.common.api.pay.response.PayOrderDTO;
+import com.nexo.common.api.pay.response.PayResponse;
 import com.nexo.common.api.product.ProductFacade;
 import com.nexo.common.api.product.constant.ProductEvent;
 import com.nexo.common.api.product.constant.ProductType;
@@ -21,21 +32,22 @@ import com.nexo.common.api.product.response.data.ProductDTO;
 import com.nexo.common.api.product.response.data.ProductInventoryStreamDTO;
 import com.nexo.common.mq.producer.StreamProducer;
 import com.nexo.common.web.filter.TokenFilter;
-import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import static com.nexo.business.trade.domain.exception.TradeErrorCode.GOODS_NOT_FOR_SALE;
-import static com.nexo.business.trade.domain.exception.TradeErrorCode.ORDER_CREATE_FAILED;
+import static com.nexo.business.trade.domain.exception.TradeErrorCode.*;
+import static com.nexo.common.api.user.constant.UserType.PLATFORM;
 
 /**
  * @classname TradeServiceImpl
@@ -47,25 +59,52 @@ import static com.nexo.business.trade.domain.exception.TradeErrorCode.ORDER_CREA
 @Slf4j
 public class TradeServiceImpl implements TradeService {
 
+    /**
+     * 旁路校验线程工厂
+     */
     private static final ThreadFactory inventoryBypassVerifyThreadFactory = new ThreadFactoryBuilder()
             .setNameFormat("inventory-bypass-verify-pool-%d").build();
 
+    /**
+     * 旁路校验线程池
+     */
     private final ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(10,
             inventoryBypassVerifyThreadFactory);
 
     /**
-     * 生产者
+     * 消息生产者
      */
     private final StreamProducer streamProducer;
 
+    /**
+     * 商品模块Dubbo接口
+     */
     @DubboReference(version = "1.0.0")
     private ProductFacade productFacade;
 
+    /**
+     * 库存模块Dubbo接口
+     */
     @DubboReference(version = "1.0.0")
     private InventoryFacade inventoryFacade;
 
+    /**
+     * 藏品模块Dubbo接口
+     */
     @DubboReference(version = "1.0.0")
     private ArtWorkFacade artWorkFacade;
+
+    /**
+     * 订单模块Dubbo接口
+     */
+    @DubboReference(version = "1.0.0")
+    private OrderFacade orderFacade;
+
+    /**
+     * 支付模块Dubbo接口
+     */
+    @DubboReference(version = "1.0.0")
+    private PayFacade payFacade;
 
     @Override
     public String buy(BuyDTO params) {
@@ -98,10 +137,24 @@ public class TradeServiceImpl implements TradeService {
         if (!result) {
             throw new TradeException(ORDER_CREATE_FAILED);
         }
-        // 5. 查询Redis库存扣减日志判断是否成功（增加重试机制，等待MQ事务完成）
-        InventoryResponse<String> decreaseLogResponse = decreaseLogResponse = inventoryFacade.getInventoryDecreaseLog(orderCreateRequest);
 
-        if (decreaseLogResponse.getSuccess() && decreaseLogResponse.getData() != null) {
+        // 5. 查询Redis库存扣减日志判断是否成功（增加重试机制，等待MQ事务完成）
+        InventoryResponse<String> decreaseLogResponse = null;
+        for (int i = 0; i < 20; i++) {
+            decreaseLogResponse = inventoryFacade.getInventoryDecreaseLog(orderCreateRequest);
+            if (decreaseLogResponse.getSuccess() && decreaseLogResponse.getData() != null) {
+                break;
+            }
+            try {
+                Thread.sleep(100); // 等待100ms，让本地事务完成
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                log.error("等待库存扣减日志被中断", e);
+                break;
+            }
+        }
+
+        if (decreaseLogResponse != null && decreaseLogResponse.getSuccess() && decreaseLogResponse.getData() != null) {
             // 6. 再检查一下是否有回退库存的流水，如果回退过，则不需要旁路验证
             InventoryResponse<String> increaseLogResponse = inventoryFacade.getInventoryIncreaseLog(orderCreateRequest);
             log.info("库存回退日志查询结果, orderId={}, increaseLogData={}", orderCreateRequest.getOrderId(),
@@ -130,23 +183,66 @@ public class TradeServiceImpl implements TradeService {
                 return orderCreateRequest.getOrderId();
             }
         } else {
-            log.error("库存扣减日志未查到, orderId={}, identifier={}, response={}",
-                    orderCreateRequest.getOrderId(), orderCreateRequest.getIdentifier(),
-                    decreaseLogResponse != null ? decreaseLogResponse.getData() : "null");
+            log.error("库存扣减日志未查到, orderId={}, identifier={}, response={}", orderCreateRequest.getOrderId(),
+                    orderCreateRequest.getIdentifier(), decreaseLogResponse.getData());
         }
         throw new TradeException(ORDER_CREATE_FAILED);
     }
 
-    @PreDestroy
-    public void destroy() {
-        scheduler.shutdown();
-        try {
-            if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                scheduler.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            scheduler.shutdownNow();
-            Thread.currentThread().interrupt();
+    @Override
+    public PayVO pay(PayDTO payParams) {
+        // 1. 调用订单服务查找对应订单信息
+        OrderResponse<OrderDTO> response = orderFacade.getOrder(payParams.getOrderId(), StpUtil.getLoginIdAsLong());
+        OrderDTO order = response.getData();
+        // 2. 订单存在校验
+        if (order == null) {
+            throw new TradeException(ORDER_NOT_EXIST);
         }
+        // 3. 订单状态校验
+        if (order.getOrderState() != TradeOrderState.CONFIRM) {
+            throw new TradeException(ORDER_IS_CANNOT_PAY);
+        }
+        // 4. 订单超时校验
+        if (Boolean.TRUE.equals(order.getTimeout())) {
+            // 4.1 异步关闭订单
+            Thread.ofVirtual().start(() -> {
+                OrderTimeoutRequest cancelRequest = new OrderTimeoutRequest();
+                cancelRequest.setOperatorType(PLATFORM);
+                cancelRequest.setOperator(PLATFORM.getCode());
+                cancelRequest.setOrderId(order.getOrderId());
+                cancelRequest.setOperateTime(LocalDateTime.now());
+                cancelRequest.setIdentifier(UUID.randomUUID().toString());
+                orderFacade.timeout(cancelRequest);
+            });
+            throw new TradeException(ORDER_IS_CANNOT_PAY);
+        }
+
+        // 5. 调用支付服务创建支付单
+        PayCreateRequest payCreateRequest = new PayCreateRequest();
+        payCreateRequest.setBizNo(order.getOrderId());
+        payCreateRequest.setBizType("TRADE_ORDER");
+        payCreateRequest.setOrderAmount(order.getTotalPrice());
+        payCreateRequest.setPayerId(StpUtil.getLoginIdAsString());
+        payCreateRequest.setPayerType("CUSTOMER");
+        payCreateRequest.setPayeeId(order.getSellerId());
+        payCreateRequest.setPayeeType("PLATFORM");
+        payCreateRequest.setPayChannel(payParams.getPaymentType());
+        payCreateRequest.setMemo(order.getProductName());
+
+        PayResponse<PayOrderDTO> payResponse = payFacade.createPayOrder(payCreateRequest);
+
+        // 6. 处理支付响应
+        if (!payResponse.getSuccess()) {
+            log.error("创建支付单失败, orderId={}, msg={}", order.getOrderId(), payResponse.getMessage());
+            throw new TradeException(ORDER_IS_CANNOT_PAY);
+        }
+
+        // 7. 组装返回结果
+        PayOrderDTO payOrderDTO = payResponse.getData();
+        PayVO payVO = new PayVO();
+        payVO.setPayOrderId(payOrderDTO.getPayOrderId());
+        payVO.setPayUrl(payOrderDTO.getPayUrl());
+        payVO.setPayState(payOrderDTO.getOrderState());
+        return payVO;
     }
 }

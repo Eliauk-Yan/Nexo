@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  */
 @Getter
 @Setter
-public class CreateAndConfirmOrderBaseRequest extends CreateOrderBaseRequest {
+public class AndConfirmOrderCreateRequest extends OrderCreateRequest {
 
     /**
      * 操作时间

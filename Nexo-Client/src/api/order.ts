@@ -1,4 +1,5 @@
 import { get } from '@/utils/request'
+import request from '@/utils/request'
 
 /**
  * 订单状态枚举
@@ -76,4 +77,19 @@ export const orderApi = {
   list: (params: QueryOrderRequest) => {
     return get<OrderVO[]>('/order/list', params)
   },
+
+  /**
+   * 获取单个订单详情（用于支付后轮询状态）
+   */
+  getOrder: (orderId: string) => {
+    return get<OrderVO>('/order/get', { orderId })
+  },
+
+  /**
+   * 取消订单
+   */
+  cancel: (orderId: string) => {
+    return request('/order/cancel', { method: 'POST', params: { orderId } })
+  },
 }
+

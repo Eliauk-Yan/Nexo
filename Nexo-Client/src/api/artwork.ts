@@ -36,6 +36,26 @@ export interface QueryArtWorkRequest {
   keyword?: string
 }
 
+export interface Asset {
+  id: number
+  artworkId: number
+  artworkName: string
+  artworkCover: string
+  purchasePrice: number
+  serialNumber: string
+  state: string
+  transactionHash: string
+  createdAt: string
+}
+
+export interface PageAssetResponse {
+  records: Asset[]
+  total: number
+  size: number
+  current: number
+  pages: number
+}
+
 export const artworkApi = {
   /**
    * 获取藏品列表
@@ -49,5 +69,12 @@ export const artworkApi = {
    */
   getDetail: (id: number) => {
     return get<ArtworkDetail>(`/artwork/${id}`)
+  },
+
+  /**
+   * 获取我的数字资产列表
+   */
+  getMyAssets: (currentPage: number, pageSize: number) => {
+    return get<Asset[]>('/artwork/myAssets', { current: currentPage, size: pageSize })
   },
 }
