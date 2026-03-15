@@ -1,6 +1,5 @@
 package com.nexo.common.api.order.constant;
 
-import com.alibaba.fastjson2.annotation.JSONField;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -25,7 +24,6 @@ public enum TradeOrderState {
 
     DISCARD("DISCARD", "废单，用户看不到");
 
-    @JSONField
     private final String code;
 
     private final String description;

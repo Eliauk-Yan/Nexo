@@ -20,7 +20,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { orderApi, OrderVO, OrderState } from '@/api/order'
 import { tradeApi, PaymentType } from '@/api/trade'
+import { useSession } from '@/utils/ctx'
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
+import Spinner from 'react-native-loading-spinner-overlay'
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window')
 
@@ -86,6 +88,7 @@ const PAGE_SIZE = 10
 const OrderPage = () => {
   const insets = useSafeAreaInsets()
   const router = useRouter()
+  const { session, isLoading: isSessionLoading } = useSession()
   const [activeTab, setActiveTab] = useState('all')
   const [orders, setOrders] = useState<OrderVO[]>([])
   const [loading, setLoading] = useState(false)
@@ -130,10 +133,15 @@ const OrderPage = () => {
     [activeTab],
   )
 
-  /** 初始化加载 & tab 切换时重新加载 */
+  /** 未登录时进入即跳转登录页，不请求接口；已登录时初始化加载 & tab 切换时重新加载 */
   useEffect(() => {
+    if (isSessionLoading) return
+    if (!session) {
+      router.replace('/(auth)/sign-in')
+      return
+    }
     fetchOrders(activeTab)
-  }, [activeTab])
+  }, [isSessionLoading, session, activeTab])
 
   /** 切换 Tab */
   const handleTabPress = (tabId: string) => {
@@ -352,6 +360,15 @@ const OrderPage = () => {
       <View style={styles.emptyContainer}>
         <Text style={styles.emptyIcon}>📦</Text>
         <Text style={styles.emptyText}>暂无相关订单</Text>
+      </View>
+    )
+  }
+
+  // 未登录或仍在确认登录状态时，不渲染订单页，直接跳转或显示加载
+  if (isSessionLoading || !session) {
+    return (
+      <View style={[styles.rootContainer, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
+        <Spinner visible={true} />
       </View>
     )
   }

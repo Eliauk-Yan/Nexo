@@ -1,6 +1,6 @@
 package com.nexo.common.api.inventory.response;
 
-import com.nexo.common.api.common.response.BaseResponse;
+import com.nexo.common.base.response.BaseResponse;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -14,11 +14,18 @@ import java.io.Serializable;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class InventoryResponse<T> extends BaseResponse implements Serializable {
+public class InventoryResponse<T> extends BaseResponse {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     private T data;
+
+    public static <T> InventoryResponse<T> success(T data) {
+        InventoryResponse<T> response = new InventoryResponse<>();
+        response.setSuccess(true);
+        response.setData(data);
+        return response;
+    }
 
 }

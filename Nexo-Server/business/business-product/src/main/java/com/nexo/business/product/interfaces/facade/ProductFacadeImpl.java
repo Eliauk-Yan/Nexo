@@ -1,11 +1,11 @@
 package com.nexo.business.product.interfaces.facade;
 
-import com.nexo.common.api.artwork.ArtWorkFacade;
-import com.nexo.common.api.artwork.response.data.ArtworkInventoryStreamDTO;
-import com.nexo.common.api.common.response.ResponseCode;
+import com.nexo.common.api.nft.NFTFacade;
+import com.nexo.common.api.nft.response.data.ArtworkInventoryStreamDTO;
+import com.nexo.common.api.nft.constant.NFTType;
+import com.nexo.common.base.response.ResponseCode;
 import com.nexo.common.api.product.ProductFacade;
-import com.nexo.common.api.product.constant.ProductEvent;
-import com.nexo.common.api.product.constant.ProductType;
+import com.nexo.common.api.nft.constant.NFTEvent;
 import com.nexo.common.api.product.request.ProductSaleRequest;
 import com.nexo.common.api.product.response.ProductResponse;
 import com.nexo.common.api.product.response.data.ProductInventoryStreamDTO;
@@ -24,15 +24,15 @@ import org.apache.dubbo.config.annotation.DubboService;
 public class ProductFacadeImpl implements ProductFacade {
 
     @DubboReference(version = "1.0.0")
-    private ArtWorkFacade artWorkFacade;
+    private NFTFacade nftFacade;
 
     @Override
     public ProductResponse<ProductInventoryStreamDTO> getProductInventoryStream(String productId,
-            ProductType productType, ProductEvent productEvent, String identifier) {
-        return switch (productType) {
-            case ARTWORK -> {
+                                                                                NFTType NFTType, NFTEvent NFTEvent, String identifier) {
+        return switch (NFTType) {
+            case NFT -> {
                 // 1. 获取藏品库存流水数据 TODO
-                ArtworkInventoryStreamDTO artworkInventoryStream = artWorkFacade
+                ArtworkInventoryStreamDTO artworkInventoryStream = nftFacade
                         .getArtworkInventoryStream(Long.parseLong(productId), identifier);
                 // 2. 构造响应体并返回
                 ProductResponse<ProductInventoryStreamDTO> productResponse = new ProductResponse<>();
@@ -50,8 +50,8 @@ public class ProductFacadeImpl implements ProductFacade {
     public ProductResponse<ProductSaleDTO> sale(ProductSaleRequest saleRequest) {
         // TODO 后续优化为模板那方法模式
         ProductResponse<ProductSaleDTO> response = new ProductResponse<>();
-        if (saleRequest.getProductType() == ProductType.ARTWORK) {
-            Boolean trySaleResult = artWorkFacade.sale(saleRequest);
+        if (saleRequest.getNFTType() == NFTType.NFT) {
+            Boolean trySaleResult = nftFacade.sale(saleRequest);
             response.setSuccess(trySaleResult);
             return response;
         } else {
@@ -63,8 +63,8 @@ public class ProductFacadeImpl implements ProductFacade {
     public ProductResponse<ProductSaleDTO> unsale(ProductSaleRequest saleRequest) {
         // TODO 后续优化为模板那方法模式
         ProductResponse<ProductSaleDTO> response = new ProductResponse<>();
-        if (saleRequest.getProductType() == ProductType.ARTWORK) {
-            Boolean unsaleResult = artWorkFacade.unsale(saleRequest);
+        if (saleRequest.getNFTType() == NFTType.NFT) {
+            Boolean unsaleResult = nftFacade.unsale(saleRequest);
             response.setSuccess(unsaleResult);
             return response;
         } else {

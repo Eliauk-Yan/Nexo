@@ -1,8 +1,8 @@
 package com.nexo.auth.interfaces.vo;
 
-import com.nexo.common.api.user.response.data.UserInfo;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * @classname LoginResponse
@@ -10,7 +10,8 @@ import lombok.Data;
  * @date 2025/12/01 20:48
  * @created by YanShijie
  */
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 public class LoginVO {
 
@@ -24,9 +25,5 @@ public class LoginVO {
      */
     private Long expire;
 
-    /**
-     * 用户信息
-     */
-    private UserInfo userInfo;
 
 }

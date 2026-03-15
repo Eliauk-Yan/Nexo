@@ -13,6 +13,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum TradeErrorCode implements ErrorCode {
 
+    PAY_PERMISSION_DENIED("PAY_PERMISSION_DENIED", "无支付权限"),
+
     ORDER_IS_CANNOT_PAY("ORDER_IS_CANNOT_PAY", "订单不可支付"),
 
     ORDER_NOT_EXIST("ORDER_NOT_EXIST", "订单不存在"),

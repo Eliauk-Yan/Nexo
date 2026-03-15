@@ -1,6 +1,6 @@
 package com.nexo.common.api.user.request;
 
-import com.nexo.common.api.common.request.BaseRequest;
+import com.nexo.common.base.request.BaseRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -20,7 +20,5 @@ public class UserRegisterRequest extends BaseRequest {
     private static final long serialVersionUID = 1L;
 
     private String phone;
-
-    private String inviteCode;
 
 }

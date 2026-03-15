@@ -4,7 +4,7 @@ import com.nexo.business.order.domain.validator.OrderCreateValidator;
 import com.nexo.business.order.domain.validator.ProductValidator;
 import com.nexo.business.order.domain.validator.StockValidator;
 import com.nexo.business.order.domain.validator.UserValidator;
-import com.nexo.common.api.artwork.ArtWorkFacade;
+import com.nexo.common.api.nft.NFTFacade;
 import com.nexo.common.api.inventory.InventoryFacade;
 import com.nexo.common.api.user.UserFacade;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -23,7 +23,7 @@ public class ValidatorConfig {
     private UserFacade userFacade;
 
     @DubboReference(version = "1.0.0")
-    private ArtWorkFacade artWorkFacade;
+    private NFTFacade nftFacade;
 
     @DubboReference(version = "1.0.0")
     private InventoryFacade inventoryFacade;
@@ -31,7 +31,7 @@ public class ValidatorConfig {
     @Bean
     public OrderCreateValidator getOrderCreateValidator() {
         UserValidator userValidator = new UserValidator(userFacade);
-        ProductValidator productValidator = new ProductValidator(artWorkFacade);
+        ProductValidator productValidator = new ProductValidator(nftFacade);
         StockValidator stockValidator = new StockValidator(inventoryFacade);
         productValidator.setNext(stockValidator);
         userValidator.setNext(productValidator);

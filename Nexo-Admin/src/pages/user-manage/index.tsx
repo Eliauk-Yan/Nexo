@@ -2,19 +2,53 @@ import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import {
     ProTable,
 } from '@ant-design/pro-components';
-import { Image } from 'antd';
-import { message, Popconfirm } from 'antd';
-import { useRef } from 'react';
+import { Image, Tag, Switch } from 'antd';
+import { message } from 'antd';
+import React, { useRef, useState } from 'react';
 import { getUserList, freezeUser, unfreezeUser } from '@/services/api/user';
+
+const ActiveSwitch: React.FC<{
+    record: User;
+    onFreeze: (id: number) => Promise<boolean>;
+    onUnfreeze: (id: number) => Promise<boolean>;
+    onSuccess: () => void;
+}> = ({ record, onFreeze, onUnfreeze, onSuccess }) => {
+    const [checked, setChecked] = useState(record.state === 'ACTIVE');
+    const [loading, setLoading] = useState(false);
+
+    return (
+        <Switch
+            checked={checked}
+            loading={loading}
+            checkedChildren="正常"
+            unCheckedChildren="冻结"
+            onChange={async (value) => {
+                setChecked(value);
+                setLoading(true);
+                const success = value
+                    ? await onUnfreeze(record.id)
+                    : await onFreeze(record.id);
+                setLoading(false);
+                if (success) {
+                    onSuccess();
+                } else {
+                    setChecked(!value);
+                }
+            }}
+        />
+    );
+};
 
 export type User = {
     id: number;
     nickName: string;
     phone: string;
     email: string;
-    role: 'ADMIN' | 'USER';
+    role: 'ADMIN' | 'COLLECTOR';
     state: 'INIT' | 'AUTHENTICATED' | 'ACTIVE' | 'FROZEN';
     avatarUrl: string;
+    address?: string;
+    certification?: boolean;
     loginTime: string;
     createdAt: string;
 };
@@ -76,27 +110,11 @@ export default () => {
             dataIndex: 'nickName',
             copyable: true,
             ellipsis: true,
-            formItemProps: {
-                rules: [
-                    {
-                        required: true,
-                        message: '此项为必填项',
-                    },
-                ],
-            },
         },
         {
             title: '手机号',
             dataIndex: 'phone',
             copyable: true,
-            formItemProps: {
-                rules: [
-                    {
-                        required: true,
-                        message: '此项为必填项',
-                    },
-                ],
-            },
         },
         {
             title: '邮箱',
@@ -104,63 +122,92 @@ export default () => {
             search: false,
         },
         {
+            title: '地址',
+            dataIndex: 'address',
+            search: false,
+            ellipsis: true,
+        },
+        {
             title: '角色',
             dataIndex: 'role',
             valueType: 'select',
-            search: false,
             valueEnum: {
-                ADMIN: { text: '管理员', status: 'Warning' },
-                COLLECTOR: { text: '收藏家', status: 'Success' },
+                ADMIN: { text: '管理员' },
+                COLLECTOR: { text: '收藏家' },
             },
+            render: (_, record) => (
+                <Tag color={record.role === 'ADMIN' ? 'gold' : 'green'}>
+                    {record.role === 'ADMIN' ? '管理员' : '收藏家'}
+                </Tag>
+            ),
+        },
+        {
+            title: '实名认证',
+            dataIndex: 'certification',
+            valueType: 'select',
+            valueEnum: {
+                true: { text: '已认证' },
+                false: { text: '未认证' },
+            },
+            render: (_, record) => (
+                <Tag color={record.certification ? 'blue' : 'default'}>
+                    {record.certification ? '已认证' : '未认证'}
+                </Tag>
+            ),
         },
         {
             title: '状态',
             dataIndex: 'state',
             valueType: 'select',
-            search: false,
             valueEnum: {
-                INIT: { text: '初始化', status: 'Default' },
-                AUTHENTICATED: { text: '已实名', status: 'Processing' },
-                ACTIVE: { text: '正常', status: 'Success' },
-                FROZEN: { text: '冻结', status: 'Error' },
+                INIT: { text: '初始化' },
+                AUTHENTICATED: { text: '已实名' },
+                ACTIVE: { text: '正常' },
+                FROZEN: { text: '冻结' },
+            },
+            render: (_, record) => {
+                let color: string = 'default';
+                let text: string = '';
+                switch (record.state) {
+                    case 'INIT':
+                        color = 'default';
+                        text = '初始化';
+                        break;
+                    case 'AUTHENTICATED':
+                        color = 'processing';
+                        text = '已实名';
+                        break;
+                    case 'ACTIVE':
+                        color = 'success';
+                        text = '正常';
+                        break;
+                    case 'FROZEN':
+                        color = 'error';
+                        text = '冻结';
+                        break;
+                    default:
+                        text = record.state;
+                }
+                return <Tag color={color}>{text}</Tag>;
             },
         },
         {
-            title: '注册时间',
-            dataIndex: 'createdAt',
-            valueType: 'dateTime',
-            search: false,
-        },
-        {
-            title: '最后登录时间',
-            dataIndex: 'loginTime',
-            valueType: 'dateTime',
-            search: false,
-        },
-        {
-            title: '操作',
+            title: '激活',
             valueType: 'option',
             key: 'option',
             render: (text, record, _, action) => {
-                // INIT 和 AUTHENTICATED 状态不显示冻结/解冻操作
-                if (record.state === 'INIT' || record.state === 'AUTHENTICATED') {
+                // 未实名认证或处于 INIT / AUTHENTICATED 状态，不显示操作
+                if (!record.certification || record.state === 'INIT' || record.state === 'AUTHENTICATED') {
                     return [<span key="no-op" style={{ color: '#999' }}>-</span>];
                 }
                 return [
-                    <Popconfirm
-                        key="freeze"
-                        title={record.state === 'ACTIVE' ? '确定冻结该用户吗?' : '确定解冻该用户吗?'}
-                        onConfirm={async () => {
-                            const success = record.state === 'ACTIVE' ? await handleFreeze(record.id) : await handleUnfreeze(record.id);
-                            if (success) {
-                                actionRef.current?.reload();
-                            }
-                        }}
-                    >
-                        <a style={{ color: record.state === 'ACTIVE' ? 'red' : 'green' }}>
-                            {record.state === 'ACTIVE' ? '冻结' : '解冻'}
-                        </a>
-                    </Popconfirm>,
+                    <ActiveSwitch
+                        key="freeze-switch"
+                        record={record}
+                        onFreeze={handleFreeze}
+                        onUnfreeze={handleUnfreeze}
+                        onSuccess={() => actionRef.current?.reload()}
+                    />,
                 ];
             },
         },
@@ -178,6 +225,9 @@ export default () => {
                         size: params.pageSize,
                         nickName: params.nickName,
                         phone: params.phone,
+                        role: params.role,
+                        certification: params.certification,
+                        state: params.state,
                     };
                     const res = await getUserList(APIParams);
                     return {

@@ -2,11 +2,13 @@ package com.nexo.business.trade.listener;
 
 import com.alibaba.fastjson2.JSON;
 import com.nexo.common.api.inventory.InventoryFacade;
+import com.nexo.common.api.inventory.request.InventoryRequest;
 import com.nexo.common.api.inventory.response.InventoryResponse;
 import com.nexo.common.api.order.request.OrderCreateRequest;
 import com.nexo.common.mq.message.MessageBody;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.rocketmq.client.producer.LocalTransactionState;
 import org.apache.rocketmq.client.producer.TransactionListener;
 import org.apache.rocketmq.common.message.Message;
@@ -23,7 +25,8 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class InventoryDecreaseTransactionListener implements TransactionListener {
 
-    private final InventoryFacade inventoryFacade;
+    @DubboReference(version = "1.0.0")
+    private InventoryFacade inventoryFacade;
 
     /**
      * 生产者发送消息成功后调用
@@ -44,9 +47,13 @@ public class InventoryDecreaseTransactionListener implements TransactionListener
             MessageBody messageBody = JSON.parseObject(jsonString, MessageBody.class);
             // 从 MessageBody 中获取真正的业务请求 String 并解析
             OrderCreateRequest request = JSON.parseObject(messageBody.getBody(), OrderCreateRequest.class);
-
             // 2. 扣减库存
-            InventoryResponse<Boolean> response = inventoryFacade.decreaseInventory(request);
+            InventoryRequest inventoryRequest = new InventoryRequest();
+            inventoryRequest.setInventory(request.getItemCount());
+            inventoryRequest.setNFTType(request.getNFTType());
+            inventoryRequest.setIdentifier(request.getIdentifier());
+            inventoryRequest.setNftId(request.getProductId());
+            InventoryResponse<Boolean> response = inventoryFacade.decreaseInventory(inventoryRequest);
             if (response.getSuccess() && response.getData()) {
                 log.info("本地事务执行成功，提交 MQ 消息");
                 // 返回 COMMIT_MESSAGE：MQ 消息对下游消费者变为可见

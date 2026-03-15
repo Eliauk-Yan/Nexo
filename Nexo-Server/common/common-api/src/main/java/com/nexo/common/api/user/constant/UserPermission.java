@@ -4,32 +4,21 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * 用户权限枚举 TODO 后续优化结构
+ * 用户权限枚举
  */
 @Getter
 @AllArgsConstructor
 public enum UserPermission {
 
-    /**
-     * 基础权限
-     */
-    BASIC("basic"),
+    BASIC("BASIC", "基础权限"),
 
-    /**
-     * 认证权限
-     */
-    AUTHENTICATE("authenticate"),
+    AUTHENTICATE("AUTHENTICATE", "认证权限"),
 
-    /**
-     * 冻结权限
-     */
-    FROZEN("frozen"),
+    FROZEN("FROZEN", "冻结权限"),
 
-    /**
-     * 无权限
-     */
-    NONE("none");
-
+    NONE("NONE", "无权限");
 
     private final String code;
+
+    private final String description;
 }

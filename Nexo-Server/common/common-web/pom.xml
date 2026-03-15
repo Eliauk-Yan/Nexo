@@ -36,7 +36,6 @@
             <artifactId>common-base</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-
         <!-- Sa-Token 权限认证（SpringBoot3集成）-->
         <dependency>
             <groupId>cn.dev33</groupId>

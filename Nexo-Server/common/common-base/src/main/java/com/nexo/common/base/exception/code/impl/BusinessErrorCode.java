@@ -56,5 +56,6 @@ public enum BusinessErrorCode implements ErrorCode {
     PERMISSION_DENIED("607", "权限不足");
 
     private final String code;
+
     private final String message;
 }

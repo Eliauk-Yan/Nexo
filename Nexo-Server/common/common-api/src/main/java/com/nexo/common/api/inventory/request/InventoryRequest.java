@@ -1,7 +1,7 @@
 package com.nexo.common.api.inventory.request;
 
-import com.nexo.common.api.common.request.BaseRequest;
-import com.nexo.common.api.product.constant.ProductType;
+import com.nexo.common.base.request.BaseRequest;
+import com.nexo.common.api.nft.constant.NFTType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,13 +19,13 @@ public class InventoryRequest extends BaseRequest {
      * 商品ID
      */
     @NotNull(message = "商品为空")
-    private String productId;
+    private String nftId;
 
     /**
      * 商品类型
      */
     @NotNull(message = "商品类型为空")
-    private ProductType productType;
+    private NFTType NFTType;
 
     /**
      * 幂等号：唯一标识
@@ -36,5 +36,6 @@ public class InventoryRequest extends BaseRequest {
      * 库存数量
      */
     private Long inventory;
+
 
 }

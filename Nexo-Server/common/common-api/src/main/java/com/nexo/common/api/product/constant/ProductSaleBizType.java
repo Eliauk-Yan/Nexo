@@ -1,28 +1,21 @@
 package com.nexo.common.api.product.constant;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+
 /**
  * 商品售卖业务类型
  */
+@AllArgsConstructor
+@Getter
 public enum ProductSaleBizType {
 
-    /**
-     * 一级市场交易
-     */
-    PRIMARY_TRADE,
+    PRIMARY_TRADE("PRIMARY_TRADE", "一级市场交易"),
 
-    /**
-     * 盲盒交易
-     */
-    BLIND_BOX_TRADE,
+    TRANSFER("TRANSFER", "转赠"),;
 
-    /**
-     * 空投
-     */
-    AIR_DROP,
+    private final String code;
 
-    /**
-     * 转赠
-     */
-    TRANSFER;
+    private final String description;
 
 }

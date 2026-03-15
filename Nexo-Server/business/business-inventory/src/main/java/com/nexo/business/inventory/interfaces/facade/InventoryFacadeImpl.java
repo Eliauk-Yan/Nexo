@@ -2,15 +2,15 @@ package com.nexo.business.inventory.interfaces.facade;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.nexo.common.api.artwork.ArtWorkFacade;
-import com.nexo.common.api.artwork.response.ArtWorkQueryResponse;
-import com.nexo.common.api.artwork.response.data.ArtworkInventoryDTO;
-import com.nexo.common.api.common.response.ResponseCode;
+import com.nexo.common.api.nft.NFTFacade;
+import com.nexo.common.api.nft.response.NFTQueryResponse;
+import com.nexo.common.api.nft.response.data.ArtworkInventoryDTO;
+import com.nexo.common.base.response.ResponseCode;
 import com.nexo.common.api.inventory.InventoryFacade;
 import com.nexo.common.api.inventory.request.InventoryRequest;
 import com.nexo.common.api.inventory.response.InventoryResponse;
 import com.nexo.common.api.order.request.OrderCreateRequest;
-import com.nexo.common.api.product.constant.ProductType;
+import com.nexo.common.api.nft.constant.NFTType;
 import com.nexo.common.api.product.response.data.ProductInventoryDTO;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -26,10 +26,13 @@ import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static com.nexo.common.api.nft.constant.NFTType.NFT;
 import static com.nexo.common.base.constant.CommonConstant.SEPARATOR;
 
 /**
@@ -46,7 +49,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
      * 藏品Dubbo接口
      */
     @DubboReference(version = "1.0.0")
-    private ArtWorkFacade artWorkFacade;
+    private NFTFacade nftFacade;
 
     /**
      * 本地缓存
@@ -84,10 +87,10 @@ public class InventoryFacadeImpl implements InventoryFacade {
     }
 
     @Override
-    public InventoryResponse<ProductInventoryDTO> getInventory(String productId, ProductType productType) {
-        return switch (productType) {
-            case ARTWORK -> {
-                ArtWorkQueryResponse<ArtworkInventoryDTO> response = artWorkFacade
+    public InventoryResponse<ProductInventoryDTO> getInventory(String productId, NFTType NFTType) {
+        return switch (NFTType) {
+            case NFT -> {
+                NFTQueryResponse<ArtworkInventoryDTO> response = nftFacade
                         .getArtworkInventory(Long.parseLong(productId));
                 if (response.getSuccess()) {
                     InventoryResponse<ProductInventoryDTO> inventoryResponse = new InventoryResponse<>();
@@ -99,7 +102,6 @@ public class InventoryFacadeImpl implements InventoryFacade {
                 }
                 yield null;
             }
-            case BLIND_BOX -> null;
         };
     }
 
@@ -111,9 +113,9 @@ public class InventoryFacadeImpl implements InventoryFacade {
         response.setCode(ResponseCode.SUCCESS.name());
         response.setMessage(ResponseCode.SUCCESS.getMessage());
         // 2. 获取商品类型
-        ProductType productType = request.getProductType();
+        NFTType NFTType = request.getNFTType();
         // 3. 检查本地缓存商品是否售罄
-        if (soldOutProductLocalCache.getIfPresent(productType + SEPARATOR + request.getProductId()) != null) {
+        if (soldOutProductLocalCache.getIfPresent(NFTType + SEPARATOR + request.getNftId()) != null) {
             // 3.1 已售罄直接返回
             response = new InventoryResponse<>();
             response.setData(0L);
@@ -121,40 +123,55 @@ public class InventoryFacadeImpl implements InventoryFacade {
         }
         // 4. 从 Redis 获取库存并返回
         String stock = (String) redissonClient
-                .getBucket("nft:inventory:" + request.getProductId(), StringCodec.INSTANCE).get();
+                .getBucket("nft:inventory:" + request.getNftId(), StringCodec.INSTANCE).get();
         response.setData(Long.parseLong(stock));
         return response;
     }
 
     @Override
-    public InventoryResponse<Boolean> decreaseInventory(OrderCreateRequest request) {
+    public InventoryResponse<Boolean> invalid(InventoryRequest inventoryRequest) {
+        // 1. 删除Redis库存
+        if (redissonClient.getBucket("nft:inventory:" + inventoryRequest.getNftId(), StringCodec.INSTANCE).isExists()) {
+            redissonClient.getBucket("nft:inventory:" + inventoryRequest.getNftId(), StringCodec.INSTANCE).delete();
+        }
+        // 2. 删除Redis库存流水
+        if (redissonClient.getBucket("nft:inventory:stream:" + inventoryRequest.getNftId(), StringCodec.INSTANCE).isExists()) {
+            // 让流水记录的过期时间设置为24小时后，这样可以避免流水记录立即过期，对账出现问题
+            redissonClient.getBucket("nft:inventory:stream:" + inventoryRequest.getNftId(), StringCodec.INSTANCE).expire(Instant.now().plus(24, ChronoUnit.HOURS));
+        }
+        // 3. 清楚售罄本地缓存
+        soldOutProductLocalCache.invalidate(inventoryRequest.getNFTType() + SEPARATOR + inventoryRequest.getNftId());
+        return InventoryResponse.success(true);
+    }
+
+    @Override
+    public InventoryResponse<Boolean> decreaseInventory(InventoryRequest request) {
         InventoryResponse<Boolean> response = new InventoryResponse<>();
         // 1. 获取商品类型（如：数字藏品、盲盒）
-        ProductType productType = request.getProductType();
+        NFTType nftType = request.getNFTType();
         // 2. 检查本地缓存:如果本地缓存命中，说明该商品已卖完，直接拦截请求，不再查 Redis，实现快速失败
-        if (soldOutProductLocalCache.getIfPresent(productType + SEPARATOR + request.getProductId()) != null) {
+        if (soldOutProductLocalCache.getIfPresent(nftType + SEPARATOR + request.getNftId()) != null) {
             response.setSuccess(false);
             response.setData(false);
             response.setCode(ResponseCode.FAIL.getCode());
             response.setMessage("库存不足");
             return response;
         }
-        // TODO 后续优化为模板方法设计模式
-        if (productType == ProductType.ARTWORK) {
+        if (nftType == NFT) {
             try {
                 // 3. 执行Lua脚本 扣减库存
                 Long result = redissonClient.getScript(StringCodec.INSTANCE).eval(RScript.Mode.READ_WRITE,
                         decreaseScript,
                         RScript.ReturnType.LONG,
-                        Arrays.asList("nft:inventory:" + request.getProductId(),
-                                "nft:inventory:stream:" + request.getProductId()), // 库存 key 与 流水 key
-                        request.getItemCount(), "DECREASE_" + request.getIdentifier());// 扣减数量与唯一标识
+                        Arrays.asList("nft:inventory:" + request.getNftId(),
+                                "nft:inventory:stream:" + request.getNftId()), // 库存 key 与 流水 key
+                        request.getInventory(), "DECREASE_" + request.getIdentifier());// 扣减数量与唯一标识
                 // 如果库存为 0，则在本地缓存记录，用于对售罄商品快速决策
                 if (result == 0) {
-                    soldOutProductLocalCache.put(productType + SEPARATOR + request.getProductId(), true);
+                    soldOutProductLocalCache.put(nftType + SEPARATOR + request.getNftId(), true);
                 }
             } catch (RedisException e) {
-                log.error("库存扣减错误 , 商品ID = {} , 幂等号 = {} ,", request.getProductId(), request.getIdentifier(), e);
+                log.error("库存扣减错误 , 商品ID = {} , 幂等号 = {} ,", request.getNftId(), request.getIdentifier(), e);
                 response.setSuccess(false);
                 response.setData(false);
                 response.setCode(ResponseCode.FAIL.getCode());
@@ -173,30 +190,30 @@ public class InventoryFacadeImpl implements InventoryFacade {
     }
 
     @Override
-    public InventoryResponse<Boolean> increaseInventory(OrderCreateRequest request) {
+    public InventoryResponse<Boolean> increaseInventory(InventoryRequest request) {
         InventoryResponse<Boolean> response = new InventoryResponse<>();
-        ProductType productType = request.getProductType();
+        NFTType NFTType = request.getNFTType();
 
         // 如果本地缓存命中说明之前售罄过，现在有库存了可以清理掉本地售罄标识
-        soldOutProductLocalCache.invalidate(productType + SEPARATOR + request.getProductId());
+        soldOutProductLocalCache.invalidate(NFTType + SEPARATOR + request.getNftId());
 
-        if (productType == ProductType.ARTWORK) {
+        if (NFTType == NFT) {
             try {
                 // 执行Lua脚本 增加库存
                 Long result = redissonClient.getScript(StringCodec.INSTANCE).eval(RScript.Mode.READ_WRITE,
                         increaseScript,
                         RScript.ReturnType.LONG,
-                        Arrays.asList("nft:inventory:" + request.getProductId(),
-                                "nft:inventory:stream:" + request.getProductId()), // 库存 key 与 流水 key
-                        request.getItemCount(), "INCREASE_" + request.getIdentifier());// 加回数量与唯一标识
+                        Arrays.asList("nft:inventory:" + request.getNftId(),
+                                "nft:inventory:stream:" + request.getNftId()), // 库存 key 与 流水 key
+                        request.getInventory(), "INCREASE_" + request.getIdentifier());// 加回数量与唯一标识
 
-                log.info("Redis库存回滚成功, 商品ID = {}, 当前库存 = {}", request.getProductId(), result);
+                log.info("Redis库存回滚成功, 商品ID = {}, 当前库存 = {}", request.getNftId(), result);
             } catch (RedisException e) {
                 // 如果是 Lua 中的 redis.error_reply 返回的 OPERATION_ALREADY_EXECUTED，属于正常幂等现象
                 if (e.getMessage() != null && e.getMessage().contains("OPERATION_ALREADY_EXECUTED")) {
-                    log.info("库存回滚幂等, 商品ID = {} , 幂等号 = {}", request.getProductId(), request.getIdentifier());
+                    log.info("库存回滚幂等, 商品ID = {} , 幂等号 = {}", request.getNftId(), request.getIdentifier());
                 } else {
-                    log.error("库存回滚错误 , 商品ID = {} , 幂等号 = {} ,", request.getProductId(), request.getIdentifier(), e);
+                    log.error("库存回滚错误 , 商品ID = {} , 幂等号 = {} ,", request.getNftId(), request.getIdentifier(), e);
                     response.setSuccess(false);
                     response.setData(false);
                     response.setCode(ResponseCode.FAIL.getCode());
@@ -217,8 +234,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
 
     @Override
     public InventoryResponse<String> getInventoryDecreaseLog(OrderCreateRequest request) {
-        // TODO 后续改为模板方法
-        if (request.getProductType() == ProductType.ARTWORK) {
+        if (request.getNFTType() == NFT) {
             String hashKey = "nft:inventory:stream:" + request.getProductId();
             String field = "DECREASE_" + request.getIdentifier();
 
@@ -243,8 +259,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
 
     @Override
     public InventoryResponse<String> getInventoryIncreaseLog(OrderCreateRequest request) {
-        // TODO 后续改为模板方法
-        if (request.getProductType() == ProductType.ARTWORK) {
+        if (request.getNFTType() == NFT) {
             // 1. 编写 Lua 脚本
             String luaScript = "return redis.call('hget', KEYS[1], ARGV[1])";
             // 2. 执行 Lua 脚本
@@ -268,7 +283,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
     @Override
     public InventoryResponse<Long> removeInventoryDecreaseLog(OrderCreateRequest request) {
         // TODO 后续改为模板方法
-        if (request.getProductType() == ProductType.ARTWORK) {
+        if (request.getNFTType() == NFT) {
             // 1. 编写 Lua 脚本
             String luaScript = "return redis.call('hdel', KEYS[1], ARGV[1])";
             // 2. 执行 Lua 脚本
@@ -291,18 +306,17 @@ public class InventoryFacadeImpl implements InventoryFacade {
 
     @Override
     public InventoryResponse<Boolean> init(InventoryRequest request) {
-        // TODO 后续改为模板方法
-        if (request.getProductType() == ProductType.ARTWORK) {
+        if (request.getNFTType() == NFT) {
             // 1. 构造库存响应对象
             InventoryResponse<Boolean> inventoryResponse = new InventoryResponse<>();
             // 2. 检查库存是否存在
-            if (redissonClient.getBucket("nft:inventory:" + request.getProductId()).isExists()) {
+            if (redissonClient.getBucket("nft:inventory:" + request.getNftId()).isExists()) {
                 inventoryResponse.setSuccess(true);
                 inventoryResponse.setCode(ResponseCode.DUPLICATED.getCode());
                 return inventoryResponse;
             }
             // 3. 初始化库存 指定解码器 StringCodec.INSTANCE
-            redissonClient.getBucket("nft:inventory:" + request.getProductId(), StringCodec.INSTANCE)
+            redissonClient.getBucket("nft:inventory:" + request.getNftId(), StringCodec.INSTANCE)
                     .set(request.getInventory());
             inventoryResponse.setSuccess(true);
             inventoryResponse.setCode(ResponseCode.SUCCESS.getCode());

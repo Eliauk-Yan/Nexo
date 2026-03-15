@@ -1,14 +1,18 @@
 package com.nexo.business.user.service.impl;
 
+import com.alicp.jetcache.anno.CacheInvalidate;
 import com.alicp.jetcache.anno.CacheRefresh;
 import com.alicp.jetcache.anno.CacheType;
 import com.alicp.jetcache.anno.Cached;
 import com.nexo.business.user.domain.entity.User;
+import com.nexo.business.user.domain.exception.UserException;
 import com.nexo.business.user.mapper.mybatis.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
+
+import static com.nexo.business.user.domain.exception.UserErrorCode.USER_UPDATE_FAILED;
 
 /**
  * @classname UserCacheService
@@ -25,6 +29,12 @@ public class UserCacheService {
     @CacheRefresh(refresh = 60, timeUnit = TimeUnit.MINUTES) // 每60分钟刷新
     public User getUserById(Long userId) {
         return userMapper.selectById(userId);
+    }
+
+    @CacheInvalidate(name = ":user:cache:id:", key = "#user.id")
+    public Boolean updateById(User user) {
+        int res = userMapper.updateById(user);
+        return res == 1;
     }
 
 }

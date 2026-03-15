@@ -14,6 +14,7 @@ import {
 
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
+import { getCurrentUser } from '@/services/api/auth';
 import '@ant-design/v5-patch-for-react-19';
 
 const isDev = process.env.NODE_ENV === 'development';
@@ -30,20 +31,23 @@ export async function getInitialState(): Promise<{
 }> {
   const fetchUserInfo = async () => {
     try {
-      const userInfoStr = localStorage.getItem('userInfo');
-      console.log('fetchUserInfo local storage:', userInfoStr);
-      if (userInfoStr) {
-        const userInfo = JSON.parse(userInfoStr);
+      const res = await getCurrentUser({ skipErrorHandler: true });
+      // 兼容多种响应格式：Result<UserInfo> 的 data、或直接返回用户对象（参考 NFTurbo msg.data）
+      const raw = res?.data ?? res;
+      const data = raw?.data ?? raw;
+      if (data && (data.nickName != null || data.id != null)) {
+        // 昵称/头像可能为空，提供兜底显示（参考 NFTurbo 的 profilePhotoUrl / nickName）
+        const nickName = data.nickName ?? data.phone ?? '管理员';
+        const avatarUrl = data.avatarUrl ?? data.profilePhotoUrl;
         return {
-          name: userInfo.nickName,
-          avatar: userInfo.avatarUrl,
-          userid: userInfo.id,
-          access: userInfo.role,
+          name: nickName,
+          avatar: avatarUrl,
+          userid: data.id,
+          access: data.role,
         };
       }
     } catch (error) {
       console.error('fetchUserInfo error:', error);
-      // history.push(loginPath);
     }
     return undefined;
   };

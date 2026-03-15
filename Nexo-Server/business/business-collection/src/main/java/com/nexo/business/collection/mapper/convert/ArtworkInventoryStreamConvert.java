@@ -1,7 +1,7 @@
 package com.nexo.business.collection.mapper.convert;
 
-import com.nexo.business.collection.domain.entity.ArtworkInventoryStream;
-import com.nexo.common.api.artwork.response.data.ArtworkInventoryStreamDTO;
+import com.nexo.business.collection.domain.entity.NFTInventoryStream;
+import com.nexo.common.api.nft.response.data.ArtworkInventoryStreamDTO;
 import org.mapstruct.Mapper;
 
 /**
@@ -10,5 +10,5 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring")
 public interface ArtworkInventoryStreamConvert {
 
-    ArtworkInventoryStreamDTO toDTO(ArtworkInventoryStream artworkInventoryStream);
+    ArtworkInventoryStreamDTO toDTO(NFTInventoryStream nftInventoryStream);
 }

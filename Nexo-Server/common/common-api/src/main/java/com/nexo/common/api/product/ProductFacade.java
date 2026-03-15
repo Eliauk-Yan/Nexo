@@ -1,7 +1,7 @@
 package com.nexo.common.api.product;
 
-import com.nexo.common.api.product.constant.ProductEvent;
-import com.nexo.common.api.product.constant.ProductType;
+import com.nexo.common.api.nft.constant.NFTEvent;
+import com.nexo.common.api.nft.constant.NFTType;
 import com.nexo.common.api.product.request.ProductSaleRequest;
 import com.nexo.common.api.product.response.ProductResponse;
 import com.nexo.common.api.product.response.data.ProductInventoryStreamDTO;
@@ -16,13 +16,13 @@ public interface ProductFacade {
      * 获取商品库存流水信息
      * 
      * @param productId    商品ID
-     * @param productType  商品类型
-     * @param productEvent 商品事件
+     * @param NFTType  商品类型
+     * @param NFTEvent 商品事件
      * @param identifier   幂等号
      * @return 商品库存流水信息
      */
-    ProductResponse<ProductInventoryStreamDTO> getProductInventoryStream(String productId, ProductType productType,
-            ProductEvent productEvent, String identifier);
+    ProductResponse<ProductInventoryStreamDTO> getProductInventoryStream(String productId, NFTType NFTType,
+                                                                         NFTEvent NFTEvent, String identifier);
 
     /**
      * 商品售卖

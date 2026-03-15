@@ -2,18 +2,17 @@ package com.nexo.admin.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.lang.UUID;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.nexo.admin.domain.dto.NFTCreateDTO;
-import com.nexo.admin.domain.dto.NFTQueryDTO;
+import com.nexo.admin.domain.param.NFTCreateParam;
+import com.nexo.admin.domain.param.NFTQueryParam;
 import com.nexo.admin.domain.exception.AdminException;
+import com.nexo.admin.domain.param.NFTUpdateParam;
 import com.nexo.admin.domain.vo.NFTVO;
 import com.nexo.admin.service.NFTService;
-import com.nexo.common.api.artwork.ArtWorkFacade;
-import com.nexo.common.api.artwork.request.ArtWorkQueryRequest;
-import com.nexo.common.api.artwork.request.NFTCreateRequest;
-import com.nexo.common.api.artwork.response.ArtWorkQueryResponse;
-import com.nexo.common.api.artwork.response.NFTResponse;
-import com.nexo.common.api.artwork.response.data.ArtWorkDTO;
+import com.nexo.common.api.nft.NFTFacade;
+import com.nexo.common.api.nft.request.*;
+import com.nexo.common.api.nft.response.NFTResponse;
+import com.nexo.common.api.nft.response.data.NFTDTO;
+import com.nexo.common.base.response.PageResponse;
 import com.nexo.common.file.service.FileService;
 import com.nexo.common.web.result.MultiResult;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.nexo.admin.domain.exception.AdminErrorCode.*;
 
@@ -36,10 +36,10 @@ import static com.nexo.admin.domain.exception.AdminErrorCode.*;
 public class NFTServiceImpl implements NFTService {
 
     /**
-     * 藏品服务门面
+     * 藏品模块接口
      */
     @DubboReference(version = "1.0.0")
-    private ArtWorkFacade artWorkFacade;
+    private NFTFacade nftFacade;
 
     /**
      * 文件存储服务
@@ -47,69 +47,26 @@ public class NFTServiceImpl implements NFTService {
     private final FileService fileService;
 
     @Override
-    public MultiResult<NFTVO> getNFTList(NFTQueryDTO dto) {
-        // 1. 调用藏品服务获取藏品列表
-        ArtWorkQueryRequest request = new ArtWorkQueryRequest();
+    public MultiResult<NFTVO> getNFTList(NFTQueryParam dto) {
+        // 1. 构造分页查询请求
+        NFTPageQueryRequest request = new NFTPageQueryRequest();
         request.setCurrent(dto.getCurrent());
         request.setSize(dto.getSize());
-        request.setName(dto.getName());
+        request.setKeyword(dto.getName());
         request.setState(dto.getState());
-        ArtWorkQueryResponse<Page<ArtWorkDTO>> response = artWorkFacade.getNFTList(request);
+        // 2. 调用藏品服务进行查询
+        PageResponse<NFTDTO> response = nftFacade.queryPage(request);
         if (!response.getSuccess() || response.getData() == null) {
             throw new AdminException(GET_NFT_FAILED);
         }
-        // 2. 转换并返回藏品列表数据
-        List<NFTVO> list = response.getData().getRecords().stream().map(item -> {
-            NFTVO nftVO = new NFTVO();
-            BeanUtils.copyProperties(item, nftVO);
-            return nftVO;
-        }).toList();
-        return MultiResult.multiSuccess(list, response.getData().getTotal(), response.getData().getCurrent(),
-                response.getData().getSize());
-    }
-
-    @Override
-    public Boolean addNFT(NFTCreateDTO dto) {
-        // 1. 构造藏品创建请求
-        NFTCreateRequest request = new NFTCreateRequest();
-        request.setName(dto.getName());
-        request.setCover(dto.getCover());
-        request.setPrice(dto.getPrice());
-        request.setQuantity(dto.getQuantity());
-        request.setDescription(dto.getDescription());
-        request.setIdentifier(UUID.randomUUID().toString());
-        request.setSaleTime(dto.getSaleTime());
-        request.setCanBook(dto.getCanBook());
-        request.setBookStartTime(dto.getBookStartTime());
-        request.setBookEndTime(dto.getBookEndTime());
-        request.setCreatorId(StpUtil.getLoginIdAsLong());
-        // 2. 调用藏品服务创建藏品
-        NFTResponse<Boolean> response = artWorkFacade.addNFT(request);
-        if (!response.getSuccess() || response.getData() == null) {
-            throw new AdminException(CREATE_NFT_ERROR);
-        }
-        // 3. 返回结果
-        return response.getData();
-    }
-
-    @Override
-    public Boolean updateNFT(com.nexo.admin.domain.dto.NFTUpdateDTO dto) {
-        ArtWorkDTO artWorkDTO = new ArtWorkDTO();
-        BeanUtils.copyProperties(dto, artWorkDTO);
-        if (dto.getBookStartTime() != null && !dto.getBookStartTime().isEmpty()) {
-            artWorkDTO.setBookStartTime(java.time.LocalDateTime.parse(dto.getBookStartTime(),
-                    java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        }
-        if (dto.getBookEndTime() != null && !dto.getBookEndTime().isEmpty()) {
-            artWorkDTO.setBookEndTime(java.time.LocalDateTime.parse(dto.getBookEndTime(),
-                    java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-        }
-        return artWorkFacade.updateNFT(artWorkDTO);
-    }
-
-    @Override
-    public Boolean deleteNFT(Long id) {
-        return artWorkFacade.deleteNFT(id);
+        // 3. DTO → VO
+        List<NFTVO> voList = response.getData().stream().map(nftDTO -> {
+            NFTVO vo = new NFTVO();
+            BeanUtils.copyProperties(nftDTO, vo);
+            return vo;
+        }).collect(Collectors.toList());
+        // 4. 返回数据
+        return MultiResult.multiSuccess(voList, response.getTotal(), response.getCurrent(), response.getSize());
     }
 
     @Override
@@ -122,6 +79,62 @@ public class NFTServiceImpl implements NFTService {
         String filePath = "nft/" + StpUtil.getLoginIdAsString() + "/" + file.getOriginalFilename();
         // 3. 上传文件并返回URL
         return fileService.uploadFile(file, filePath);
+    }
+
+    @Override
+    public Boolean addNFT(NFTCreateParam dto) {
+        // 1. 构造藏品创建请求
+        NFTCreateRequest request = new NFTCreateRequest();
+        request.setName(dto.getName());
+        request.setCover(dto.getCover());
+        request.setPrice(dto.getPrice());
+        request.setQuantity(dto.getQuantity());
+        request.setDescription(dto.getDescription());
+        request.setIdentifier(UUID.randomUUID().toString());
+        request.setSaleTime(dto.getSaleTime());
+        request.setCreatorId(StpUtil.getLoginIdAsLong());
+        // 2. 调用藏品服务创建藏品
+        NFTResponse<Boolean> response = nftFacade.addNFT(request);
+        if (!response.getSuccess() || response.getData() == null) {
+            throw new AdminException(CREATE_NFT_ERROR);
+        }
+        // 3. 返回结果
+        return response.getData();
+    }
+
+    @Override
+    public Boolean deleteNFT(Long id) {
+        // 1. 创建删除请求
+        NFTRemoveRequest nftRemoveRequest = new NFTRemoveRequest();
+        nftRemoveRequest.setNFTId(id);
+        nftRemoveRequest.setIdentifier(UUID.randomUUID().toString());
+        // 2. 调用藏品服务
+        NFTResponse<Long> response = nftFacade.removeNFT(nftRemoveRequest);
+        return response.getSuccess();
+    }
+
+    @Override
+    public Boolean updatePrice(NFTUpdateParam param) {
+        // 创建更新价格请求
+        NFTUpdatePriceRequest request = new NFTUpdatePriceRequest();
+        request.setNFTId(param.getNftId());
+        request.setPrice(param.getPrice());
+        request.setIdentifier(UUID.randomUUID().toString());
+        // 2. 调用藏品服务更新价格
+        NFTResponse<Long> response = nftFacade.updatePrice(request);
+        return response.getSuccess();
+    }
+
+    @Override
+    public Boolean updateInventory(NFTUpdateParam param) {
+        // 1. 创建更新库存请求
+        NFTUpdateInventoryRequest request = new NFTUpdateInventoryRequest();
+        request.setNFTId(param.getNftId());
+        request.setQuantity(param.getQuantity());
+        request.setIdentifier(UUID.randomUUID().toString());
+        // 2. 调用藏品服务更新库存
+        NFTResponse<Long> response = nftFacade.updateInventory(request);
+        return response.getSuccess();
     }
 
 }

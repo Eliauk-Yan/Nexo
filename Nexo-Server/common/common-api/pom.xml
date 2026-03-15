@@ -25,17 +25,6 @@
             <artifactId>common-base</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-        <!--枚举映射-->
-        <dependency>
-            <groupId>com.nexo.common.datasource</groupId>
-            <artifactId>common-datasource</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-        <!--Json映射-->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-        </dependency>
     </dependencies>
 
 </project>

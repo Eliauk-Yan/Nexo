@@ -1,10 +1,10 @@
 package com.nexo.business.user.interfaces.controller;
 
+import cn.dev33.satoken.stp.StpUtil;
 import com.nexo.business.user.interfaces.dto.RealNameAuthDTO;
-import com.nexo.business.user.service.CertificationService;
 import com.nexo.business.user.service.UserService;
 import com.nexo.business.user.interfaces.dto.UserUpdateDTO;
-import com.nexo.business.user.interfaces.vo.UserProfileVO;
+import com.nexo.common.api.user.response.data.UserInfo;
 import com.nexo.common.web.result.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -24,21 +24,17 @@ public class UserController {
 
     private final UserService userService;
 
-    private final CertificationService certificationService;
-
     /**
      * 获取用户信息
-     * @return 用户信息
      */
     @GetMapping("/profile")
-    public Result<UserProfileVO> getUserInfo() {
-        return Result.success(userService.getUserProfile());
+    public Result<UserInfo> getUserInfo() {
+        UserInfo userInfo = userService.queryUserById(StpUtil.getLoginIdAsLong());
+        return Result.success(userInfo);
     }
 
     /**
      * 更新用户头像
-     * @param avatar 头像图片
-     * @return 更新结果
      */
     @PutMapping("/avatar")
     public Result<Boolean> updateAvatar(@RequestPart("avatar") MultipartFile avatar) {
@@ -47,7 +43,6 @@ public class UserController {
 
     /**
      * 更新用户昵称
-     * @return 更新结果
      */
     @PutMapping("/nickName")
     public Result<Boolean> updateNickName(@RequestBody UserUpdateDTO request) {
@@ -56,12 +51,11 @@ public class UserController {
 
     /**
      * 实名认证
-     * @param dto 实名认证信息
-     * @return 认证结果
      */
     @PostMapping("/realNameAuth")
     public Result<Boolean> realNameAuthentication(@RequestBody RealNameAuthDTO dto) {
-        return Result.success(certificationService.realNameAuth(dto));
+        userService.realNameAuth(dto);
+        return Result.success(true);
     }
 
 }

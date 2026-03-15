@@ -1,6 +1,6 @@
 package com.nexo.business.collection.interfaces.vo;
 
-import com.nexo.common.api.product.constant.ProductState;
+import com.nexo.common.api.nft.constant.ProductState;
 import lombok.Data;
 
 import java.io.Serial;
@@ -59,26 +59,6 @@ public class NFTDetailVO implements Serializable {
      * NFT 版本
      */
     private Integer version;
-
-    /**
-     * NFT 预约开始时间
-     */
-    private LocalDateTime bookStartTime;
-
-    /**
-     * NFT 预约结束时间
-     */
-    private LocalDateTime bookEndTime;
-
-    /**
-     * NFT 是否可预约
-     */
-    private Boolean canBook;
-
-    /**
-     * NFT 是否已预约
-     */
-    private Boolean hasBooked;
 
     /**
      * NFT 状态

@@ -11,13 +11,14 @@ import com.nexo.business.order.mapper.convert.OrderConvertor;
 import com.nexo.business.order.mapper.mybatis.OrderMapper;
 import com.nexo.business.order.service.OrderService;
 import com.nexo.common.api.inventory.InventoryFacade;
+import com.nexo.common.api.inventory.request.InventoryRequest;
 import com.nexo.common.api.order.constant.TradeOrderState;
 import com.nexo.common.api.order.request.OrderCreateRequest;
 import com.nexo.common.api.order.request.OrderPayRequest;
 import com.nexo.common.api.product.ProductFacade;
 import com.nexo.common.api.product.request.ProductSaleRequest;
-import com.nexo.common.api.artwork.ArtWorkFacade;
-import com.nexo.common.api.artwork.request.AssetAllocateRequest;
+import com.nexo.common.api.nft.NFTFacade;
+import com.nexo.common.api.nft.request.AssetAllocateRequest;
 import com.nexo.common.web.result.MultiResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +54,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
     private ProductFacade productFacade;
 
     @DubboReference(version = "1.0.0")
-    private ArtWorkFacade artWorkFacade;
+    private NFTFacade nftFacade;
 
     @Override
     public MultiResult<OrderVO> getOrderList(TradeOrderState state, Long current, Long size) {
@@ -115,14 +116,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
             try {
                 AssetAllocateRequest allocateRequest = new AssetAllocateRequest();
                 allocateRequest.setBusinessNo(order.getOrderId());
-                allocateRequest.setBusinessType(order.getProductType().name()); // 此处如果业务类型不符，可以在Asset表中直接用ProductType
+                allocateRequest.setBusinessType(order.getNFTType().name()); // 此处如果业务类型不符，可以在Asset表中直接用ProductType
                 allocateRequest.setBuyerId(Long.parseLong(order.getBuyerId()));
                 allocateRequest.setArtworkId(Long.parseLong(order.getProductId()));
-                allocateRequest.setProductType(order.getProductType());
+                allocateRequest.setNFTType(order.getNFTType());
                 allocateRequest.setPurchasePrice(request.getPaymentAmount());
                 allocateRequest.setIdentifier(order.getIdentifier()); // 使用订单的幂等号作为生成资产的追踪
 
-                Boolean allocateResult = artWorkFacade.allocateAsset(allocateRequest);
+                Boolean allocateResult = nftFacade.allocateAsset(allocateRequest);
                 if (Boolean.TRUE.equals(allocateResult)) {
                     log.info("向买家发放数字资产成功, orderId={}, artworkId={}", order.getOrderId(), order.getProductId());
                 } else {
@@ -169,13 +170,12 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
         if (result) {
             // 4. Redis库存回滚
             try {
-                OrderCreateRequest revertRequest = new OrderCreateRequest();
-                revertRequest.setOrderId(orderId);
-                revertRequest.setIdentifier(order.getIdentifier());
-                revertRequest.setProductId(order.getProductId());
-                revertRequest.setProductType(order.getProductType());
-                revertRequest.setItemCount((long) order.getQuantity());
-                inventoryFacade.increaseInventory(revertRequest);
+                InventoryRequest inventoryRequest = new InventoryRequest();
+                inventoryRequest.setNFTType(order.getNFTType());
+                inventoryRequest.setIdentifier(order.getIdentifier());
+                inventoryRequest.setInventory((long) order.getQuantity());
+                inventoryRequest.setNFTType(order.getNFTType());
+                inventoryFacade.increaseInventory(inventoryRequest);
                 log.info("Redis库存回推请求已发送, orderId={}", orderId);
             } catch (Exception e) {
                 log.error("Redis库存回推异常, orderId={}", orderId, e);
@@ -187,7 +187,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
                 saleRequest.setUserId(userId.toString());
                 saleRequest.setQuantity((long) order.getQuantity());
                 saleRequest.setBizNo(orderId);
-                saleRequest.setProductType(order.getProductType());
+                saleRequest.setNFTType(order.getNFTType());
                 saleRequest.setIdentifier(order.getIdentifier());
                 saleRequest.setProductId(Long.parseLong(order.getProductId()));
                 productFacade.unsale(saleRequest);

@@ -2,6 +2,7 @@ package com.nexo.business.user.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.nexo.business.user.config.encrypt.AesEncryptTypeHandler;
 import com.nexo.common.api.user.constant.UserRole;
 import com.nexo.common.api.user.constant.UserState;
 import com.nexo.common.datasource.entity.BaseEntity;
@@ -26,34 +27,39 @@ public class User extends BaseEntity implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    @TableField("nick_name")
     private String nickName;
 
-    @TableField("phone")
     private String phone;
 
-    @TableField("email")
     private String email;
 
-    @TableField("role")
     private UserRole role;
 
-    @TableField("password")
     private String password;
 
-    @TableField("state")
     private UserState state;
 
-    @TableField("invite_code")
-    private String inviteCode;
-
-    @TableField("inviter_id")
-    private Long inviterId;
-
-    @TableField("avatar_url")
     private String avatarUrl;
 
-    @TableField("login_time")
     private LocalDateTime loginTime;
 
+    private String address;
+
+    private String platform;
+
+    private Boolean certification;
+
+    @TableField(typeHandler = AesEncryptTypeHandler.class)
+    private String realName;
+
+    @TableField(typeHandler = AesEncryptTypeHandler.class)
+    private String idCard;
+
+
+    public void register(String defaultNickName, String phone) {
+        this.nickName = defaultNickName;
+        this.phone = phone;
+        this.role = UserRole.COLLECTOR;
+        this.state = UserState.INIT;
+    }
 }

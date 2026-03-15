@@ -1,5 +1,11 @@
 
-import { PlusOutlined } from '@ant-design/icons';
+import {
+  PlusOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  DatabaseOutlined,
+  MoneyCollectOutlined,
+} from '@ant-design/icons';
 import type { ActionType, ProColumns, ProFormInstance } from '@ant-design/pro-components';
 import {
   ModalForm,
@@ -8,13 +14,11 @@ import {
   ProFormText,
   ProFormTextArea,
   ProFormUploadButton,
-  ProFormSwitch,
-  ProFormDependency,
   ProTable,
 } from '@ant-design/pro-components';
 import { Button, Image, Space, Tag, message, Modal, Typography, Popconfirm } from 'antd';
 import { useRef, useState } from 'react';
-import { getNFTList, addNFT, updateNFT, removeNFT } from '@/services/api/nft';
+import { getNFTList, addNFT, removeNFT, updateNFT, updateNFTInventory, updateNFTPrice } from '@/services/api/nft';
 
 export type Artwork = {
   id: number;
@@ -29,20 +33,19 @@ export type Artwork = {
   state: 'PENDING' | 'SUCCESS' | 'ARCHIVED';
   saleTime: string;
   syncChainTime?: string;
-  bookStartTime?: string;
-  bookEndTime?: string;
-  canBook: boolean;
   createdAt: string;
   updatedAt: string;
-  creatorId?: string;
 };
 
 export default () => {
   const actionRef = useRef<ActionType>(null);
-  const formRef = useRef<ProFormInstance>();
+  const formRef = useRef<ProFormInstance<any> | null>(null);
   const [createModalVisible, handleModalVisible] = useState<boolean>(false);
   const [detailModalVisible, setDetailModalVisible] = useState<boolean>(false);
   const [currentDetail, setCurrentDetail] = useState<Artwork | null>(null);
+  const [editPriceModalVisible, setEditPriceModalVisible] = useState<boolean>(false);
+  const [editStockModalVisible, setEditStockModalVisible] = useState<boolean>(false);
+  const [currentRecord, setCurrentRecord] = useState<Artwork | null>(null);
 
   const columns: ProColumns<Artwork>[] = [
     {
@@ -74,20 +77,13 @@ export default () => {
       dataIndex: 'name',
       copyable: true,
       ellipsis: true,
-      formItemProps: {
-        rules: [
-          {
-            required: true,
-            message: '此项为必填项',
-          },
-        ],
-      },
     },
 
     {
       title: '价格',
       dataIndex: 'price',
       valueType: 'money',
+      search: false,
       sorter: (a, b) => a.price - b.price,
     },
     {
@@ -126,6 +122,7 @@ export default () => {
       title: '发售时间',
       dataIndex: 'saleTime',
       valueType: 'dateTime',
+      search: false,
       sorter: (a, b) => new Date(a.saleTime).getTime() - new Date(b.saleTime).getTime(),
     },
     {
@@ -135,82 +132,61 @@ export default () => {
       hideInSearch: true,
     },
     {
-      title: '可否预约',
-      dataIndex: 'canBook',
-      valueType: 'select',
-      valueEnum: {
-        true: { text: '是', status: 'Success' },
-        false: { text: '否', status: 'Default' },
-      },
-    },
-    {
-      title: '预约开始',
-      dataIndex: 'bookStartTime',
-      valueType: 'dateTime',
-      hideInSearch: true,
-    },
-    {
-      title: '预约结束',
-      dataIndex: 'bookEndTime',
-      valueType: 'dateTime',
-      hideInSearch: true,
-    },
-    {
-      title: '创建者ID',
-      dataIndex: 'creatorId',
-      hideInSearch: true,
-    },
-    {
       title: '创建时间',
       dataIndex: 'createdAt',
       valueType: 'dateTime',
-      hideInTable: true,
-      search: {
-        transform: (value) => {
-          return {
-            startTime: value[0],
-            endTime: value[1],
-          };
-        },
-      },
+      search: false,
     },
     {
       title: '操作',
       valueType: 'option',
       key: 'option',
-      render: (text, record, _, action) => [
-        <a
-          key="editable"
+      render: (text, record, _, action) =>
+        record.state === 'ARCHIVED'
+          ? []
+          : [
+        <Button
+          key="editPrice"
+          size="small"
+          color="primary"
+          variant="solid"
+          icon={<MoneyCollectOutlined />}
           onClick={() => {
-            action?.startEditable?.(record.id);
+            setCurrentRecord(record);
+            setEditPriceModalVisible(true);
           }}
-        >
-          编辑
-        </a>,
-        <a
-          key="view"
+        />,
+        <Button
+          key="editStock"
+          size="small"
+          color="default"
+          variant="outlined"
+          icon={<DatabaseOutlined />}
           onClick={() => {
-            setCurrentDetail(record);
-            setDetailModalVisible(true);
+            setCurrentRecord(record);
+            setEditStockModalVisible(true);
           }}
-        >
-          查看
-        </a>,
+        />,
         <Popconfirm
           key="delete"
-          title="删除确认"
-          description="您确定要删除这个藏品吗？此操作无法恢复。"
+          title="下架确认"
+          description="您确定要下架这个藏品吗？此操作无法恢复。"
           onConfirm={async () => {
             const success = await removeNFT(record.id);
             if (success) {
-              message.success('删除成功');
+              message.success('下架成功');
               action?.reload();
             }
           }}
           okText="确定"
           cancelText="取消"
         >
-          <a style={{ color: 'red' }}>删除</a>
+          <Button
+            size="small"
+            color="danger"
+            variant="solid"
+            icon={<DeleteOutlined />}
+          />
         </Popconfirm>,
       ],
     },
@@ -236,13 +212,6 @@ export default () => {
             success: true,
             total: msg.total,
           };
-        }}
-        editable={{
-          type: 'multiple',
-          onSave: async (key, row) => {
-            await updateNFT(row);
-            message.success('保存成功');
-          }
         }}
         columnsState={{
           persistenceKey: 'pro-table-nft-list',
@@ -370,40 +339,84 @@ export default () => {
           rules={[{ required: true, message: '藏品发售时间不能为空' }]}
         />
 
-        <ProFormSwitch
-          name="canBook"
-          label="是否开启预约"
-          fieldProps={{
-            checkedChildren: '开启',
-            unCheckedChildren: '关闭'
-          }}
-          initialValue={false}
-          rules={[{ required: true, message: '藏品是否预约不能为空' }]}
+      </ModalForm>
+
+      <ModalForm
+        title="修改价格"
+        width="400px"
+        visible={editPriceModalVisible}
+        key={currentRecord?.id ? `price-${currentRecord.id}` : 'price'}
+        modalProps={{
+          destroyOnClose: true,
+          onCancel: () => setEditPriceModalVisible(false),
+        }}
+        initialValues={{
+          price: currentRecord?.price,
+        }}
+        onFinish={async (value) => {
+          if (!currentRecord) return false;
+          const success = await updateNFTPrice({
+            nftId: currentRecord.id,
+            id: currentRecord.id,
+            price: value.price,
+          });
+          if (success) {
+            message.success('价格修改成功');
+            setEditPriceModalVisible(false);
+            actionRef.current?.reload();
+            return true;
+          }
+          message.error('价格修改失败');
+          return false;
+        }}
+      >
+        <ProFormDigit
+          name="price"
+          label="价格 (元)"
+          placeholder="请输入新的价格"
+          min={0}
+          fieldProps={{ precision: 2 }}
+          rules={[{ required: true, message: '价格不能为空' }]}
         />
+      </ModalForm>
 
-        {/* Dependent fields: Show DatePickers only if canBook is true */}
-        <ProFormDependency name={['canBook']}>
-          {({ canBook }) => {
-            if (!canBook) return null;
-            return (
-              <>
-                <ProFormDateTimePicker
-                  name="bookStartTime"
-                  label="预约开始时间"
-                  width="md"
-                  rules={[{ required: true, message: '预约开始时间不能为空' }]}
-                />
-                <ProFormDateTimePicker
-                  name="bookEndTime"
-                  label="预约结束时间"
-                  width="md"
-                  rules={[{ required: true, message: '预约结束时间不能为空' }]}
-                />
-              </>
-            );
-          }}
-        </ProFormDependency>
-
+      <ModalForm
+        title="修改库存"
+        width="400px"
+        visible={editStockModalVisible}
+        key={currentRecord?.id ? `stock-${currentRecord.id}` : 'stock'}
+        modalProps={{
+          destroyOnClose: true,
+          onCancel: () => setEditStockModalVisible(false),
+        }}
+        initialValues={{
+          quantity: currentRecord?.quantity,
+        }}
+        onFinish={async (value) => {
+          if (!currentRecord) return false;
+          const success = await updateNFTInventory({
+            nftId: currentRecord.id,
+            id: currentRecord.id,
+            quantity: value.quantity,
+          });
+          if (success) {
+            message.success('库存修改成功');
+            setEditStockModalVisible(false);
+            actionRef.current?.reload();
+            return true;
+          }
+          message.error('库存修改失败');
+          return false;
+        }}
+      >
+        <ProFormDigit
+          name="quantity"
+          label="发行数量"
+          placeholder="请输入新的发行数量"
+          min={1}
+          fieldProps={{ precision: 0 }}
+          rules={[{ required: true, message: '发行数量不能为空' }]}
+        />
       </ModalForm>
 
       <Modal

@@ -5,7 +5,7 @@ import com.alibaba.fastjson2.JSONObject;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.nexo.business.chain.api.request.ChainProviderRequest;
 import com.nexo.business.chain.api.response.ChainProviderResponse;
-import com.nexo.business.chain.domain.entity.ChainOperationLog;
+import com.nexo.business.chain.domain.entity.ChainOperationStream;
 import com.nexo.common.api.blockchain.constant.ChainOperateType;
 import com.nexo.common.api.blockchain.constant.ChainOperationBizType;
 import com.nexo.common.api.blockchain.constant.ChainOperationState;
@@ -60,24 +60,18 @@ public abstract class AbstractChainService implements ChainService {
 
     public abstract ChainType getChainType();
 
-    @RateLimit(key = "#type + ':' + #request.identifier", limit = 1, windowSize = 60, message = "链操作过于频繁，60秒后再试")
-    protected ChainResponse<?> doPostExecute(ChainRequest request, ChainOperationBizType bizType, ChainOperateType operationType, Consumer<ChainProviderRequest> consumer)  {
+    @RateLimit(key = "limit + ':' + #request.identifier", limit = 1, windowSize = 60, message = "链操作过于频繁，60秒后再试")
+    protected ChainResponse doPostExecute(ChainRequest request, ChainOperationBizType bizType, ChainOperateType operationType, Consumer<ChainProviderRequest> consumer)  {
         // 1. 做幂等控制，防止重复上链
-        ChainOperationLog chainOperationLog = chainOperationLogService.queryLog(request.getBizId(), bizType, request.getIdentifier());
-        if (chainOperationLog != null) {
+        ChainOperationStream chainOperationStream = chainOperationLogService.queryLog(request.getBizId(), bizType, request.getIdentifier());
+        if (chainOperationStream != null) {
             // 1.1 多余请求，做幂等控制
             // 创建链账户操作
             if (operationType == ChainOperateType.CREATE_ACCOUNT) {
-                // 创建兜底响应
-                ChainResponse<ChainCreateData> response = new ChainResponse<>();
-                // 填充响应数据
-                response.setSuccess(true);
-                response.setCode(ChainOperationState.SUCCESS.getCode());
-                JSONObject jsonObject = JSON.parseObject(chainOperationLog.getResult(), JSONObject.class);
+                JSONObject jsonObject = JSON.parseObject(chainOperationStream.getResult(), JSONObject.class);
                 String account = jsonObject.getString("native_address");
-                ChainCreateData data = new ChainCreateData(request.getIdentifier(), account, request.getUserId(), getChainType().name());
-                response.setData(data);
-                return response;
+                ChainCreateData data = new ChainCreateData(request.getIdentifier(), account, request.getUserId(), getChainType().getCode());
+                return ChainResponse.success(data);
             } else {
                 // 其他操作
                 ChainResponse<ChainOperationData> response = new ChainResponse<>();
@@ -133,9 +127,8 @@ public abstract class AbstractChainService implements ChainService {
         // 7. 其他操作异步执行
         if (response.getSuccess() && operationType != ChainOperateType.CREATE_ACCOUNT) {
             scheduler.schedule(() -> {
-                // TODO 异步处理
                 // 7.1 查询链操作日志
-                ChainOperationLog operateInfo = chainOperationLogService.queryLog(request.getBizId(), bizType, request.getIdentifier());
+                ChainOperationStream operateInfo = chainOperationLogService.queryLog(request.getBizId(), bizType, request.getIdentifier());
                 // 7.2 构造查询请求
                 ChainQueryRequest chainQueryRequest = new ChainQueryRequest();
                 chainQueryRequest.setOperationId(request.getIdentifier());
@@ -156,7 +149,7 @@ public abstract class AbstractChainService implements ChainService {
     }
 
     @Override
-    public void sendMsg(ChainOperationLog operateInfo, ChainResultData data) {
+    public void sendMsg(ChainOperationStream operateInfo, ChainResultData data) {
         ChainOperateBody chainOperateBody = new ChainOperateBody();
         chainOperateBody.setBizId(operateInfo.getBizId());
         chainOperateBody.setBizType(operateInfo.getBizType());

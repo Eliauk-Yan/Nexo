@@ -18,13 +18,13 @@ const Home = () => {
   const [artworks, setArtworks] = useState<Artwork[]>([])
   const [loading, setLoading] = useState(true)
 
-  const fetchTrending = useCallback(async () => {
+  const fetchTrending = useCallback(async (keyword = '') => {
     try {
       setLoading(true)
       const response = await artworkApi.list({
         currentPage: 1,
         pageSize: 10,
-        keyword: '',
+        keyword,
       })
       setArtworks(Array.isArray(response) ? response : [])
     } catch (error) {
@@ -60,7 +60,9 @@ const Home = () => {
       <View style={[styles.headerWrap, { paddingTop: insets.top }]}>
         <LiquidGlassSearchBar
           placeholder={'搜索收藏品'}
-          onSubmit={(t) => console.log('submit:', t)}
+          onSubmit={(t) => {
+            fetchTrending(t).catch((err) => console.error(err))
+          }}
           onPressAction={() => router.push('/notification')}
           actionIcon="bell"
           glassStyle="regular"

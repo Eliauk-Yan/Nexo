@@ -16,7 +16,7 @@ const { REACT_APP_ENV = 'dev' } = process.env;
  */
 const PUBLIC_PATH: string = '/';
 
-export default defineConfig({
+const config: any = defineConfig({
   /**
    * @name 开启 hash 模式
    * @description 让 build 之后的产物包含 hash 后缀。通常用于增量发布和避免浏览器加载缓存。
@@ -159,16 +159,8 @@ export default defineConfig({
       schemaPath: join(__dirname, 'oneapi.json'),
       mock: false,
     },
-    {
-      requestLibPath: "import { request } from '@umijs/max'",
-      schemaPath:
-        'https://gw.alipayobjects.com/os/antfincdn/CA1dOm%2631B/openapi.json',
-      projectName: 'swagger',
-    },
   ],
-  mock: {
-    include: ['mock/**/*', 'src/pages/**/_mock.ts'],
-  },
+  mock: false,
   /**
    * @name 是否开启 mako
    * @description 使用 mako 极速研发
@@ -179,3 +171,5 @@ export default defineConfig({
   requestRecord: {},
   exportStatic: {},
 });
+
+export default config;

@@ -14,7 +14,7 @@ spring:
   application:
     name: business-blockchain
   profiles:
-    active: prod
+    active: dev
   config:
     import:
       - classpath:/datasource.yml

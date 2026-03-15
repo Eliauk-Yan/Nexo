@@ -1,6 +1,6 @@
 package com.nexo.common.api.notification.response;
 
-import com.nexo.common.api.common.response.BaseResponse;
+import com.nexo.common.base.response.BaseResponse;
 
 import java.io.Serial;
 

@@ -78,9 +78,11 @@ const Index = () => {
             <Text style={styles.nickName}>{user?.nickName || '未登录'}</Text>
           </TouchableOpacity>
           {!isLogin && <Text style={styles.tip}>登录后可以查看更多功能</Text>}
-          {isLogin && (
+          {isLogin && user?.account && (
             <View style={styles.addressContainer}>
-              <Text style={styles.addressText}>0x71C...9A23</Text>
+              <Text style={styles.addressText} numberOfLines={1}>
+                {user.account}
+              </Text>
               <Feather name="copy" size={12} color={colors.textSecondary} />
             </View>
           )}

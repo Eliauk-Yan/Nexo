@@ -1,15 +1,18 @@
 import { get, put, post } from '@/utils/request'
 
-export interface UserProfile {
-  id: string
-  avatarUrl: string
-  nickName: string
-  phone: string
-  alipay: string
-  wechat: string
-  appleId: string
-  realNameAuth: boolean
-  password: string
+/** 与后端 UserInfo 一致，/user/profile 返回此类型 */
+export interface UserInfo {
+  id: string | number
+  nickName?: string
+  avatarUrl?: string
+  role?: string
+  state?: string
+  phone?: string
+  email?: string
+  /** 链地址/钱包地址 */
+  account?: string
+  /** 实名认证状态 */
+  certification?: boolean
 }
 
 export interface UpdateUserRequest {
@@ -25,11 +28,10 @@ export interface RealNameAuthDTO {
 
 export const userApi = {
   /**
-   * 获取用户账户信息
-   * @returns 账户信息
+   * 获取用户信息（与后端 Result&lt;UserInfo&gt; 一致）
    */
   getUserProfile: () => {
-    return get<UserProfile>('/user/profile')
+    return get<UserInfo>('/user/profile')
   },
 
   /**

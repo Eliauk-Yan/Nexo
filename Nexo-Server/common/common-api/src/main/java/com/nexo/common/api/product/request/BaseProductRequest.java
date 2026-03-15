@@ -1,12 +1,10 @@
 package com.nexo.common.api.product.request;
 
-import com.nexo.common.api.common.request.BaseRequest;
-import com.nexo.common.api.product.constant.ProductEvent;
-import com.nexo.common.api.product.constant.ProductType;
+import com.nexo.common.api.nft.constant.NFTType;
+import com.nexo.common.base.request.BaseRequest;
+import com.nexo.common.api.nft.constant.NFTEvent;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -32,11 +30,11 @@ public abstract class BaseProductRequest extends BaseRequest {
     /**
      * 藏品类型
      */
-    private ProductType productType;
+    private NFTType NFTType;
 
     /**
      * 获取事件类型
      */
-    public abstract ProductEvent getEventType();
+    public abstract NFTEvent getEventType();
 
 }

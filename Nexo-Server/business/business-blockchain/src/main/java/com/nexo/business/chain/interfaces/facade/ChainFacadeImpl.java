@@ -46,11 +46,6 @@ public class ChainFacadeImpl implements ChainFacade {
     }
 
     @Override
-    public ChainResponse<ChainOperationData> transfer(ChainRequest request) {
-        return null;
-    }
-
-    @Override
     public ChainResponse<ChainOperationData> burn(ChainRequest request) {
         return null;
     }

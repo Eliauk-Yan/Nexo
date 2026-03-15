@@ -2,7 +2,6 @@ package com.nexo.gateway;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 /**
  * @classname GatewayApplication
@@ -11,7 +10,6 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
  * @created by YanShijie
  */
 @SpringBootApplication
-@EnableDiscoveryClient
 public class GatewayApplication {
     static void main(String[] args) {
         SpringApplication.run(GatewayApplication.class, args);

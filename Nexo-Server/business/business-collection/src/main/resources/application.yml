@@ -12,7 +12,7 @@ spring:
           chain-in-0:
             consumer:
               subscription:
-                expression: 'ARTWORK' # 关键点：根据发送端的 BizType 按 Tag 过滤消息
+                expression: 'NFT' # 关键点：根据发送端的 BizType 按 Tag 过滤消息
       bindings:
         chain-in-0: # 对应上面的 function definition (加上 -in-0 构成输入通道)
           content-type: application/json

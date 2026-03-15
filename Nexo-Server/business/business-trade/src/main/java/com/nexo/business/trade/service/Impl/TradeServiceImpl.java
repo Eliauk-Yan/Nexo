@@ -9,9 +9,10 @@ import com.nexo.business.trade.interfaces.dto.BuyDTO;
 import com.nexo.business.trade.interfaces.dto.PayDTO;
 import com.nexo.business.trade.interfaces.vo.PayVO;
 import com.nexo.business.trade.service.TradeService;
-import com.nexo.common.api.artwork.ArtWorkFacade;
-import com.nexo.common.api.artwork.response.ArtWorkQueryResponse;
-import com.nexo.common.api.artwork.response.data.ArtWorkDTO;
+import com.nexo.common.api.nft.NFTFacade;
+import com.nexo.common.api.nft.constant.NFTState;
+import com.nexo.common.api.nft.response.NFTQueryResponse;
+import com.nexo.common.api.nft.response.data.NFTDTO;
 import com.nexo.common.api.inventory.InventoryFacade;
 import com.nexo.common.api.inventory.response.InventoryResponse;
 import com.nexo.common.api.order.OrderFacade;
@@ -25,11 +26,12 @@ import com.nexo.common.api.pay.request.PayCreateRequest;
 import com.nexo.common.api.pay.response.PayOrderDTO;
 import com.nexo.common.api.pay.response.PayResponse;
 import com.nexo.common.api.product.ProductFacade;
-import com.nexo.common.api.product.constant.ProductEvent;
-import com.nexo.common.api.product.constant.ProductType;
+import com.nexo.common.api.nft.constant.NFTEvent;
+import com.nexo.common.api.nft.constant.NFTType;
 import com.nexo.common.api.product.response.ProductResponse;
 import com.nexo.common.api.product.response.data.ProductDTO;
 import com.nexo.common.api.product.response.data.ProductInventoryStreamDTO;
+import com.nexo.common.api.user.constant.UserType;
 import com.nexo.common.mq.producer.StreamProducer;
 import com.nexo.common.web.filter.TokenFilter;
 import lombok.RequiredArgsConstructor;
@@ -92,7 +94,7 @@ public class TradeServiceImpl implements TradeService {
      * 藏品模块Dubbo接口
      */
     @DubboReference(version = "1.0.0")
-    private ArtWorkFacade artWorkFacade;
+    private NFTFacade nftFacade;
 
     /**
      * 订单模块Dubbo接口
@@ -116,23 +118,23 @@ public class TradeServiceImpl implements TradeService {
         orderCreateRequest.setIdentifier(TokenFilter.tokenThreadLocal.get()); // 设置幂等号
         orderCreateRequest.setBuyerId(StpUtil.getLoginIdAsString()); // 设置买家ID
         orderCreateRequest.setProductId(params.getProductId()); // 设置商品ID
-        orderCreateRequest.setProductType(ProductType.ARTWORK); // 设置商品类型
+        orderCreateRequest.setNFTType(NFTType.NFT); // 设置商品类型
         orderCreateRequest.setItemCount(params.getItemCount()); // 设置商品数量
         // 3. 调用商品服务填充订单请求
-        ArtWorkQueryResponse<ArtWorkDTO> response = artWorkFacade.getArtWorkById(Long.parseLong(params.getProductId()));
-        ProductDTO product = response.getData();
-        if (product == null || !product.available()) {
+        NFTQueryResponse<NFTDTO> response = nftFacade.getArtWorkById(Long.parseLong(params.getProductId()));
+        NFTDTO nft = response.getData();
+        if (nft == null || !(nft.getState() == NFTState.SUCCESS)) {
             throw new TradeException(GOODS_NOT_FOR_SALE);
         }
-        orderCreateRequest.setItemPrice(product.getPrice()); // 设置商品单价
-        orderCreateRequest.setSellerId(product.getSellerId()); // 设置卖家ID
-        orderCreateRequest.setProductName(product.getProductName()); // 设置商品名称
-        orderCreateRequest.setProductPicUrl(product.getProductPicUrl()); // 设置商品封面
-        orderCreateRequest.setSnapshotVersion(product.getVersion()); // 设置快照版本
+        orderCreateRequest.setItemPrice(nft.getPrice()); // 设置商品单价
+        orderCreateRequest.setSellerId("0"); // 设置卖家ID
+        orderCreateRequest.setProductName(nft.getName()); // 设置商品名称
+        orderCreateRequest.setProductPicUrl(nft.getCover()); // 设置商品封面
+        orderCreateRequest.setSnapshotVersion(nft.getVersion()); // 设置快照版本
         orderCreateRequest.setOrderAmount(
                 orderCreateRequest.getItemPrice().multiply(new BigDecimal(orderCreateRequest.getItemCount()))); // 设置订单总价
         // 4. 发送MQ消息,监听并进行Redis库存预扣减
-        boolean result = streamProducer.send("buy-out-0", params.getProductType().getCode(),
+        boolean result = streamProducer.send("buy-out-0", params.getNFTType().getCode(),
                 JSON.toJSONString(orderCreateRequest));
         if (!result) {
             throw new TradeException(ORDER_CREATE_FAILED);
@@ -166,8 +168,8 @@ public class TradeServiceImpl implements TradeService {
                         // 7.1 查询数据库中是否有库存扣减记录
                         ProductResponse<ProductInventoryStreamDTO> inventoryStream = productFacade
                                 .getProductInventoryStream(
-                                        orderCreateRequest.getProductId(), orderCreateRequest.getProductType(),
-                                        ProductEvent.TRY_SALE, orderCreateRequest.getIdentifier());
+                                        orderCreateRequest.getProductId(), orderCreateRequest.getNFTType(),
+                                        NFTEvent.TRY_SALE, orderCreateRequest.getIdentifier());
                         // 7.2 校验成功 数据一致
                         if (inventoryStream.getSuccess() && inventoryStream.getData() != null && Objects.equals(
                                 inventoryStream.getData().getChangedQuantity(), orderCreateRequest.getItemCount())) {
@@ -192,7 +194,8 @@ public class TradeServiceImpl implements TradeService {
     @Override
     public PayVO pay(PayDTO payParams) {
         // 1. 调用订单服务查找对应订单信息
-        OrderResponse<OrderDTO> response = orderFacade.getOrder(payParams.getOrderId(), StpUtil.getLoginIdAsLong());
+        Long userId = StpUtil.getLoginIdAsLong();
+        OrderResponse<OrderDTO> response = orderFacade.getOrder(payParams.getOrderId(), userId);
         OrderDTO order = response.getData();
         // 2. 订单存在校验
         if (order == null) {
@@ -216,22 +219,25 @@ public class TradeServiceImpl implements TradeService {
             });
             throw new TradeException(ORDER_IS_CANNOT_PAY);
         }
-
-        // 5. 调用支付服务创建支付单
+        // 5. 支付权限校验
+        if (!order.getBuyerId().equals(userId.toString())) {
+            throw new TradeException(PAY_PERMISSION_DENIED);
+        }
+        // 6. 调用支付服务创建支付单
         PayCreateRequest payCreateRequest = new PayCreateRequest();
         payCreateRequest.setBizNo(order.getOrderId());
         payCreateRequest.setBizType("TRADE_ORDER");
         payCreateRequest.setOrderAmount(order.getTotalPrice());
         payCreateRequest.setPayerId(StpUtil.getLoginIdAsString());
-        payCreateRequest.setPayerType("CUSTOMER");
+        payCreateRequest.setPayerType(UserType.CUSTOMER);
         payCreateRequest.setPayeeId(order.getSellerId());
-        payCreateRequest.setPayeeType("PLATFORM");
+        payCreateRequest.setPayeeType(PLATFORM);
         payCreateRequest.setPayChannel(payParams.getPaymentType());
         payCreateRequest.setMemo(order.getProductName());
 
         PayResponse<PayOrderDTO> payResponse = payFacade.createPayOrder(payCreateRequest);
 
-        // 6. 处理支付响应
+        // 7. 处理支付响应
         if (!payResponse.getSuccess()) {
             log.error("创建支付单失败, orderId={}, msg={}", order.getOrderId(), payResponse.getMessage());
             throw new TradeException(ORDER_IS_CANNOT_PAY);

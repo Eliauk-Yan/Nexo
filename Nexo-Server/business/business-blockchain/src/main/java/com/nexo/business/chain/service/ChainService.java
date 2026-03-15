@@ -1,6 +1,6 @@
 package com.nexo.business.chain.service;
 
-import com.nexo.business.chain.domain.entity.ChainOperationLog;
+import com.nexo.business.chain.domain.entity.ChainOperationStream;
 import com.nexo.common.api.blockchain.constant.ChainType;
 import com.nexo.common.api.blockchain.request.ChainQueryRequest;
 import com.nexo.common.api.blockchain.request.ChainRequest;
@@ -39,13 +39,6 @@ public interface ChainService {
     ChainResponse<ChainOperationData> mint(ChainRequest request);
 
     /**
-     * 交易藏品
-      * @param request 藏品交易请求
-      * @return 藏品交易响应
-     */
-    ChainResponse<ChainOperationData> transfer(ChainRequest request);
-
-    /**
      * 销毁藏品
       * @param request 藏品销毁请求
       * @return 藏品销毁响应
@@ -64,5 +57,5 @@ public interface ChainService {
       * @param operateInfo 操作信息
       * @param data 数据
      */
-    void sendMsg(ChainOperationLog operateInfo, ChainResultData data);
+    void sendMsg(ChainOperationStream operateInfo, ChainResultData data);
 }

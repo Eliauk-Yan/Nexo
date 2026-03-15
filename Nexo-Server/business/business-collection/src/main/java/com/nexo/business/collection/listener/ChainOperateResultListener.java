@@ -1,16 +1,16 @@
 package com.nexo.business.collection.listener;
 
 
-import com.nexo.business.collection.domain.entity.ArtWork;
-import com.nexo.business.collection.domain.exception.ArtWorkException;
-import com.nexo.business.collection.service.ArtWorkService;
-import com.nexo.common.api.artwork.constant.ArtWorkState;
+import com.nexo.business.collection.domain.entity.NFT;
+import com.nexo.business.collection.domain.exception.NFTException;
+import com.nexo.business.collection.service.NFTService;
+import com.nexo.common.api.nft.constant.NFTState;
 import com.nexo.common.api.blockchain.model.ChainOperateBody;
 import com.nexo.common.api.blockchain.response.data.ChainResultData;
 import com.nexo.common.api.inventory.InventoryFacade;
 import com.nexo.common.api.inventory.request.InventoryRequest;
 import com.nexo.common.api.inventory.response.InventoryResponse;
-import com.nexo.common.api.product.constant.ProductType;
+import com.nexo.common.api.nft.constant.NFTType;
 import com.nexo.common.mq.consumer.StreamConsumer;
 import com.nexo.common.mq.message.MessageBody;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +38,7 @@ public class ChainOperateResultListener extends StreamConsumer {
     /**
      * 藏品服务
      */
-    private final ArtWorkService artWorkService;
+    private final NFTService NFTService;
 
     /**
      * 库存服务门面
@@ -58,38 +58,38 @@ public class ChainOperateResultListener extends StreamConsumer {
                 // 3.1 藏品上链
                 case NFT_ON_CHAIN:
                     // 3.1.1 获取藏品 藏品上链成功更新,只有一个txHash
-                    ArtWork nft = artWorkService.getById(chainOperateBody.getBizId());
+                    NFT nft = NFTService.getById(chainOperateBody.getBizId());
                     if (null == nft) {
-                        throw new ArtWorkException(NFT_QUERY_FAILED);
+                        throw new NFTException(NFT_QUERY_FAILED);
                     }
                     // 3.1.2 先写缓存，写成功再更新状态
-                    initInventory(nft.getId().toString(), ProductType.ARTWORK,  nft.getQuantity(), nft.getIdentifier());
+                    initInventory(nft.getId().toString(), NFTType.NFT,  nft.getQuantity(), nft.getIdentifier());
                     // 3.1.3 更新状态
-                    nft.setState(ArtWorkState.SUCCESS);
+                    nft.setState(NFTState.SUCCESS);
                     nft.setSyncChainTime(LocalDateTime.now());
-                    boolean result = artWorkService.updateById(nft);
+                    boolean result = NFTService.updateById(nft);
                     if (!result) {
-                        throw new ArtWorkException(NFT_UPDATE_FAILED);
+                        throw new NFTException(NFT_UPDATE_FAILED);
                     }
                     break;
                 default:
-                    throw new IllegalStateException("Unexpected value: " + chainOperateBody.getBizType().name());
+                    throw new IllegalStateException("Unexpected value: " + chainOperateBody.getBizType().getCode());
             }
         };
     }
 
-    private void initInventory(String productId, ProductType productType, Long inventory, String identifier) {
+    private void initInventory(String productId, NFTType nftType, Long inventory, String identifier) {
         // 1. 构造库存请求
         InventoryRequest inventoryRequest = new InventoryRequest();
-        inventoryRequest.setProductId(productId);
-        inventoryRequest.setProductType(productType);
+        inventoryRequest.setNftId(productId);
+        inventoryRequest.setNFTType(nftType);
         inventoryRequest.setInventory(inventory);
         inventoryRequest.setIdentifier(identifier);
         // 2. 初始化Redis库存
         InventoryResponse<Boolean> inventoryResponse = inventoryFacade.init(inventoryRequest);
         // 3. 请求失败，抛出异常
         if (!inventoryResponse.getSuccess()) {
-            throw new ArtWorkException(NFT_INVENTORY_INIT_FAILED);
+            throw new NFTException(NFT_INVENTORY_INIT_FAILED);
         }
     }
 

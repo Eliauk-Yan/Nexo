@@ -21,11 +21,13 @@ spring:
               enabled: true
               lower-case-service-id: true
           routes:
-            # 认证中心路由
+            # 认证中心路由（StripPrefix=1：/auth/xxx -> auth 服务接收 /xxx）
             - id: auth
               uri: lb://auth
               predicates:
-                - Path=/auth/**, /token/**
+                - Path=/auth/**
+              filters:
+                - StripPrefix=1
             # 用户服务路由
             - id: business-user
               uri: lb://business-user
@@ -46,4 +48,25 @@ spring:
               uri: lb://business-order
               predicates:
                 - Path=/order/**
+            # 管理后台服务路由
+            - id: admin
+              uri: lb://admin
+              predicates:
+                - Path=/admin/**
+    sentinel:
+      transport:
+        dashboard: 47.99.39.81:8858 # Sentinel 控制台地址，用于监控和交互
+        client-ip: ke5c3c6b.natappfree.cc
+        port: 8719
+      # 建议开启启动时立即注册
+      eager: true
+      datasource: # 规则数据源
+        flow:
+          nacos:
+            # Nacos 的地址（通常是 8848）
+            server-addr: 47.99.39.81:8848
+            data-id: expo-gateway-flow-rules # nacos 中的配置文件名
+            group-id: SENTINEL_GROUP
+            rule-type: gw-flow # 网关限流：gw-flow 普通限流 flow 熔断降级 degrade
+            data-type: json # nacos 里存储的是JSON格式的数据
 

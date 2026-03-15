@@ -32,6 +32,43 @@ export async function updateNFT(body: any, options?: { [key: string]: any }) {
     });
 }
 
+export type NFTUpdateParam = {
+    /** 兼容：部分后端用 nftId 字段 */
+    nftId?: number;
+    /** 兼容：部分后端用 id 字段 */
+    id?: number;
+    price?: number;
+    quantity?: number;
+};
+
+/**
+ * 修改价格
+ */
+export async function updateNFTPrice(body: NFTUpdateParam, options?: { [key: string]: any }) {
+    return request<any>('/admin/nft/price', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        data: body,
+        ...(options || {}),
+    });
+}
+
+/**
+ * 修改库存
+ */
+export async function updateNFTInventory(body: NFTUpdateParam, options?: { [key: string]: any }) {
+    return request<any>('/admin/nft/inventory', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        data: body,
+        ...(options || {}),
+    });
+}
+
 export async function removeNFT(id: number, options?: { [key: string]: any }) {
     return request<any>(`/admin/nft/${id}`, {
         method: 'DELETE',

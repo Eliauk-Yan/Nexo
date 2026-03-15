@@ -1,6 +1,5 @@
 package com.nexo.common.api.blockchain.constant;
 
-import com.baomidou.mybatisplus.annotation.EnumValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -13,11 +12,14 @@ import lombok.Getter;
 @Getter
 public enum ChainOperateType {
 
+    CREATE_ACCOUNT("CREATE_ACCOUNT", "创建链账户"),
+
     NFT_ON_CHAIN("NFT_ON_CHAIN", "NFT上链"),
 
-    CREATE_ACCOUNT("CREATE_ACCOUNT", "创建链账户");
+    NFT_MINT("NFT_MINT", "NFT铸造"),
 
-    @EnumValue
+    NFT_DESTROY("NFT_DESTROY", "NFT销毁");
+
     private final String code;
 
     private final String desc;

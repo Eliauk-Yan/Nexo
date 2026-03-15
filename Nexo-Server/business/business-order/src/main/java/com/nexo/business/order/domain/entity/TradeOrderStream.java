@@ -3,7 +3,7 @@ package com.nexo.business.order.domain.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.nexo.common.api.order.constant.TradeOrderState;
-import com.nexo.common.api.product.constant.ProductType;
+import com.nexo.common.api.nft.constant.NFTType;
 import com.nexo.common.api.user.constant.UserType;
 import com.nexo.common.datasource.entity.BaseEntity;
 import lombok.Data;
@@ -44,7 +44,7 @@ public class TradeOrderStream extends BaseEntity {
     private String productId;
 
     @TableField(value = "product_type")
-    private ProductType productType;
+    private NFTType NFTType;
 
     @TableField(value = "product_cover_url")
     private String productCoverUrl;
