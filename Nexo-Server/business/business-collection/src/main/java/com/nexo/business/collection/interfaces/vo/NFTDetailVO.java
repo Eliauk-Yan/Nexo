@@ -1,6 +1,6 @@
 package com.nexo.business.collection.interfaces.vo;
 
-import com.nexo.common.api.product.constant.ProductState;
+import com.nexo.common.api.artwork.constant.ProductState;
 import lombok.Data;
 
 import java.io.Serial;

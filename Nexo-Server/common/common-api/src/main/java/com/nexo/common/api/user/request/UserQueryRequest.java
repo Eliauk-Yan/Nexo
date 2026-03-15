@@ -1,9 +1,8 @@
 package com.nexo.common.api.user.request;
 
-import com.nexo.common.api.common.request.BaseRequest;
-import com.nexo.common.api.user.request.condition.UserQueryCondition;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import com.nexo.common.base.request.BaseRequest;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 
@@ -13,13 +12,15 @@ import java.io.Serial;
  * @date 2025/12/03 12:47
  * @created by YanShijie
  */
-@EqualsAndHashCode(callSuper = true)
-@Data
+@Getter
+@Setter
 public class UserQueryRequest extends BaseRequest {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private UserQueryCondition condition;
+    private Long id;
+
+    private String phone;
 
 }

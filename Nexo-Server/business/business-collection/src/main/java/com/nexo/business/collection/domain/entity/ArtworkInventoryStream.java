@@ -2,8 +2,8 @@ package com.nexo.business.collection.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.nexo.common.api.artwork.constant.ArtWorkState;
-import com.nexo.common.api.product.constant.ProductEvent;
+import com.nexo.common.api.artwork.constant.NFTState;
+import com.nexo.common.api.artwork.constant.NFTEvent;
 import com.nexo.common.datasource.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -33,7 +33,7 @@ public class ArtworkInventoryStream extends BaseEntity {
     private Long quantity;
 
     @TableField("state")
-    private ArtWorkState state;
+    private NFTState state;
 
     @TableField("saleable_inventory")
     private Long saleableInventory;
@@ -42,7 +42,7 @@ public class ArtworkInventoryStream extends BaseEntity {
     private Long frozenInventory;
 
     @TableField("stream_type")
-    private ProductEvent streamType;
+    private NFTEvent streamType;
 
     @TableField("identifier")
     private String identifier;

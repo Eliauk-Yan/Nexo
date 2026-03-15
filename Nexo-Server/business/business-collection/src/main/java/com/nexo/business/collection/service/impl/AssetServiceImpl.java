@@ -4,11 +4,11 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.nexo.business.collection.domain.entity.ArtWork;
+import com.nexo.business.collection.domain.entity.NFT;
 import com.nexo.business.collection.domain.entity.Asset;
 import com.nexo.business.collection.interfaces.vo.AssetVO;
 import com.nexo.business.collection.mapper.mybatis.AssetMapper;
-import com.nexo.business.collection.service.ArtWorkService;
+import com.nexo.business.collection.service.NFTService;
 import com.nexo.business.collection.service.AssetService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements AssetService {
 
-    private final ArtWorkService artWorkService;
+    private final NFTService NFTService;
 
     @Override
     public Page<AssetVO> getMyAssets(Long current, Long size) {
@@ -55,8 +55,8 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
                 .distinct()
                 .collect(Collectors.toList());
 
-        Map<Long, ArtWork> artworkMap = artWorkService.listByIds(artworkIds).stream()
-                .collect(Collectors.toMap(ArtWork::getId, a -> a));
+        Map<Long, NFT> artworkMap = NFTService.listByIds(artworkIds).stream()
+                .collect(Collectors.toMap(NFT::getId, a -> a));
 
         // 4. 组装数据
         List<AssetVO> vos = assetPage.getRecords().stream().map(asset -> {
@@ -64,10 +64,10 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
             BeanUtils.copyProperties(asset, vo);
             vo.setState(asset.getState() != null ? asset.getState().name() : null);
 
-            ArtWork artWork = artworkMap.get(asset.getArtWorkId());
-            if (artWork != null) {
-                vo.setArtworkName(artWork.getName());
-                vo.setArtworkCover(artWork.getCover());
+            NFT NFT = artworkMap.get(asset.getArtWorkId());
+            if (NFT != null) {
+                vo.setArtworkName(NFT.getName());
+                vo.setArtworkCover(NFT.getCover());
             }
 
             return vo;

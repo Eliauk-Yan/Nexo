@@ -51,7 +51,17 @@ const Verify = () => {
     setSubmitting(true)
     try {
       const response = await authApi.login({ phone, verifyCode: code, rememberMe: true })
-      signIn(response.token, response.userInfo)
+      const token = response.token
+      // 登录接口仅返回 token/expire，需再拉取用户信息（头像、昵称）
+      let userInfo = response.userInfo
+      if (!userInfo?.nickName && !userInfo?.avatarUrl) {
+        try {
+          userInfo = await authApi.getCurrentUser(token)
+        } catch {
+          userInfo = { id: '', nickName: '', avatarUrl: '', role: '' }
+        }
+      }
+      signIn(token, userInfo!)
       router.replace('/(tabs)/account')
     } catch (error) {
       Alert.alert('登录失败', error instanceof Error ? error.message : '登录失败')

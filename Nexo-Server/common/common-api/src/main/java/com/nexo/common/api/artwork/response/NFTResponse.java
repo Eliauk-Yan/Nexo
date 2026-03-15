@@ -1,6 +1,6 @@
 package com.nexo.common.api.artwork.response;
 
-import com.nexo.common.api.common.response.BaseResponse;
+import com.nexo.common.base.response.BaseResponse;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,5 +20,4 @@ public class NFTResponse<T> extends BaseResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private T data;
-
 }

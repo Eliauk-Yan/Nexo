@@ -23,7 +23,7 @@ public class StockValidator extends BaseOrderCreateValidator {
     protected void doValidate(OrderCreateRequest request) throws OrderException {
         // 1. 查询商品库存信息
         InventoryResponse<ProductInventoryDTO> response = inventoryFacade.getInventory(request.getProductId(),
-                request.getProductType());
+                request.getNFTType());
         ProductInventoryDTO inventoryDTO = response.getData();
         // 2. 判断库存是否充足
         if (inventoryDTO == null || inventoryDTO.getInventory() == 0

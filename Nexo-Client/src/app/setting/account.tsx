@@ -1,8 +1,7 @@
 import { LiquidGlassButton } from '@/components/ui'
 import ListItem, { ListItemData } from '@/components/ui/ListItem'
 import { colors, spacing } from '@/config/theme'
-import { userApi, UpdateUserRequest, UserProfile } from '@/api/user'
-import { UserInfo } from '@/api/auth'
+import { userApi, UserInfo } from '@/api/user'
 import { useSession } from '@/utils/ctx'
 import * as ImagePicker from 'expo-image-picker'
 import { useRouter } from 'expo-router'
@@ -11,52 +10,47 @@ import { Alert, ScrollView, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Spinner from 'react-native-loading-spinner-overlay'
 
+const defaultProfile: UserInfo = {
+  id: '',
+  nickName: '未设置',
+  avatarUrl: '',
+  phone: '未绑定',
+}
+
 const AccountSecurity = () => {
-  // 路由
   const router = useRouter()
-  // 安全距离
   const insets = useSafeAreaInsets()
-  // 用户会话
-  const { session, user, signIn } = useSession()
-  // 加载状态
+  const { session, user, signIn, isLoading: isSessionLoading } = useSession()
   const [loading, setLoading] = useState(false)
-  // 用户信息 状态
-  const [profile, setProfile] = useState<UserProfile>({
-    alipay: '未绑定',
-    appleId: '未绑定',
-    avatarUrl: '',
-    id: '',
-    nickName: '未设置',
-    password: '',
-    phone: '未绑定',
-    realNameAuth: false,
-    wechat: '未绑定',
-  })
+  const [profile, setProfile] = useState<UserInfo>(defaultProfile)
+
   const fetchProfile = async () => {
-    // 设置加载状态
     setLoading(true)
     try {
       const res = await userApi.getUserProfile()
-      // 设置用户信息状态
-      setProfile(res)
+      // 用 session 中的 user 补全接口可能未返回的字段（如 phone）
+      const merged = res ? { ...defaultProfile, ...user, ...res } : defaultProfile
+      setProfile(merged)
       return res
     } finally {
       setLoading(false)
     }
   }
-  // 获取用户信息
+
+  // 未登录时进入即跳转登录页，不请求接口
   useEffect(() => {
+    if (isSessionLoading) return
+    if (!session) {
+      router.replace('/(auth)/sign-in')
+      return
+    }
     fetchProfile().catch((err) => console.error(err))
-  }, [])
+  }, [isSessionLoading, session])
 
   const avatar = profile?.avatarUrl || ''
   const nickname = profile?.nickName || '未设置'
   const phone = profile?.phone || '未绑定'
-  const alipayAccount = profile?.alipay || '未绑定'
-  const wechatAccount = profile?.wechat || '未绑定'
-  const appleId = profile?.appleId || '未绑定'
-  const isRealNameAuth = profile?.realNameAuth ?? false
-  const hasPassword = !!profile?.password
+  const isRealNameAuth = profile?.certification === true
 
   const deleteAccount = () => {
     Alert.alert('账号注销', '注销账号后，所有数据将被永久删除且无法恢复。确定要继续吗？', [
@@ -135,15 +129,10 @@ const AccountSecurity = () => {
           onPress: async (text?: string) => {
             if (text !== undefined) {
               try {
-                const payload: UpdateUserRequest = { nickName: text }
-                await userApi.updateNickName(payload)
+                await userApi.updateNickName({ nickName: text })
                 const newProfile = await fetchProfile()
-                // 同步全局登录态
-                if (session && user && newProfile) {
-                  signIn(session, {
-                    ...user,
-                    nickName: newProfile.nickName,
-                  })
+                if (session && newProfile) {
+                  signIn(session, { ...user, ...newProfile } as any)
                 }
               } catch (err) {
                 console.error('更新昵称失败', err)
@@ -184,22 +173,14 @@ const AccountSecurity = () => {
       try {
         await userApi.updateAvatar(formData)
         const newProfile = await fetchProfile()
-        // 同步全局状态
-        if (session && user && newProfile) {
-          signIn(session, {
-            ...user,
-            avatarUrl: newProfile.avatarUrl,
-          })
+        if (session && newProfile) {
+          signIn(session, { ...user, ...newProfile } as any)
         }
         Alert.alert('成功', '头像已更新')
       } catch {
         Alert.alert('失败', '头像更新失败，请重试')
       }
     }
-  }
-
-  const appleIdAuthentication = () => {
-    Alert.alert('提示', '请使用 Apple 账号登录')
   }
 
   const menuItems: ListItemData[] = [
@@ -222,24 +203,6 @@ const AccountSecurity = () => {
       onPress: () => {},
     },
     {
-      label: '支付宝账号',
-      type: 'text',
-      value: alipayAccount,
-      onPress: () => {},
-    },
-    {
-      label: '微信账号',
-      type: 'text',
-      value: wechatAccount,
-      onPress: () => {},
-    },
-    {
-      label: 'AppleID',
-      type: 'text',
-      value: appleId,
-      onPress: appleIdAuthentication,
-    },
-    {
       label: '实名认证',
       type: 'text',
       value: isRealNameAuth ? '已认证' : '未认证',
@@ -253,6 +216,15 @@ const AccountSecurity = () => {
   ]
 
   const buttonTop = insets.top + spacing.md
+
+  // 未登录或仍在确认登录状态时，不渲染页面内容，直接跳转或显示加载
+  if (isSessionLoading || !session) {
+    return (
+      <View style={[styles.container, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
+        <Spinner visible={true} />
+      </View>
+    )
+  }
 
   return (
     <View style={styles.container}>

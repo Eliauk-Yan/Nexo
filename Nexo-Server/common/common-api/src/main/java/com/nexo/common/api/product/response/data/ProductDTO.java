@@ -1,12 +1,11 @@
 package com.nexo.common.api.product.response.data;
 
-import com.nexo.common.api.product.constant.ProductState;
+import com.nexo.common.api.artwork.constant.ProductState;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 /**
  * @classname ProductDTO
@@ -50,29 +49,4 @@ public abstract class ProductDTO implements Serializable {
      * 价格
      */
     public abstract BigDecimal getPrice();
-
-    /**
-     * 是否预约商品
-     */
-    public abstract Boolean canBook();
-
-    /**
-     * 当前是否可预约
-     */
-    public abstract Boolean canBookNow();
-
-    /**
-     * 是否已预约过
-     */
-    public abstract Boolean hasBooked();
-
-    /**
-     * 商品预约开始时间
-     */
-    public abstract LocalDateTime getBookStartTime();
-
-    /**
-     * 商品预约结束时间
-     */
-    public abstract LocalDateTime getBookEndTime();
 }

@@ -4,6 +4,8 @@ import com.nexo.business.user.domain.entity.User;
 import com.nexo.common.api.user.response.data.UserInfo;
 import org.mapstruct.Mapper;
 
+import java.util.List;
+
 /**
  * @classname UserConverter
  * @description 用户模块 MapStruct
@@ -13,5 +15,8 @@ import org.mapstruct.Mapper;
 @Mapper(componentModel = "spring")
 public interface UserConverter {
 
-    UserInfo userToUserInfo(User user);
+    UserInfo toInfo(User user);
+
+    List<UserInfo> toInfos(List<User> users);
+
 }

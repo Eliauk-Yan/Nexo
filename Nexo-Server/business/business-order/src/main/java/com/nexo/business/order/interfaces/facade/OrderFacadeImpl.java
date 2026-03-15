@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.nexo.business.order.domain.entity.TradeOrder;
 import com.nexo.business.order.mapper.convert.OrderConvertor;
 import com.nexo.business.order.service.OrderService;
-import com.nexo.common.api.common.response.ResponseCode;
+import com.nexo.common.base.response.ResponseCode;
 import com.nexo.common.api.order.OrderFacade;
 import com.nexo.common.api.order.constant.TradeOrderState;
 import com.nexo.common.api.order.request.OrderPayRequest;

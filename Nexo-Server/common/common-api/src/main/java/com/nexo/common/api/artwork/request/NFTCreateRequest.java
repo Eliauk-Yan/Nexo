@@ -1,6 +1,6 @@
 package com.nexo.common.api.artwork.request;
 
-import com.nexo.common.api.product.constant.ProductEvent;
+import com.nexo.common.api.artwork.constant.NFTEvent;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -26,18 +26,12 @@ public class NFTCreateRequest extends NFTBaseRequest {
 
     private LocalDateTime saleTime;
 
-    private Boolean canBook;
-
-    private LocalDateTime bookStartTime;
-
-    private LocalDateTime bookEndTime;
-
     private String description;
 
     private Long creatorId;
 
     @Override
-    public ProductEvent getEventType() {
-        return ProductEvent.CHAIN;
+    public NFTEvent getEventType() {
+        return NFTEvent.CHAIN;
     }
 }

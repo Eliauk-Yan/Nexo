@@ -1,7 +1,7 @@
 package com.nexo.common.api.artwork.request;
 
-import com.nexo.common.api.common.request.BaseRequest;
-import com.nexo.common.api.product.constant.ProductEvent;
+import com.nexo.common.base.request.BaseRequest;
+import com.nexo.common.api.artwork.constant.NFTEvent;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,21 +15,14 @@ import lombok.Setter;
 @Setter
 public abstract class NFTBaseRequest extends BaseRequest {
 
-    /**
-     * 幂等号
-     */
     @NotNull(message = "幂等号不能为空")
     private String identifier;
 
-    /**
-     * 藏品id
-     */
-    private Long artworkId;
+    private Long NFTId;
 
     /**
      * 获取事件类型
-     * @return 事件类型
      */
-    public abstract ProductEvent getEventType();
+    public abstract NFTEvent getEventType();
 
 }

@@ -1,6 +1,6 @@
 package com.nexo.common.api.blockchain.response;
 
-import com.nexo.common.api.common.response.BaseResponse;
+import com.nexo.common.base.response.BaseResponse;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -20,5 +20,12 @@ public class ChainResponse<T> extends BaseResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private T data;
+
+    public static <T> ChainResponse<T> success(T data) {
+        ChainResponse<T> response = new ChainResponse<>();
+        response.setSuccess(true);
+        response.setData(data);
+        return response;
+    }
 
 }

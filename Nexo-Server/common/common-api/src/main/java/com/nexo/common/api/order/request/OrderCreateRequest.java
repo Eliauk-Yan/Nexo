@@ -1,7 +1,7 @@
 package com.nexo.common.api.order.request;
 
 import com.nexo.common.api.order.constant.TradeOrderEvent;
-import com.nexo.common.api.product.constant.ProductType;
+import com.nexo.common.api.artwork.constant.NFTType;
 import com.nexo.common.api.user.constant.UserType;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
@@ -57,7 +57,7 @@ public class OrderCreateRequest extends OrderBaseRequest {
     /**
      * 商品类型
      */
-    private ProductType productType;
+    private NFTType NFTType;
 
     /**
      * 商品图片

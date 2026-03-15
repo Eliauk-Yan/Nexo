@@ -84,7 +84,7 @@ public class BuyMsgListener {
             saleRequest.setUserId(orderCreateAndConfirmRequest.getBuyerId());
             saleRequest.setQuantity(orderCreateAndConfirmRequest.getItemCount());
             saleRequest.setBizNo(orderCreateAndConfirmRequest.getOrderId());
-            saleRequest.setProductType(orderCreateAndConfirmRequest.getProductType());
+            saleRequest.setNFTType(orderCreateAndConfirmRequest.getNFTType());
             saleRequest.setIdentifier(orderCreateAndConfirmRequest.getIdentifier());
             saleRequest.setProductId(Long.parseLong(orderCreateAndConfirmRequest.getProductId())); // 设置商品ID
             ProductResponse<ProductSaleDTO> response = productFacade.sale(saleRequest);
@@ -103,7 +103,7 @@ public class BuyMsgListener {
                 tradeOrder.setSellerType(orderCreateAndConfirmRequest.getSellerType());
                 tradeOrder.setIdentifier(orderCreateAndConfirmRequest.getIdentifier());
                 tradeOrder.setProductId(orderCreateAndConfirmRequest.getProductId());
-                tradeOrder.setProductType(orderCreateAndConfirmRequest.getProductType());
+                tradeOrder.setNFTType(orderCreateAndConfirmRequest.getNFTType());
                 tradeOrder.setProductCoverUrl(orderCreateAndConfirmRequest.getProductPicUrl());
                 tradeOrder.setProductName(orderCreateAndConfirmRequest.getProductName());
                 tradeOrder.setUnitPrice(orderCreateAndConfirmRequest.getItemPrice());

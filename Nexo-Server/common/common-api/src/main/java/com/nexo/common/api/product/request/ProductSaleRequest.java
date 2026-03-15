@@ -1,6 +1,6 @@
 package com.nexo.common.api.product.request;
 
-import com.nexo.common.api.product.constant.ProductEvent;
+import com.nexo.common.api.artwork.constant.NFTEvent;
 import com.nexo.common.api.product.constant.ProductSaleBizType;
 import lombok.Getter;
 import lombok.Setter;
@@ -53,8 +53,8 @@ public class ProductSaleRequest extends BaseProductRequest {
 
 
     @Override
-    public ProductEvent getEventType() {
-        return ProductEvent.SALE;
+    public NFTEvent getEventType() {
+        return NFTEvent.SALE;
     }
 
 }

@@ -1,6 +1,5 @@
 package com.nexo.common.api.blockchain.constant;
 
-import com.baomidou.mybatisplus.annotation.EnumValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -15,13 +14,12 @@ public enum ChainOperationBizType {
 
     USER("USER", "用户"),
 
-    ARTWORK("ARTWORK", "藏品"),
+    NFT("NFT", "藏品"),
 
     ASSET("ASSET", "资产"),
 
     BLOCKCHAIN("BLOCKCHAIN", "区块链");
 
-    @EnumValue
     private final String code;
 
     private final String desc;

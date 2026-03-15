@@ -1,7 +1,8 @@
 package com.nexo.common.api.pay.request;
 
-import com.nexo.common.api.common.request.BaseRequest;
+import com.nexo.common.base.request.BaseRequest;
 import com.nexo.common.api.pay.constant.PaymentType;
+import com.nexo.common.api.user.constant.UserType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -46,7 +47,7 @@ public class PayCreateRequest extends BaseRequest {
     /**
      * 付款方类型
      */
-    private String payerType;
+    private UserType payerType;
 
     /**
      * 收款方ID
@@ -56,7 +57,7 @@ public class PayCreateRequest extends BaseRequest {
     /**
      * 收款方类型
      */
-    private String payeeType;
+    private UserType payeeType;
 
     /**
      * 支付渠道

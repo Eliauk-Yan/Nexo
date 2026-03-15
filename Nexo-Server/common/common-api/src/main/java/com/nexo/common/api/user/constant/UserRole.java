@@ -10,32 +10,12 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum UserRole {
 
-    /**
-     * 普通收藏者
-     */
-    COLLECTOR("COLLECTOR"),
+    COLLECTOR("COLLECTOR", "收藏者"),
 
-    /**
-     * 艺术家
-     */
-    ARTIST("ARTIST"),
-
-    /**
-     * 管理员
-     */
-    ADMIN("ADMIN"),
-
-    /**
-     * （隐藏用户）菜单
-     */
-    ROOT("ROOT"),
-
-    /**
-     * 神
-     */
-    GOD("GOD");
-
+    ADMIN("ADMIN", "管理员");
 
     private final String code;
+
+    private final String description;
 
 }

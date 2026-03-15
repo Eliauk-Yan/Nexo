@@ -8,25 +8,32 @@ import com.alicp.jetcache.anno.CacheInvalidate;
 import com.alicp.jetcache.anno.CacheType;
 import com.alicp.jetcache.template.QuickConfig;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.nexo.business.user.config.encrypt.AesUtil;
-import com.nexo.business.user.domain.entity.Certification;
 import com.nexo.business.user.domain.entity.User;
+import com.nexo.business.user.domain.exception.UserErrorCode;
 import com.nexo.business.user.domain.exception.UserException;
-import com.nexo.business.user.mapper.mybatis.CertificationMapper;
+import com.nexo.business.user.interfaces.dto.RealNameAuthDTO;
+import com.nexo.business.user.service.UserAuthService;
 import com.nexo.business.user.service.UserService;
 import com.nexo.business.user.mapper.mybatis.UserMapper;
 import com.nexo.business.user.mapper.convert.UserConverter;
-import com.nexo.business.user.interfaces.vo.UserProfileVO;
+import com.nexo.common.api.blockchain.ChainFacade;
+import com.nexo.common.api.blockchain.request.ChainRequest;
+import com.nexo.common.api.blockchain.response.ChainResponse;
+import com.nexo.common.api.blockchain.response.data.ChainCreateData;
 import com.nexo.common.api.user.constant.UserState;
-import com.nexo.common.api.user.constant.UserRole;
 import com.nexo.common.api.user.response.data.UserInfo;
+import com.nexo.common.base.constant.CommonConstant;
+import com.nexo.common.base.response.PageResponse;
 import com.nexo.common.file.service.FileService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -60,13 +67,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     private final FileService fileService;
 
-    /**
-     * 用户认证Mapper
-     */
-    private final CertificationMapper certificationMapper;
+    @DubboReference(version = "1.0.0")
+    private ChainFacade chainFacade;
 
     /**
-     * 用户缓存服务 为避免JetCache缓存失效
+     * 用户认证服务
+     */
+    private final UserAuthService userAuthService;
+
+    /**
+     * 用户缓存服务
      */
     private final UserCacheService userCacheService;
 
@@ -106,43 +116,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public void register(String phone, String inviteCode) {
-        // 2. 生成默认昵称
-        // TODO 后续加入布隆过滤器，优化用户名重复问题
+    public Boolean register(String phone) {
+        // 1. 生成默认昵称
         String random = RandomUtil.randomString(6);
         String defaultNickName = DEFAULT_NICK_NAME_PREFIX + random + phone.substring(7, 11);
-        // 3. 查询邀请人
-        Long invitorId = null;
-        // 3.1 判断是否有邀请人
-        if (inviteCode != null) {
-            // 3.2 获取邀请人信息
-            User invitor = this
-                    .getOne(new LambdaQueryWrapper<User>().eq(User::getInviteCode, inviteCode).eq(User::getDeleted, 0));
-            if (invitor != null) {
-                invitorId = invitor.getId();
-            }
-        }
-        // 4. 保存用户
+        // 2. 保存用户
         User user = new User();
-        user.setNickName(defaultNickName);
-        user.setPhone(phone);
-        user.setRole(UserRole.COLLECTOR);
-        user.setState(UserState.INIT);
-        // TODO 后续加入布隆过滤器，优化邀请码重复问题
-        user.setInviteCode(RandomUtil.randomString(6));
-        user.setInviterId(invitorId);
-        this.save(user);
+        user.register(defaultNickName, phone);
+        int insertRow = userMapper.insert(user);
+        return insertRow == 1;
     }
 
-    @Override
-    public UserProfileVO getUserProfile() {
-        // 1. 获取当前登录用户ID
-        long userId = StpUtil.getLoginIdAsLong();
-        // 2. 根据用户ID查询用户账户信息
-        return userMapper.selectUserProfileById(userId);
-    }
-
-    @CacheInvalidate(name = ":user:cache:id:", key = "T(cn.dev33.satoken.stp.StpUtil).getLoginIdAsLong()")
     @Override
     public Boolean updateAvatar(MultipartFile avatar) {
         // 1. 获取当前登录用户ID
@@ -160,10 +144,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         String avatarUrl = fileService.uploadFile(avatar, filePath);
         // 6. 更新用户信息
         currentUser.setAvatarUrl(avatarUrl);
-        return this.updateById(currentUser);
+        return userCacheService.updateById(currentUser);
     }
 
-    @CacheInvalidate(name = ":user:cache:id:", key = "T(cn.dev33.satoken.stp.StpUtil).getLoginIdAsLong()")
     @Override
     public Boolean updateNickName(String nickName) {
         // 1. 获取当前登录用户ID
@@ -173,7 +156,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 3. 更新用户信息
         user.setNickName(nickName);
         // 4. 返回更新结果
-        return this.updateById(user);
+        return userCacheService.updateById(user);
     }
 
     @Override
@@ -181,7 +164,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 1. 根据手机号查询用户信息
         User user = this.getOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone));
         // 2. 实体转换为DTO
-        return userConverter.userToUserInfo(user);
+        return userConverter.toInfo(user);
     }
 
     @Override
@@ -189,23 +172,65 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         // 1. 根据手机号查询用户信息
         User user = userCacheService.getUserById(id);
         // 2. 实体转换为DTO
-        UserInfo userInfo = userConverter.userToUserInfo(user);
-        // TODO fix 2月26日 修改 BUG（用户是否实名信息遗漏）
-        Certification certification = certificationMapper
-                .selectOne(new LambdaQueryWrapper<Certification>().eq(Certification::getUserId, id));
-        userInfo.setCertification(certification != null);
-        return userInfo;
+        return userConverter.toInfo(user);
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
-    public UserInfo queryUserByPhoneAndPassword(String phone, String password) {
-        // 1. 加密密码
-        String encryptedPassword = AesUtil.encrypt(password);
-        // 2. 对比密码
-        User user = this.getOne(
-                new LambdaQueryWrapper<User>().eq(User::getPhone, phone).eq(User::getPassword, encryptedPassword));
-        // 3. 返回结果
-        return userConverter.userToUserInfo(user);
+    public void realNameAuth(RealNameAuthDTO dto) {
+        // 1. 调用用户认证服务
+        if (!userAuthService.realNameAuth(dto)) {
+            throw new UserException(UserErrorCode.REAL_NAME_AUTH_FAILED);
+        }
+        // 2. 从数据库取最新用户（避免乐观锁 version 与缓存不一致导致 update 影响 0 行）
+        long userId = StpUtil.getLoginIdAsLong();
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new UserException(UserErrorCode.USER_NOT_EXIST);
+        }
+        user.setRealName(dto.getRealName());
+        user.setIdCard(dto.getIdCardNo());
+        // 3. 保存实名信息
+        Boolean realAuthRes = userCacheService.updateById(user);
+        if (!realAuthRes) {
+            throw new UserException(UserErrorCode.USER_UPDATE_FAILED);
+        }
+        // 4. 构造创建链账户请求
+        ChainRequest chainRequest = new ChainRequest();
+        chainRequest.setUserId(String.valueOf(userId));
+        String identifier = CommonConstant.APP_NAME + CommonConstant.SEPARATOR + userId;
+        chainRequest.setIdentifier(identifier);
+        ChainResponse<ChainCreateData> chainAccount = chainFacade.createChainAccount(chainRequest);
+        if (chainAccount.getSuccess()) {
+            // 5. 保存链账户信息
+            User userForChain = userMapper.selectById(userId);
+            if (userForChain == null) {
+                throw new UserException(UserErrorCode.USER_NOT_EXIST);
+            }
+            ChainCreateData responseData = chainAccount.getData();
+            userForChain.setAddress(responseData.getAccount());
+            userForChain.setPlatform(responseData.getPlatform());
+            Boolean accountRes = userCacheService.updateById(userForChain);
+            if (!accountRes) {
+                throw new UserException(UserErrorCode.USER_CREATE_CHAIN_FAIL);
+            }
+            // 6. 更新用户以及认证状态
+            User currentUser = userMapper.selectById(userId);
+            currentUser.setState(UserState.ACTIVE);
+            currentUser.setCertification(true);
+            Boolean update = userCacheService.updateById(currentUser);
+            if (!update) {
+                throw new UserException(UserErrorCode.USER_UPDATE_FAILED);
+            }
+            // 6. 更新会话状态
+            UserInfo userInfo = StpUtil.getSessionByLoginId(userId).getModel("userInfo", UserInfo.class);
+            userInfo.setState(UserState.ACTIVE);
+            userInfo.setCertification(true);
+            userInfo.setAddress(responseData.getAccount());
+            StpUtil.getSession().set("userInfo", userInfo);
+        } else {
+            throw new UserException(UserErrorCode.USER_CREATE_CHAIN_FAIL);
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -266,6 +291,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             log.info("用户延迟双删, key = {} , result  = {}", user.getId(), idDeleteResult);
         }, 2, TimeUnit.SECONDS);
         return true;
+    }
+
+    @Override
+    public PageResponse<User> pageQueryByState(String keyword, String state, String nickName, String role, Boolean certification, int current, int size) {
+        // 1. 构建页面
+        Page<User> page = new Page<>(current, size);
+        // 2. 构造查询条件
+        LambdaQueryWrapper<User> condition = new LambdaQueryWrapper<User>()
+                .eq(StringUtils.isNotBlank(state), User::getState, state)
+                .like(StringUtils.isNotBlank(keyword), User::getPhone, keyword)
+                .like(StringUtils.isNotBlank(nickName), User::getNickName, nickName)
+                .eq(StringUtils.isNotBlank(role), User::getRole, role)
+                .eq(certification != null, User::getCertification, certification)
+                .orderByAsc(User::getCreatedAt);
+        // 3. Mapper查询
+        Page<User> userPage = userMapper.selectPage(page, condition);
+        // 4. 返回响应
+        return PageResponse.success(userPage.getRecords(), (int) userPage.getTotal(), size, current);
     }
 
 }

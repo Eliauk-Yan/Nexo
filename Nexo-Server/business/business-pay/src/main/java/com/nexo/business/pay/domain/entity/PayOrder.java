@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.nexo.common.api.pay.constant.PayState;
 import com.nexo.common.api.pay.request.PayCreateRequest;
+import com.nexo.common.api.user.constant.UserType;
 import com.nexo.common.datasource.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -41,7 +42,7 @@ public class PayOrder extends BaseEntity {
      * 付款方类型
      */
     @TableField("payer_type")
-    private String payerType;
+    private UserType payerType;
 
     /**
      * 收款方ID
@@ -53,7 +54,7 @@ public class PayOrder extends BaseEntity {
      * 收款方类型
      */
     @TableField("payee_type")
-    private String payeeType;
+    private UserType payeeType;
 
     /**
      * 业务单号
@@ -134,7 +135,6 @@ public class PayOrder extends BaseEntity {
     private String refundChannelStreamId;
 
     // ============ 状态机方法 ============
-
     /**
      * 创建支付单
      */

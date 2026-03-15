@@ -115,10 +115,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
             try {
                 AssetAllocateRequest allocateRequest = new AssetAllocateRequest();
                 allocateRequest.setBusinessNo(order.getOrderId());
-                allocateRequest.setBusinessType(order.getProductType().name()); // 此处如果业务类型不符，可以在Asset表中直接用ProductType
+                allocateRequest.setBusinessType(order.getNFTType().name()); // 此处如果业务类型不符，可以在Asset表中直接用ProductType
                 allocateRequest.setBuyerId(Long.parseLong(order.getBuyerId()));
                 allocateRequest.setArtworkId(Long.parseLong(order.getProductId()));
-                allocateRequest.setProductType(order.getProductType());
+                allocateRequest.setNFTType(order.getNFTType());
                 allocateRequest.setPurchasePrice(request.getPaymentAmount());
                 allocateRequest.setIdentifier(order.getIdentifier()); // 使用订单的幂等号作为生成资产的追踪
 
@@ -173,7 +173,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
                 revertRequest.setOrderId(orderId);
                 revertRequest.setIdentifier(order.getIdentifier());
                 revertRequest.setProductId(order.getProductId());
-                revertRequest.setProductType(order.getProductType());
+                revertRequest.setNFTType(order.getNFTType());
                 revertRequest.setItemCount((long) order.getQuantity());
                 inventoryFacade.increaseInventory(revertRequest);
                 log.info("Redis库存回推请求已发送, orderId={}", orderId);
@@ -187,7 +187,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
                 saleRequest.setUserId(userId.toString());
                 saleRequest.setQuantity((long) order.getQuantity());
                 saleRequest.setBizNo(orderId);
-                saleRequest.setProductType(order.getProductType());
+                saleRequest.setNFTType(order.getNFTType());
                 saleRequest.setIdentifier(order.getIdentifier());
                 saleRequest.setProductId(Long.parseLong(order.getProductId()));
                 productFacade.unsale(saleRequest);

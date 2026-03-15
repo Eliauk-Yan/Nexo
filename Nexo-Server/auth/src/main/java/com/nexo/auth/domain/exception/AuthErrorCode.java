@@ -8,6 +8,8 @@ import lombok.Getter;
 @Getter
 public enum AuthErrorCode implements ErrorCode {
 
+    USER_NOT_ADMIN("USER_NOT_ADMIN", "用户没有管理员权限"),
+
     VERIFY_CODE_ERROR("VERIFY_CODE_ERROR", "验证码错误"),
 
     USER_NOT_EXIST("USER_NOT_EXIST", "用户不存在"),

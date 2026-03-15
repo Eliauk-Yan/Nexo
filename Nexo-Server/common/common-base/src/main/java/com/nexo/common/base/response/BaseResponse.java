@@ -1,0 +1,27 @@
+package com.nexo.common.base.response;
+
+import lombok.Getter;import lombok.Setter;
+
+import java.io.Serial;
+import java.io.Serializable;
+
+/**
+ * @classname BaseResponse
+ * @description 响应基类
+ * @date 2025/11/30 13:13
+ * @created by YanShijie
+ */
+@Getter
+@Setter
+public class BaseResponse implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
+
+    private Boolean success;
+
+    private String code;
+
+    private String message;
+
+}

@@ -1,7 +1,5 @@
 package com.nexo.common.api.pay.constant;
 
-import com.alibaba.fastjson2.annotation.JSONField;
-import com.baomidou.mybatisplus.annotation.EnumValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -21,9 +19,7 @@ public enum PayState {
 
     REFUNDED("REFUNDED", "已退款");
 
-    @JSONField
     private final String code;
 
-    @EnumValue
     private final String description;
 }

@@ -3,7 +3,7 @@ package com.nexo.business.pay.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nexo.business.pay.domain.entity.PayOrder;
-import com.nexo.business.pay.mapper.PayOrderMapper;
+import com.nexo.business.pay.mapper.mybatis.PayOrderMapper;
 import com.nexo.common.api.pay.constant.PayState;
 import com.nexo.common.api.pay.request.PayCreateRequest;
 import lombok.extern.slf4j.Slf4j;

@@ -2,8 +2,8 @@ package com.nexo.business.order.domain.validator;
 
 import com.nexo.business.order.domain.exception.OrderException;
 import com.nexo.common.api.artwork.ArtWorkFacade;
-import com.nexo.common.api.artwork.response.ArtWorkQueryResponse;
-import com.nexo.common.api.artwork.response.data.ArtWorkDTO;
+import com.nexo.common.api.artwork.response.NFTQueryResponse;
+import com.nexo.common.api.artwork.response.data.NFTDTO;
 import com.nexo.common.api.order.request.OrderCreateRequest;
 import com.nexo.common.api.product.response.data.ProductDTO;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ public class ProductValidator extends BaseOrderCreateValidator {
     @Override
     protected void doValidate(OrderCreateRequest request) throws OrderException {
         // 1. 调用商品服务获取商品信息
-        ArtWorkQueryResponse<ArtWorkDTO> response = artWorkFacade.getArtWorkById(Long.parseLong(request.getProductId()));
+        NFTQueryResponse<NFTDTO> response = artWorkFacade.getArtWorkById(Long.parseLong(request.getProductId()));
         ProductDTO productDTO = response.getData();
         // 2. 判断商品是否可用
         if (!productDTO.available()) {

@@ -1,6 +1,6 @@
 package com.nexo.common.api.user.response;
 
-import com.nexo.common.api.common.response.BaseResponse;
+import com.nexo.common.base.response.BaseResponse;
 
 import java.io.Serial;
 
@@ -15,7 +15,10 @@ public class UserResponse extends BaseResponse {
     @Serial
     private static final long serialVersionUID = 1L;
 
-
-
+    public static UserResponse success() {
+        UserResponse response = new UserResponse();
+        response.setSuccess(true);
+        return response;
+    }
 
 }

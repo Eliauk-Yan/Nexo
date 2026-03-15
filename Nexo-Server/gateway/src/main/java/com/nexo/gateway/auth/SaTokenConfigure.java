@@ -30,15 +30,15 @@ public class SaTokenConfigure {
                 // 拦截地址
                 .addInclude("/**")
                 // 开放地址
-                .addExclude("/favicon.ico", "/admin/auth/**", "/auth/**")
+                .addExclude("/favicon.ico", "/auth/**", "/artwork/list")
                 // 鉴权方法：每次访问进入
-                .setAuth(obj -> {
+                .setAuth(_ -> {
                     // 登录校验
                     SaRouter.match("/**",  _ -> StpUtil.checkLogin());
                     // 管理端模块 -> 用户角色校验
-                    SaRouter.match("/admin/**", r -> StpUtil.checkRoleOr(UserRole.ADMIN.getCode(), UserRole.ROOT.getCode(), UserRole.GOD.getCode()));
+                    SaRouter.match("/admin/**", _ -> StpUtil.checkRoleOr(UserRole.ADMIN.getCode()));
                     // 交易模块 -> 认证权限校验（未认证的用户无法下单）
-                    SaRouter.match("/trade/**", r -> StpUtil.checkPermission(UserPermission.AUTHENTICATE.getCode()));
+                    SaRouter.match("/trade/**", _ -> StpUtil.checkPermission(UserPermission.AUTHENTICATE.getCode()));
                 })
                 // 异常处理方法：每次setAuth函数出现异常时进入
                 .setError(this::getSaResult);
@@ -51,7 +51,7 @@ public class SaTokenConfigure {
                 yield SaResult.error("未登录");
             }
             case NotRoleException e -> {
-                if (!UserRole.ADMIN.getCode().equals(e.getRole()) && !UserRole.ROOT.getCode().equals(e.getRole()) && !UserRole.GOD.getCode().equals(e.getRole())) {
+                if (!UserRole.ADMIN.getCode().equals(e.getRole())) {
                     log.error("请勿越权使用");
                     yield SaResult.error("请勿越权使用");
                 }

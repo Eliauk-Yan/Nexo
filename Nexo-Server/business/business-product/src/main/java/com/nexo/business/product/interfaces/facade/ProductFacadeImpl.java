@@ -2,10 +2,10 @@ package com.nexo.business.product.interfaces.facade;
 
 import com.nexo.common.api.artwork.ArtWorkFacade;
 import com.nexo.common.api.artwork.response.data.ArtworkInventoryStreamDTO;
-import com.nexo.common.api.common.response.ResponseCode;
+import com.nexo.common.api.artwork.constant.NFTType;
+import com.nexo.common.base.response.ResponseCode;
 import com.nexo.common.api.product.ProductFacade;
-import com.nexo.common.api.product.constant.ProductEvent;
-import com.nexo.common.api.product.constant.ProductType;
+import com.nexo.common.api.artwork.constant.NFTEvent;
 import com.nexo.common.api.product.request.ProductSaleRequest;
 import com.nexo.common.api.product.response.ProductResponse;
 import com.nexo.common.api.product.response.data.ProductInventoryStreamDTO;
@@ -28,9 +28,9 @@ public class ProductFacadeImpl implements ProductFacade {
 
     @Override
     public ProductResponse<ProductInventoryStreamDTO> getProductInventoryStream(String productId,
-            ProductType productType, ProductEvent productEvent, String identifier) {
-        return switch (productType) {
-            case ARTWORK -> {
+                                                                                NFTType NFTType, NFTEvent NFTEvent, String identifier) {
+        return switch (NFTType) {
+            case NFT -> {
                 // 1. 获取藏品库存流水数据 TODO
                 ArtworkInventoryStreamDTO artworkInventoryStream = artWorkFacade
                         .getArtworkInventoryStream(Long.parseLong(productId), identifier);
@@ -50,7 +50,7 @@ public class ProductFacadeImpl implements ProductFacade {
     public ProductResponse<ProductSaleDTO> sale(ProductSaleRequest saleRequest) {
         // TODO 后续优化为模板那方法模式
         ProductResponse<ProductSaleDTO> response = new ProductResponse<>();
-        if (saleRequest.getProductType() == ProductType.ARTWORK) {
+        if (saleRequest.getNFTType() == NFTType.NFT) {
             Boolean trySaleResult = artWorkFacade.sale(saleRequest);
             response.setSuccess(trySaleResult);
             return response;
@@ -63,7 +63,7 @@ public class ProductFacadeImpl implements ProductFacade {
     public ProductResponse<ProductSaleDTO> unsale(ProductSaleRequest saleRequest) {
         // TODO 后续优化为模板那方法模式
         ProductResponse<ProductSaleDTO> response = new ProductResponse<>();
-        if (saleRequest.getProductType() == ProductType.ARTWORK) {
+        if (saleRequest.getNFTType() == NFTType.NFT) {
             Boolean unsaleResult = artWorkFacade.unsale(saleRequest);
             response.setSuccess(unsaleResult);
             return response;

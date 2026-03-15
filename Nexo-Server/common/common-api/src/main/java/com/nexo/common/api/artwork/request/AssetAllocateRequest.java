@@ -1,7 +1,7 @@
 package com.nexo.common.api.artwork.request;
 
-import com.nexo.common.api.common.request.BaseRequest;
-import com.nexo.common.api.product.constant.ProductType;
+import com.nexo.common.base.request.BaseRequest;
+import com.nexo.common.api.artwork.constant.NFTType;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -39,7 +39,7 @@ public class AssetAllocateRequest extends BaseRequest {
     /**
      * 藏品类型
      */
-    private ProductType productType;
+    private NFTType NFTType;
 
     /**
      * 购入价格

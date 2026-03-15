@@ -1,11 +1,13 @@
 package com.nexo.business.collection.interfaces.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.nexo.business.collection.interfaces.dto.ArtWorkQueryDTO;
+import com.nexo.business.collection.domain.entity.NFT;
+import com.nexo.business.collection.interfaces.dto.NFTPageQueryDTO;
 import com.nexo.business.collection.interfaces.vo.NFTDetailVO;
-import com.nexo.business.collection.interfaces.vo.ArtWorkVO;
+import com.nexo.business.collection.interfaces.vo.NFTVO;
 import com.nexo.business.collection.interfaces.vo.AssetVO;
-import com.nexo.business.collection.service.ArtWorkService;
+import com.nexo.business.collection.mapper.convert.NFTConvertor;
+import com.nexo.business.collection.service.NFTService;
 import com.nexo.business.collection.service.AssetService;
 import com.nexo.common.web.result.MultiResult;
 import com.nexo.common.web.result.Result;
@@ -26,38 +28,31 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/artwork")
 public class NFTController {
 
-    private final ArtWorkService artWorkService;
+    private final NFTService NFTService;
+
+    private final NFTConvertor nftConvertor;
+
     private final AssetService assetService;
 
     /**
-     * 获取藏品列表
-     * 
-     * @param queryDTO 查询条件
-     * @return 藏品列表
+     * 获取藏品
      */
     @GetMapping("/list")
-    public MultiResult<ArtWorkVO> getArtWorkList(ArtWorkQueryDTO queryDTO) {
-        Page<ArtWorkVO> page = artWorkService.getArtWorkVOList(queryDTO);
-        return MultiResult.multiSuccess(page.getRecords(), page.getTotal(), page.getCurrent(), page.getSize());
+    public MultiResult<NFTVO> getNFTList(NFTPageQueryDTO queryDTO) {
+        Page<NFT> page = NFTService.queryPage(queryDTO);
+        return MultiResult.multiSuccess(nftConvertor.toVOs(page.getRecords()), page.getTotal(), page.getCurrent(), page.getSize());
     }
 
     /**
-     * 根据藏品 ID 获取藏品信息
-     * 
-     * @param id 藏品 ID
-     * @return 藏品信息
+     * 获取藏品详情
      */
     @GetMapping("/{id}")
-    public Result<NFTDetailVO> getArtWorkDetail(@PathVariable Long id) {
-        return Result.success(artWorkService.getNFTDetailById(id));
+    public Result<NFTDetailVO> getNFTDetail(@PathVariable Long id) {
+        return Result.success(NFTService.getNFTDetail(id));
     }
 
     /**
-     * 获取我的数字资产列表
-     * 
-     * @param current 当前页
-     * @param size    每页大小
-     * @return 资产列表
+     * 获取资产
      */
     @GetMapping("/myAssets")
     public MultiResult<AssetVO> getMyAssets(

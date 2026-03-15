@@ -1,6 +1,6 @@
 package com.nexo.common.api.pay.response;
 
-import com.nexo.common.api.common.response.BaseResponse;
+import com.nexo.common.base.response.BaseResponse;
 import lombok.Getter;
 import lombok.Setter;
 

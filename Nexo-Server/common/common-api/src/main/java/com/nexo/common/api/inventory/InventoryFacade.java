@@ -3,7 +3,7 @@ package com.nexo.common.api.inventory;
 import com.nexo.common.api.inventory.request.InventoryRequest;
 import com.nexo.common.api.inventory.response.InventoryResponse;
 import com.nexo.common.api.order.request.OrderCreateRequest;
-import com.nexo.common.api.product.constant.ProductType;
+import com.nexo.common.api.artwork.constant.NFTType;
 import com.nexo.common.api.product.response.data.ProductInventoryDTO;
 
 public interface InventoryFacade {
@@ -12,12 +12,10 @@ public interface InventoryFacade {
      * 获取商品库存信息
      * 
      * @param productId   商品ID
-     * @param productType 商品类型
+     * @param NFTType 商品类型
      * @return 商品库存信息
      */
-    InventoryResponse<ProductInventoryDTO> getInventory(String productId, ProductType productType);
-
-    InventoryResponse<Long> getInventory(InventoryRequest inventoryRequest);
+    InventoryResponse<ProductInventoryDTO> getInventory(String productId, NFTType NFTType);
 
     /**
      * 扣减库存 TODO 参数待优化暂时耦合
@@ -61,9 +59,11 @@ public interface InventoryFacade {
 
     /**
      * 初始化库存
-     * 
-     * @param inventoryRequest 库存请求
-     * @return 初始化结果
      */
     InventoryResponse<Boolean> init(InventoryRequest inventoryRequest);
+
+    /**
+     * 获取Redis中的库存
+     */
+    InventoryResponse<Long> getInventory(InventoryRequest inventoryRequest);
 }

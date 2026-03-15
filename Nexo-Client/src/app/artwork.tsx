@@ -2,6 +2,7 @@ import { artworkApi, authApi, tradeApi } from '@/api'
 import { LiquidGlassButton } from '@/components/ui'
 import { borderRadius, colors, shadows, spacing, typography } from '@/config/theme'
 import { ArtworkDetail } from '@/api/artwork'
+import { useSession } from '@/utils/ctx'
 import { Image } from 'expo-image'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -59,6 +60,7 @@ const Artwork = () => {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
   const insets = useSafeAreaInsets()
+  const { session, isLoading: isSessionLoading } = useSession()
   const [loading, setLoading] = useState(false)
   const [artwork, setArtwork] = useState<ArtworkDetail>({
     id: 0,
@@ -103,9 +105,24 @@ const Artwork = () => {
     }
   }
 
+  // 未登录时进入即跳转登录页，不请求接口
   useEffect(() => {
+    if (isSessionLoading) return
+    if (!session) {
+      router.replace('/(auth)/sign-in')
+      return
+    }
     fetchData().catch((e) => console.error('获取藏品详情错误：' + e))
-  }, [])
+  }, [isSessionLoading, session])
+
+  // 未登录或仍在确认登录状态时，不渲染详情内容，避免闪屏后再跳转
+  if (isSessionLoading || !session) {
+    return (
+      <View style={[styles.container, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
+        <Spinner visible={true} />
+      </View>
+    )
+  }
 
   return (
     <View style={styles.container}>

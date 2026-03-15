@@ -2,7 +2,7 @@ package com.nexo.business.order.interfaces.vo;
 
 import com.nexo.common.api.order.constant.TradeOrderState;
 import com.nexo.common.api.pay.constant.PaymentType;
-import com.nexo.common.api.product.constant.ProductType;
+import com.nexo.common.api.artwork.constant.NFTType;
 import com.nexo.common.api.user.constant.UserType;
 import lombok.Data;
 
@@ -105,7 +105,7 @@ public class OrderVO implements Serializable {
     /**
      * 商品类型
      */
-    private ProductType productType;
+    private NFTType NFTType;
 
     /**
      * 图片地址

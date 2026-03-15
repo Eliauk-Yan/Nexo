@@ -55,6 +55,6 @@
             <artifactId>protobuf-java</artifactId>
             <version>4.33.2</version>
         </dependency>
-    </dependencies>
 
+    </dependencies>
 </project>

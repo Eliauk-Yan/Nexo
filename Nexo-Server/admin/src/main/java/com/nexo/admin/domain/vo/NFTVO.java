@@ -1,7 +1,6 @@
 package com.nexo.admin.domain.vo;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.nexo.common.api.artwork.constant.ArtWorkState;
+import com.nexo.common.api.artwork.constant.NFTState;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -33,18 +32,12 @@ public class NFTVO {
 
     private Long frozenInventory;
 
-    private ArtWorkState state;
+    private NFTState state;
 
     private LocalDateTime saleTime;
 
     private LocalDateTime syncChainTime;
 
-    private LocalDateTime bookStartTime;
-
-    private LocalDateTime bookEndTime;
-
-    private Boolean canBook;
-
-    private Long creatorId;
+    private LocalDateTime createdAt;
 
 }

@@ -6,7 +6,6 @@ import com.nexo.common.api.user.UserFacade;
 import com.nexo.common.api.user.constant.UserRole;
 import com.nexo.common.api.user.constant.UserState;
 import com.nexo.common.api.user.request.UserQueryRequest;
-import com.nexo.common.api.user.request.condition.UserQueryById;
 import com.nexo.common.api.user.response.UserQueryResponse;
 import com.nexo.common.api.user.response.data.UserInfo;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +27,7 @@ public class UserValidator extends BaseOrderCreateValidator {
         // 1. 根据ID调用用户服务查询用户
         // 1.1 创建Dubbo请求
         UserQueryRequest userQueryRequest = new UserQueryRequest();
-        userQueryRequest.setCondition(new UserQueryById(Long.parseLong(request.getBuyerId())));
+        userQueryRequest.setId(Long.parseLong(request.getBuyerId()));
         // 1.2 调用用户服务
         UserQueryResponse<UserInfo> response = userFacade.userQuery(userQueryRequest);
         if (response.getSuccess() && response.getData() != null) {

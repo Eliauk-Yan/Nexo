@@ -1,15 +1,15 @@
 package com.nexo.common.api.artwork;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.nexo.common.api.artwork.request.ArtWorkQueryRequest;
+import com.nexo.common.api.artwork.request.NFTPageQueryRequest;
 import com.nexo.common.api.artwork.request.AssetAllocateRequest;
 import com.nexo.common.api.artwork.request.NFTCreateRequest;
-import com.nexo.common.api.artwork.response.ArtWorkQueryResponse;
+import com.nexo.common.api.artwork.response.NFTQueryResponse;
 import com.nexo.common.api.artwork.response.NFTResponse;
-import com.nexo.common.api.artwork.response.data.ArtWorkDTO;
+import com.nexo.common.api.artwork.response.data.NFTDTO;
 import com.nexo.common.api.artwork.response.data.ArtworkInventoryDTO;
 import com.nexo.common.api.artwork.response.data.ArtworkInventoryStreamDTO;
 import com.nexo.common.api.product.request.ProductSaleRequest;
+import com.nexo.common.base.response.PageResponse;
 
 public interface ArtWorkFacade {
 
@@ -19,7 +19,7 @@ public interface ArtWorkFacade {
      * @param id 藏品id
      * @return 藏品信息
      */
-    ArtWorkQueryResponse<ArtWorkDTO> getArtWorkById(Long id);
+    NFTQueryResponse<NFTDTO> getArtWorkById(Long id);
 
     /**
      * 根据id获取藏品库存
@@ -27,7 +27,7 @@ public interface ArtWorkFacade {
      * @param id 藏品id
      * @return 藏品库存信息
      */
-    ArtWorkQueryResponse<ArtworkInventoryDTO> getArtworkInventory(Long id);
+    NFTQueryResponse<ArtworkInventoryDTO> getArtworkInventory(Long id);
 
     /**
      * 查询藏品库存流水 TODO 后续优化返回值类型
@@ -54,22 +54,12 @@ public interface ArtWorkFacade {
      */
     Boolean unsale(ProductSaleRequest saleRequest);
 
-    /**
-     * 获取藏品列表
-     * 
-     * @return 藏品列表
-     */
-    ArtWorkQueryResponse<Page<ArtWorkDTO>> getNFTList(ArtWorkQueryRequest request);
 
-    /**
-     * 新增藏品
-     */
-    NFTResponse<Boolean> addNFT(NFTCreateRequest request);
 
     /**
      * 更新藏品
      */
-    Boolean updateNFT(ArtWorkDTO artWorkDTO);
+    Boolean updateNFT(NFTDTO NFTDTO);
 
     /**
      * 删除藏品
@@ -88,4 +78,15 @@ public interface ArtWorkFacade {
      * @return 结果
      */
     Boolean allocateAsset(AssetAllocateRequest request);
+
+
+    /**
+     * 获取藏品分页
+     */
+    PageResponse<NFTDTO> queryPage(NFTPageQueryRequest request);
+
+    /**
+     * 新增藏品
+     */
+    NFTResponse<Boolean> addNFT(NFTCreateRequest request);
 }

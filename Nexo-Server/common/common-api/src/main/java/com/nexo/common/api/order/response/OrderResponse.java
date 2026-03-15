@@ -1,6 +1,6 @@
 package com.nexo.common.api.order.response;
 
-import com.nexo.common.api.common.response.BaseResponse;
+import com.nexo.common.base.response.BaseResponse;
 import lombok.Getter;
 import lombok.Setter;
 

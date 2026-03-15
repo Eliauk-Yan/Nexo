@@ -1,6 +1,6 @@
 package com.nexo.common.api.order.request;
 
-import com.nexo.common.api.common.request.BaseRequest;
+import com.nexo.common.base.request.BaseRequest;
 import com.nexo.common.api.order.constant.TradeOrderEvent;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
