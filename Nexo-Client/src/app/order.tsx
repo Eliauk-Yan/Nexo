@@ -18,10 +18,12 @@ import {
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { GlassView } from 'expo-glass-effect'
 import { orderApi, OrderVO, OrderState } from '@/api/order'
 import { tradeApi, PaymentType } from '@/api/trade'
 import { useSession } from '@/utils/ctx'
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
+import Feather from '@expo/vector-icons/Feather'
 import Spinner from 'react-native-loading-spinner-overlay'
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window')
@@ -358,7 +360,7 @@ const OrderPage = () => {
     if (loading) return null
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyIcon}>📦</Text>
+        <Feather name="inbox" size={48} color={colors.textSecondary} />
         <Text style={styles.emptyText}>暂无相关订单</Text>
       </View>
     )
@@ -375,6 +377,8 @@ const OrderPage = () => {
 
   return (
     <View style={styles.rootContainer}>
+      {/* 订单列表加载与刷新时的全局遮罩 */}
+      <Spinner visible={loading || refreshing} />
       <Stack.Screen options={{ headerShown: false }} />
 
       {/* Header */}
@@ -385,51 +389,48 @@ const OrderPage = () => {
       </View>
 
       <View style={[styles.container, { paddingTop: insets.top + HEADER_HEIGHT + 16 }]}>
-        {/* Tabs Section */}
-        <View style={styles.tabsContainer}>
-          {TABS.map((tab) => (
-            <TouchableOpacity
-              key={tab.id}
-              style={styles.tabItem}
-              onPress={() => handleTabPress(tab.id)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.tabLabel, activeTab === tab.id && styles.activeTabLabel]}>
-                {tab.label}
-              </Text>
-              {activeTab === tab.id && <View style={styles.activeIndicator} />}
-            </TouchableOpacity>
-          ))}
-        </View>
+        {/* Tabs Section - 使用 expo-glass-effect 实现液态玻璃分段控制 */}
+        <GlassView style={styles.tabsBlurWrapper} glassEffectStyle="regular" isInteractive>
+          <View style={styles.tabsContainer}>
+            {TABS.map((tab) => {
+              const isActive = activeTab === tab.id
+              return (
+                <TouchableOpacity
+                  key={tab.id}
+                  style={[styles.tabItem, isActive && styles.tabItemActive]}
+                  onPress={() => handleTabPress(tab.id)}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[styles.tabLabel, isActive && styles.activeTabLabel]}>
+                    {tab.label}
+                  </Text>
+                </TouchableOpacity>
+              )
+            })}
+          </View>
+        </GlassView>
 
         {/* Order List */}
-        {loading && orders.length === 0 ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>加载中...</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={orders}
-            renderItem={renderOrderCard}
-            keyExtractor={(item) => item.orderId}
-            contentContainerStyle={{
-              paddingHorizontal: spacing.md,
-              paddingTop: spacing.md,
-              paddingBottom: insets.bottom + 32,
-            }}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={renderEmpty}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-                tintColor={colors.primary}
-                colors={[colors.primary]}
-              />
-            }
-          />
-        )}
+        <FlatList
+          data={orders}
+          renderItem={renderOrderCard}
+          keyExtractor={(item) => item.orderId}
+          contentContainerStyle={{
+            paddingHorizontal: spacing.md,
+            paddingTop: spacing.md,
+            paddingBottom: insets.bottom + 32,
+          }}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={renderEmpty}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+        />
       </View>
 
       {/* ===== 支付弹窗 ===== */}
@@ -563,17 +564,31 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   /* ---- Tabs ---- */
+  tabsBlurWrapper: {
+    marginHorizontal: spacing.md,
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginBottom: spacing.sm,
+  },
   tabsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+    padding: spacing.xs,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255,255,255,0.06)',
   },
   tabItem: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
     alignItems: 'center',
-    position: 'relative',
+    justifyContent: 'center',
+  },
+  tabItemActive: {
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    shadowColor: '#ffffff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   tabLabel: {
     fontSize: 14,
@@ -581,20 +596,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   activeTabLabel: {
-    color: colors.primary,
+    color: colors.text,
     fontWeight: '600',
-  },
-  activeIndicator: {
-    position: 'absolute',
-    bottom: 0,
-    width: 20,
-    height: 3,
-    backgroundColor: colors.primary,
-    borderRadius: 2,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
   },
   /* ---- Loading ---- */
   loadingContainer: {
@@ -733,9 +736,10 @@ const styles = StyleSheet.create({
   /* ---- Empty State ---- */
   emptyContainer: {
     flex: 1,
-    paddingTop: 120,
     alignItems: 'center',
     justifyContent: 'center',
+    // 适当下移一点，让整体更接近屏幕中间
+    paddingTop: 200,
   },
   emptyIcon: {
     fontSize: 48,

@@ -1,4 +1,4 @@
-package com.nexo.common.api.product.constant;
+package com.nexo.common.api.nft.constant;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,9 +10,7 @@ import lombok.Getter;
 @Getter
 public enum ProductSaleBizType {
 
-    PRIMARY_TRADE("PRIMARY_TRADE", "一级市场交易"),
-
-    TRANSFER("TRANSFER", "转赠"),;
+    PRIMARY_TRADE("PRIMARY_TRADE", "一级市场交易");
 
     private final String code;
 

@@ -1,6 +1,5 @@
 package com.nexo.business.trade.interfaces.dto;
 
-import com.nexo.common.api.nft.constant.NFTType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -25,7 +24,7 @@ public class BuyDTO {
      * 商品类型
      */
     @NotNull(message = "商品类型不能为空")
-    private NFTType NFTType;
+    private String nftType;
 
     /**
      * 商品数量

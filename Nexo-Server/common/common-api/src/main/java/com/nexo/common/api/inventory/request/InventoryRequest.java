@@ -3,7 +3,9 @@ package com.nexo.common.api.inventory.request;
 import com.nexo.common.base.request.BaseRequest;
 import com.nexo.common.api.nft.constant.NFTType;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -13,6 +15,8 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class InventoryRequest extends BaseRequest {
 
     /**

@@ -26,8 +26,6 @@ public class TradeController {
 
     /**
      * 购买藏品
-     * @param buyParams 购买参数
-     * @return 订单号
      */
     @PostMapping("/buy")
     public Result<String> buy(@Validated @RequestBody BuyDTO buyParams) {
@@ -36,8 +34,6 @@ public class TradeController {
 
     /**
      * 支付
-     * @param payParams 支付参数
-     * @return 支付情况
      */
     @PostMapping("/pay")
     public Result<PayVO> pay(@Validated @RequestBody PayDTO payParams) {

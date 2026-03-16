@@ -5,7 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * @classname NFTResponse
@@ -14,10 +13,17 @@ import java.io.Serializable;
  */
 @Getter
 @Setter
-public class NFTResponse<T> extends BaseResponse implements Serializable {
+public class NFTResponse<T> extends BaseResponse {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     private T data;
+
+    public static <T> NFTResponse<T> success(T data) {
+        NFTResponse<T> response = new NFTResponse<>();
+        response.setSuccess(true);
+        response.setData(data);
+        return response;
+    }
 }

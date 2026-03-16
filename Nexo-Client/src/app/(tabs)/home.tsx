@@ -4,11 +4,10 @@ import LiquidGlassSearchBar from '@/components/ui/LiquidGlassSearch'
 import { colors, spacing, typography } from '@/config/theme'
 import { Artwork } from '@/api/artwork'
 import React, { useCallback, useEffect, useState } from 'react'
-import { RefreshControl, StyleSheet, Text, View, FlatList } from 'react-native'
+import { StyleSheet, Text, View, FlatList } from 'react-native'
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useRouter } from 'expo-router'
-import Spinner from 'react-native-loading-spinner-overlay'
+import { useRouter, useFocusEffect } from 'expo-router'
 
 const Home = () => {
   const router = useRouter()
@@ -38,6 +37,13 @@ const Home = () => {
     fetchTrending().catch((err) => console.error(err))
   }, [fetchTrending])
 
+  // 与“我的数字资产”一致，页面重新获得焦点时静默刷新列表
+  useFocusEffect(
+    useCallback(() => {
+      fetchTrending().catch((err) => console.error(err))
+    }, [fetchTrending]),
+  )
+
   const handleArtworkPress = (artwork: Artwork) => {
     router.push({ pathname: '/artwork', params: { id: artwork.id } })
   }
@@ -56,7 +62,6 @@ const Home = () => {
 
   return (
     <View style={styles.container}>
-      <Spinner visible={loading} />
       <View style={[styles.headerWrap, { paddingTop: insets.top }]}>
         <LiquidGlassSearchBar
           placeholder={'搜索收藏品'}
@@ -79,13 +84,6 @@ const Home = () => {
             numColumns={2}
             columnWrapperStyle={styles.row}
             ListHeaderComponent={renderHeader}
-            refreshControl={
-              <RefreshControl
-                refreshing={loading}
-                onRefresh={fetchTrending}
-                tintColor={colors.primary}
-              />
-            }
             contentContainerStyle={[styles.content, { paddingTop: headerHeight }]}
             showsVerticalScrollIndicator={false}
           />

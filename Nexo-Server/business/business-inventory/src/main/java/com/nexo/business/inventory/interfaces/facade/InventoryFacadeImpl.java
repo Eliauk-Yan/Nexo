@@ -3,20 +3,17 @@ package com.nexo.business.inventory.interfaces.facade;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.nexo.common.api.nft.NFTFacade;
-import com.nexo.common.api.nft.response.NFTQueryResponse;
-import com.nexo.common.api.nft.response.data.ArtworkInventoryDTO;
 import com.nexo.common.base.response.ResponseCode;
 import com.nexo.common.api.inventory.InventoryFacade;
 import com.nexo.common.api.inventory.request.InventoryRequest;
 import com.nexo.common.api.inventory.response.InventoryResponse;
-import com.nexo.common.api.order.request.OrderCreateRequest;
 import com.nexo.common.api.nft.constant.NFTType;
-import com.nexo.common.api.product.response.data.ProductInventoryDTO;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.DubboService;
+import org.redisson.api.RMap;
 import org.redisson.api.RScript;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.RedisException;
@@ -87,25 +84,6 @@ public class InventoryFacadeImpl implements InventoryFacade {
     }
 
     @Override
-    public InventoryResponse<ProductInventoryDTO> getInventory(String productId, NFTType NFTType) {
-        return switch (NFTType) {
-            case NFT -> {
-                NFTQueryResponse<ArtworkInventoryDTO> response = nftFacade
-                        .getArtworkInventory(Long.parseLong(productId));
-                if (response.getSuccess()) {
-                    InventoryResponse<ProductInventoryDTO> inventoryResponse = new InventoryResponse<>();
-                    inventoryResponse.setSuccess(true);
-                    inventoryResponse.setCode(ResponseCode.SUCCESS.name());
-                    inventoryResponse.setMessage(ResponseCode.SUCCESS.getMessage());
-                    inventoryResponse.setData(response.getData());
-                    yield inventoryResponse;
-                }
-                yield null;
-            }
-        };
-    }
-
-    @Override
     public InventoryResponse<Long> getInventory(InventoryRequest request) {
         // 1. 构造响应对象
         InventoryResponse<Long> response = new InventoryResponse<>();
@@ -122,8 +100,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
             return response;
         }
         // 4. 从 Redis 获取库存并返回
-        String stock = (String) redissonClient
-                .getBucket("nft:inventory:" + request.getNftId(), StringCodec.INSTANCE).get();
+        String stock = (String) redissonClient.getBucket("nft:inventory:" + request.getNftId(), StringCodec.INSTANCE).get();
         response.setData(Long.parseLong(stock));
         return response;
     }
@@ -233,32 +210,26 @@ public class InventoryFacadeImpl implements InventoryFacade {
     }
 
     @Override
-    public InventoryResponse<String> getInventoryDecreaseLog(OrderCreateRequest request) {
+    public InventoryResponse<String> getInventoryDecreaseLog(InventoryRequest request) {
+        // 1. 判断商品类型为NFT
         if (request.getNFTType() == NFT) {
-            String hashKey = "nft:inventory:stream:" + request.getProductId();
+            String hashKey = "nft:inventory:stream:" + request.getNftId();
             String field = "DECREASE_" + request.getIdentifier();
-
-            org.redisson.api.RMap<String, String> map = redissonClient.getMap(hashKey, StringCodec.INSTANCE);
+            // 2. 查询库存扣减日志
+            RMap<String, String> map = redissonClient.getMap(hashKey, StringCodec.INSTANCE);
             String result = map.get(field);
-
             if (result == null) {
                 log.warn("检查库存日志为空, hashKey={}, field={}, mapSize={}, availableKeys={}",
                         hashKey, field, map.size(), map.keySet());
             }
-
             // 3. 返回结果
-            InventoryResponse<String> response = new InventoryResponse<>();
-            response.setSuccess(true);
-            response.setData(result);
-            response.setCode(ResponseCode.SUCCESS.name());
-            response.setMessage(ResponseCode.SUCCESS.getMessage());
-            return response;
+            return InventoryResponse.success(result);
         }
         throw new UnsupportedOperationException("不支持商品类型");
     }
 
     @Override
-    public InventoryResponse<String> getInventoryIncreaseLog(OrderCreateRequest request) {
+    public InventoryResponse<String> getInventoryIncreaseLog(InventoryRequest request) {
         if (request.getNFTType() == NFT) {
             // 1. 编写 Lua 脚本
             String luaScript = "return redis.call('hget', KEYS[1], ARGV[1])";
@@ -267,22 +238,16 @@ public class InventoryFacadeImpl implements InventoryFacade {
                     RScript.Mode.READ_ONLY,
                     luaScript,
                     RScript.ReturnType.VALUE, // ReturnType 为 VALUE 以获取字符串结果
-                    List.of("nft:inventory:stream:" + request.getProductId()),
+                    List.of("nft:inventory:stream:" + request.getNftId()),
                     "INCREASE_" + request.getIdentifier());
             // 3. 返回结果
-            InventoryResponse<String> response = new InventoryResponse<>();
-            response.setSuccess(true);
-            response.setData(result);
-            response.setCode(ResponseCode.SUCCESS.name());
-            response.setMessage(ResponseCode.SUCCESS.getMessage());
-            return response;
+            return InventoryResponse.success(result);
         }
         throw new UnsupportedOperationException("不支持商品类型");
     }
 
     @Override
-    public InventoryResponse<Long> removeInventoryDecreaseLog(OrderCreateRequest request) {
-        // TODO 后续改为模板方法
+    public InventoryResponse<Long> removeInventoryDecreaseLog(InventoryRequest request) {
         if (request.getNFTType() == NFT) {
             // 1. 编写 Lua 脚本
             String luaScript = "return redis.call('hdel', KEYS[1], ARGV[1])";
@@ -291,15 +256,10 @@ public class InventoryFacadeImpl implements InventoryFacade {
                     RScript.Mode.READ_WRITE,
                     luaScript,
                     RScript.ReturnType.LONG, // ReturnType 为 LONG 以获取长整型结果
-                    List.of("nft:inventory:stream:" + request.getProductId()),
+                    List.of("nft:inventory:stream:" + request.getNftId()),
                     "DECREASE_" + request.getIdentifier());
             // 3. 返回结果
-            InventoryResponse<Long> response = new InventoryResponse<>();
-            response.setSuccess(true);
-            response.setData(result);
-            response.setCode(ResponseCode.SUCCESS.name());
-            response.setMessage(ResponseCode.SUCCESS.getMessage());
-            return response;
+            return InventoryResponse.success(result);
         }
         throw new UnsupportedOperationException("不支持商品类型");
     }

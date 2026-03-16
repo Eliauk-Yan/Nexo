@@ -38,6 +38,15 @@ const Setting = () => {
     Linking.openURL(url).catch((err) => console.error('Failed to open URL:', err))
   }
 
+  // “分享APP”彩蛋：伪装分享，其实只是提示语
+  const handleShareApp = () => {
+    Alert.alert(
+      '分享 APP',
+      '如果这是正式上线的产品，这里会唤起系统分享面板。\n\n当前为毕业设计演示版，可以向老师口头“安利”一下就行啦～',
+      [{ text: '知道了', style: 'default' }],
+    )
+  }
+
   const accountItems: MenuItem[] = [
     {
       label: '账号与安全',
@@ -60,14 +69,15 @@ const Setting = () => {
       color: '#00D4FF',
       onPress: () => router.push('/setting/about'),
     },
-    { label: '分享APP', icon: 'share-2', color: '#00C851', onPress: () => { } },
+    { label: '分享APP', icon: 'share-2', color: '#00C851', onPress: handleShareApp },
   ]
 
+  const nepuUrl = 'https://www.imut.edu.cn/'
   const personalLinks = [
-    { label: '个人信息共享清单', url: 'https://example.com/sharing' },
-    { label: '个人信息已收集清单', url: 'https://example.com/collected' },
+    { label: '个人信息共享清单', url: nepuUrl },
+    { label: '个人信息已收集清单', url: nepuUrl },
   ]
-  const privacyLink = { label: '隐私与政策', url: 'https://example.com/privacy' }
+  const privacyLink = { label: '隐私与政策', url: nepuUrl }
 
   const buttonTop = insets.top + spacing.md
 

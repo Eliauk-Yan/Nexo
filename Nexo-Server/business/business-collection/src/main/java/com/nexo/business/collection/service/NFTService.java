@@ -2,7 +2,7 @@ package com.nexo.business.collection.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.nexo.business.collection.domain.entity.NFT;
-import com.nexo.business.collection.interfaces.vo.NFTDetailVO;
+import com.nexo.common.api.nft.response.data.NFTInfo;
 import com.nexo.common.api.nft.request.NFTCreateRequest;
 import com.nexo.common.api.nft.request.NFTRemoveRequest;
 import com.nexo.common.api.nft.request.NFTUpdateInventoryRequest;
@@ -14,7 +14,7 @@ public interface NFTService extends IService<NFT> {
     /**
      * 根据 ID 获取藏品详情
      */
-    NFTDetailVO getNFTDetail(Long id);
+    NFTInfo getNFTInfo(Long id);
 
     /**
      * 根据状态和关键字分页查询藏品

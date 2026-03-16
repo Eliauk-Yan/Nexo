@@ -24,7 +24,6 @@
         <module>common-sms</module>
         <module>common-limiter</module>
         <module>common-file</module>
-        <module>common-es</module>
         <module>common-base</module>
         <module>common-mq</module>
     </modules>

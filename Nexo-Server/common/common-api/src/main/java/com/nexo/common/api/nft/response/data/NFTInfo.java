@@ -1,4 +1,4 @@
-package com.nexo.business.collection.interfaces.vo;
+package com.nexo.common.api.nft.response.data;
 
 import com.nexo.common.api.nft.constant.ProductState;
 import lombok.Data;
@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * @date 2025/12/23 22:47
  */
 @Data
-public class NFTDetailVO implements Serializable {
+public class NFTInfo implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

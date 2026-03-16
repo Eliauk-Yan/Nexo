@@ -9,12 +9,13 @@ import com.nexo.business.trade.interfaces.dto.BuyDTO;
 import com.nexo.business.trade.interfaces.dto.PayDTO;
 import com.nexo.business.trade.interfaces.vo.PayVO;
 import com.nexo.business.trade.service.TradeService;
+import com.nexo.common.api.inventory.request.InventoryRequest;
 import com.nexo.common.api.nft.NFTFacade;
-import com.nexo.common.api.nft.constant.NFTState;
-import com.nexo.common.api.nft.response.NFTQueryResponse;
-import com.nexo.common.api.nft.response.data.NFTDTO;
+import com.nexo.common.api.nft.response.NFTResponse;
 import com.nexo.common.api.inventory.InventoryFacade;
 import com.nexo.common.api.inventory.response.InventoryResponse;
+import com.nexo.common.api.nft.response.data.NFTInfo;
+import com.nexo.common.api.nft.response.data.NFTInventoryStreamDTO;
 import com.nexo.common.api.order.OrderFacade;
 import com.nexo.common.api.order.constant.TradeOrderState;
 import com.nexo.common.api.order.request.OrderCreateRequest;
@@ -25,12 +26,7 @@ import com.nexo.common.api.pay.PayFacade;
 import com.nexo.common.api.pay.request.PayCreateRequest;
 import com.nexo.common.api.pay.response.PayOrderDTO;
 import com.nexo.common.api.pay.response.PayResponse;
-import com.nexo.common.api.product.ProductFacade;
-import com.nexo.common.api.nft.constant.NFTEvent;
 import com.nexo.common.api.nft.constant.NFTType;
-import com.nexo.common.api.product.response.ProductResponse;
-import com.nexo.common.api.product.response.data.ProductDTO;
-import com.nexo.common.api.product.response.data.ProductInventoryStreamDTO;
 import com.nexo.common.api.user.constant.UserType;
 import com.nexo.common.mq.producer.StreamProducer;
 import com.nexo.common.web.filter.TokenFilter;
@@ -49,6 +45,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static com.nexo.business.trade.domain.exception.TradeErrorCode.*;
+import static com.nexo.common.api.nft.constant.ProductState.SELLING;
 import static com.nexo.common.api.user.constant.UserType.PLATFORM;
 
 /**
@@ -77,12 +74,6 @@ public class TradeServiceImpl implements TradeService {
      * 消息生产者
      */
     private final StreamProducer streamProducer;
-
-    /**
-     * 商品模块Dubbo接口
-     */
-    @DubboReference(version = "1.0.0")
-    private ProductFacade productFacade;
 
     /**
      * 库存模块Dubbo接口
@@ -121,9 +112,9 @@ public class TradeServiceImpl implements TradeService {
         orderCreateRequest.setNFTType(NFTType.NFT); // 设置商品类型
         orderCreateRequest.setItemCount(params.getItemCount()); // 设置商品数量
         // 3. 调用商品服务填充订单请求
-        NFTQueryResponse<NFTDTO> response = nftFacade.getArtWorkById(Long.parseLong(params.getProductId()));
-        NFTDTO nft = response.getData();
-        if (nft == null || !(nft.getState() == NFTState.SUCCESS)) {
+        NFTResponse<NFTInfo> response = nftFacade.getNFTInfoById(Long.parseLong(params.getProductId()));
+        NFTInfo nft = response.getData();
+        if (nft == null || !(nft.getProductState() == SELLING)) {
             throw new TradeException(GOODS_NOT_FOR_SALE);
         }
         orderCreateRequest.setItemPrice(nft.getPrice()); // 设置商品单价
@@ -131,50 +122,34 @@ public class TradeServiceImpl implements TradeService {
         orderCreateRequest.setProductName(nft.getName()); // 设置商品名称
         orderCreateRequest.setProductPicUrl(nft.getCover()); // 设置商品封面
         orderCreateRequest.setSnapshotVersion(nft.getVersion()); // 设置快照版本
-        orderCreateRequest.setOrderAmount(
-                orderCreateRequest.getItemPrice().multiply(new BigDecimal(orderCreateRequest.getItemCount()))); // 设置订单总价
+        orderCreateRequest.setOrderAmount(orderCreateRequest.getItemPrice().multiply(new BigDecimal(orderCreateRequest.getItemCount()))); // 设置订单总价
         // 4. 发送MQ消息,监听并进行Redis库存预扣减
-        boolean result = streamProducer.send("buy-out-0", params.getNFTType().getCode(),
+        boolean result = streamProducer.send("buy-out-0", params.getNftType(),
                 JSON.toJSONString(orderCreateRequest));
         if (!result) {
             throw new TradeException(ORDER_CREATE_FAILED);
         }
-
         // 5. 查询Redis库存扣减日志判断是否成功（增加重试机制，等待MQ事务完成）
-        InventoryResponse<String> decreaseLogResponse = null;
-        for (int i = 0; i < 20; i++) {
-            decreaseLogResponse = inventoryFacade.getInventoryDecreaseLog(orderCreateRequest);
-            if (decreaseLogResponse.getSuccess() && decreaseLogResponse.getData() != null) {
-                break;
-            }
-            try {
-                Thread.sleep(100); // 等待100ms，让本地事务完成
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                log.error("等待库存扣减日志被中断", e);
-                break;
-            }
-        }
-
-        if (decreaseLogResponse != null && decreaseLogResponse.getSuccess() && decreaseLogResponse.getData() != null) {
-            // 6. 再检查一下是否有回退库存的流水，如果回退过，则不需要旁路验证
-            InventoryResponse<String> increaseLogResponse = inventoryFacade.getInventoryIncreaseLog(orderCreateRequest);
-            log.info("库存回退日志查询结果, orderId={}, increaseLogData={}", orderCreateRequest.getOrderId(),
-                    increaseLogResponse.getData());
-            if (increaseLogResponse.getSuccess() && increaseLogResponse.getData() == null) {
+        InventoryRequest inventoryRequest = new InventoryRequest();
+        inventoryRequest.setNftId(orderCreateRequest.getProductId());
+        inventoryRequest.setNFTType(orderCreateRequest.getNFTType());
+        inventoryRequest.setIdentifier(orderCreateRequest.getIdentifier());
+        InventoryResponse<String> decreaseLogResponse = inventoryFacade.getInventoryDecreaseLog(inventoryRequest);
+        if (decreaseLogResponse.getSuccess() && decreaseLogResponse.getData() != null) {
+            // 6. 再检查一下是否有Redis回退库存的流水，如果回退过，则不需要旁路验证
+            InventoryResponse<String> increaseLogResponse = inventoryFacade.getInventoryIncreaseLog(inventoryRequest);
+            log.info("库存回退日志查询结果, orderId={}, increaseLogData={}", orderCreateRequest.getOrderId(), increaseLogResponse.getData());
+            if (increaseLogResponse.getSuccess() && increaseLogResponse.getData() != null) {
                 // 7. 旁路校验
                 scheduler.schedule(() -> {
                     try {
                         // 7.1 查询数据库中是否有库存扣减记录
-                        ProductResponse<ProductInventoryStreamDTO> inventoryStream = productFacade
-                                .getProductInventoryStream(
-                                        orderCreateRequest.getProductId(), orderCreateRequest.getNFTType(),
-                                        NFTEvent.TRY_SALE, orderCreateRequest.getIdentifier());
+                        NFTResponse<NFTInventoryStreamDTO> streamResponse = nftFacade.getNFTInventoryStream(Long.parseLong(orderCreateRequest.getProductId()),  orderCreateRequest.getIdentifier());
                         // 7.2 校验成功 数据一致
-                        if (inventoryStream.getSuccess() && inventoryStream.getData() != null && Objects.equals(
-                                inventoryStream.getData().getChangedQuantity(), orderCreateRequest.getItemCount())) {
+                        if (streamResponse.getSuccess() && streamResponse.getData() != null && Objects.equals(streamResponse.getData().getChangedQuantity(), orderCreateRequest.getItemCount())) {
                             // 7.3 删除Redis库存扣减流水记录 删除无效数据，避免数据库长期存储压力
-                            inventoryFacade.removeInventoryDecreaseLog(orderCreateRequest);
+                            InventoryResponse<Long> longInventoryResponse = inventoryFacade.removeInventoryDecreaseLog(inventoryRequest);
+                            log.info("Redis库存扣减流水记录删除结果, orderId={}, result={}", orderCreateRequest.getOrderId(), longInventoryResponse.getData());
                         }
                     } catch (Exception e) {
                         log.error("旁路校验异常, orderId={}, identifier={}", orderCreateRequest.getOrderId(),

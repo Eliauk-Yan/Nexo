@@ -2,9 +2,9 @@ package com.nexo.business.order.domain.validator;
 
 import com.nexo.business.order.domain.exception.OrderException;
 import com.nexo.common.api.inventory.InventoryFacade;
+import com.nexo.common.api.inventory.request.InventoryRequest;
 import com.nexo.common.api.inventory.response.InventoryResponse;
 import com.nexo.common.api.order.request.OrderCreateRequest;
-import com.nexo.common.api.product.response.data.ProductInventoryDTO;
 import lombok.RequiredArgsConstructor;
 
 import static com.nexo.business.order.domain.exception.OrderErrorCode.INVENTORY_NOT_ENOUGH;
@@ -22,15 +22,14 @@ public class StockValidator extends BaseOrderCreateValidator {
     @Override
     protected void doValidate(OrderCreateRequest request) throws OrderException {
         // 1. 查询商品库存信息
-        InventoryResponse<ProductInventoryDTO> response = inventoryFacade.getInventory(request.getProductId(),
-                request.getNFTType());
-        ProductInventoryDTO inventoryDTO = response.getData();
+        InventoryRequest inventoryRequest = new InventoryRequest();
+        inventoryRequest.setNftId(request.getProductId());
+        inventoryRequest.setNFTType(request.getNFTType());
+        InventoryResponse<Long> response = inventoryFacade.getInventory(inventoryRequest);
+        Long inventory = response.getData();
         // 2. 判断库存是否充足
-        if (inventoryDTO == null || inventoryDTO.getInventory() == 0
-                || inventoryDTO.getQuantity() < request.getItemCount()
-                || inventoryDTO.getInventory() < request.getItemCount()) {
+        if (inventory == null || inventory == 0 || inventory < request.getItemCount()) {
             throw new OrderException(INVENTORY_NOT_ENOUGH);
         }
     }
-
 }

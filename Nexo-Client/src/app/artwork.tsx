@@ -94,7 +94,7 @@ const Artwork = () => {
     setLoading(true)
     try {
       await tradeApi.buy(
-        { productId: String(artwork.id), productType: 'ARTWORK', itemCount: 1 },
+        { productId: String(artwork.id), nftType: 'NFT', itemCount: 1 },
         token,
       )
       await fetchData()

@@ -1,7 +1,7 @@
 import Feather from '@expo/vector-icons/Feather'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
 import React, { useCallback, useEffect, useState } from 'react'
-import { Image, StyleSheet, Text, TouchableOpacity, View, FlatList, RefreshControl } from 'react-native'
+import { Alert, Image, StyleSheet, Text, TouchableOpacity, View, FlatList } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import LiquidGlassSearchBar from '@/components/ui/LiquidGlassSearch'
@@ -9,7 +9,6 @@ import { AssetCard } from '@/components/ui/AssetCard'
 import { borderRadius, colors, spacing, typography } from '@/config/theme'
 import { artworkApi, Asset } from '@/api/artwork'
 import { useSession } from '@/utils/ctx'
-import Spinner from 'react-native-loading-spinner-overlay'
 
 const Index = () => {
   const router = useRouter()
@@ -34,6 +33,15 @@ const Index = () => {
     }
   }, [isLogin])
 
+  // 页面重新获得焦点时刷新“我的数字资产”
+  useFocusEffect(
+    useCallback(() => {
+      if (isLogin) {
+        fetchMyAssets()
+      }
+    }, [isLogin, fetchMyAssets]),
+  )
+
   useEffect(() => {
     if (isLogin) {
       fetchMyAssets()
@@ -50,8 +58,36 @@ const Index = () => {
       color: '#FFFFFF',
       onPress: () => router.push('/setting'),
     },
-    { label: '区块链', icon: 'link', color: '#D4AF37', onPress: () => { } },
-    { label: '批量转赠', icon: 'send', color: '#00C851', onPress: () => { } },
+    {
+      label: '区块链',
+      icon: 'link',
+      color: '#D4AF37',
+      onPress: () => {
+        if (!isLogin) {
+          router.push('/(auth)/sign-in')
+          return
+        }
+        Alert.alert(
+          '链上身份信息',
+          `昵称：${user?.nickName || '未设置'}\n链地址：${user?.account || '暂未绑定'}\n实名状态：${
+            user?.certification ? '已实名认证' : '未实名认证'
+          }`,
+          [{ text: '知道了', style: 'default' }],
+        )
+      },
+    },
+    {
+      label: '批量转赠',
+      icon: 'send',
+      color: '#00C851',
+      onPress: () => {
+        Alert.alert(
+          '暂不支持批量转赠',
+          '受当前法规及合规要求限制，本项目仅用于毕业设计演示，不开放二级市场交易与批量转赠功能。',
+          [{ text: '知道了', style: 'default' }],
+        )
+      },
+    },
   ]
 
   const renderHeader = () => (
@@ -104,25 +140,11 @@ const Index = () => {
           </TouchableOpacity>
         ))}
       </View>
-      {!isLogin && (
-        <View style={styles.emptyState}>
-          <View style={styles.illustration}>
-            <Feather name="box" size={80} color={colors.textSecondary} />
-          </View>
-          <Text style={styles.loginPrompt}>请登录以查看你的数字藏品</Text>
-          <TouchableOpacity
-            style={styles.loginButton}
-            activeOpacity={0.8}
-            onPress={() => router.push('/(auth)/sign-in')}
-          >
-            <Text style={styles.loginButtonText}>立即登录</Text>
-          </TouchableOpacity>
-        </View>
-      )}
 
       {isLogin && (
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>我的数字资产</Text>
+          <View style={styles.sectionUnderline} />
         </View>
       )}
     </View>
@@ -135,8 +157,7 @@ const Index = () => {
   )
 
   return (
-    <View style={styles.container}>
-      <Spinner visible={loading} />
+  <View style={styles.container}>
       <View style={[styles.headerWrap, { paddingTop: insets.top }]}>
         <LiquidGlassSearchBar
           onSubmit={(t) => console.log('submit:', t)}
@@ -147,31 +168,51 @@ const Index = () => {
         />
       </View>
 
-      <FlatList
-        data={assets}
-        renderItem={renderItem}
-        keyExtractor={(item) => String(item.id)}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
-        ListHeaderComponent={renderHeader}
-        ListEmptyComponent={
-          isLogin && !loading ? (
-            <View style={styles.emptyAssetContainer}>
-              <Feather name="inbox" size={48} color={colors.textSecondary} />
-              <Text style={styles.emptyAssetText}>暂无数字资产</Text>
+      {/* 未登录：仅展示登录引导块，居中显示 */}
+      {!isLogin && (
+        <View style={[styles.loggedOutWrapper, { marginTop: insets.top + 40 }]}>
+          {renderHeader()}
+          <View style={styles.emptyState}>
+            <View style={styles.illustration}>
+              <Feather name="box" size={80} color={colors.textSecondary} />
             </View>
-          ) : null
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={loading}
-            onRefresh={fetchMyAssets}
-            tintColor={colors.primary}
+            <Text style={styles.loginPrompt}>请登录以查看你的数字藏品</Text>
+            <TouchableOpacity
+              style={styles.loginButton}
+              activeOpacity={0.8}
+              onPress={() => router.push('/(auth)/sign-in')}
+            >
+              <Text style={styles.loginButtonText}>立即登录</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* 已登录：账户信息固定，资产列表可滚动 */}
+      {isLogin && (
+        <>
+          <View style={{ marginTop: insets.top + 60 }}>
+            {renderHeader()}
+          </View>
+          <FlatList
+            data={assets}
+            renderItem={renderItem}
+            keyExtractor={(item) => String(item.id)}
+            numColumns={2}
+            columnWrapperStyle={styles.row}
+            ListEmptyComponent={
+              !loading ? (
+                <View style={styles.emptyAssetContainer}>
+                  <Feather name="inbox" size={48} color={colors.textSecondary} />
+                  <Text style={styles.emptyAssetText}>暂无数字资产</Text>
+                </View>
+              ) : null
+            }
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
           />
-        }
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 50 }]}
-        showsVerticalScrollIndicator={false}
-      />
+        </>
+      )}
     </View>
   )
 }
@@ -180,6 +221,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  loggedOutWrapper: {
+    flex: 1,
   },
   headerWrap: {
     paddingHorizontal: 16,
@@ -195,7 +239,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: spacing.xl,
-    gap: spacing.lg,
+    // 减小头部和资产列表之间的间距，让区块更连贯
+    gap: spacing.sm,
   },
   row: {
     justifyContent: 'space-between',
@@ -209,17 +254,25 @@ const styles = StyleSheet.create({
   sectionHeader: {
     paddingHorizontal: spacing.md,
     marginTop: spacing.md,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   sectionTitle: {
     fontSize: typography.fontSize.xl,
     fontWeight: typography.fontWeight.bold,
     color: colors.text,
   },
+  sectionUnderline: {
+    marginTop: spacing.xs,
+    width: 40,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: colors.primary,
+  },
   emptyAssetContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
   },
   emptyAssetText: {
     marginTop: spacing.sm,

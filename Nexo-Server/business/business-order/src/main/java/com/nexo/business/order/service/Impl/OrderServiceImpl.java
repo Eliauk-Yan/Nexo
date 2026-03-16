@@ -12,11 +12,10 @@ import com.nexo.business.order.mapper.mybatis.OrderMapper;
 import com.nexo.business.order.service.OrderService;
 import com.nexo.common.api.inventory.InventoryFacade;
 import com.nexo.common.api.inventory.request.InventoryRequest;
+import com.nexo.common.api.nft.request.NFTSaleRequest;
+import com.nexo.common.api.nft.response.NFTResponse;
 import com.nexo.common.api.order.constant.TradeOrderState;
-import com.nexo.common.api.order.request.OrderCreateRequest;
 import com.nexo.common.api.order.request.OrderPayRequest;
-import com.nexo.common.api.product.ProductFacade;
-import com.nexo.common.api.product.request.ProductSaleRequest;
 import com.nexo.common.api.nft.NFTFacade;
 import com.nexo.common.api.nft.request.AssetAllocateRequest;
 import com.nexo.common.web.result.MultiResult;
@@ -49,9 +48,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
 
     @DubboReference(version = "1.0.0")
     private InventoryFacade inventoryFacade;
-
-    @DubboReference(version = "1.0.0")
-    private ProductFacade productFacade;
 
     @DubboReference(version = "1.0.0")
     private NFTFacade nftFacade;
@@ -140,22 +136,16 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
     @Override
     public boolean cancelOrder(String orderId, Long userId) {
         // 1. 查询订单
-        TradeOrder order = orderMapper.selectOne(
-                new LambdaQueryWrapper<TradeOrder>()
-                        .eq(TradeOrder::getOrderId, orderId)
-                        .eq(TradeOrder::getBuyerId, userId));
-
+        TradeOrder order = orderMapper.selectOne(new LambdaQueryWrapper<TradeOrder>().eq(TradeOrder::getOrderId, orderId).eq(TradeOrder::getBuyerId, userId));
         if (order == null) {
             log.error("订单不存在或不属于当前用户, orderId={}, userId={}", orderId, userId);
             return false;
         }
-
         // 2. 校验订单状态（只有 CREATE 或 CONFIRM 状态可以取消）
         if (order.getOrderState() != TradeOrderState.CREATE && order.getOrderState() != TradeOrderState.CONFIRM) {
             log.warn("订单状态不允许取消, orderId={}, state={}", orderId, order.getOrderState());
             return order.getOrderState() == TradeOrderState.CLOSED; // 幂等：已关闭则返回true
         }
-
         // 3. 更新订单状态为 CLOSED
         LambdaUpdateWrapper<TradeOrder> updateWrapper = new LambdaUpdateWrapper<>();
         updateWrapper.eq(TradeOrder::getOrderId, orderId)
@@ -163,10 +153,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
                 .set(TradeOrder::getOrderState, TradeOrderState.CLOSED)
                 .set(TradeOrder::getClosingTime, LocalDateTime.now())
                 .set(TradeOrder::getCloseType, "CANCEL");
-
         boolean result = this.update(updateWrapper);
         log.info("订单取消结果, orderId={}, result={}", orderId, result);
-
         if (result) {
             // 4. Redis库存回滚
             try {
@@ -180,23 +168,21 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
             } catch (Exception e) {
                 log.error("Redis库存回推异常, orderId={}", orderId, e);
             }
-
             // 5. 数据库真实库存回滚
             try {
-                ProductSaleRequest saleRequest = new ProductSaleRequest();
+                NFTSaleRequest saleRequest = new NFTSaleRequest();
                 saleRequest.setUserId(userId.toString());
                 saleRequest.setQuantity((long) order.getQuantity());
                 saleRequest.setBizNo(orderId);
-                saleRequest.setNFTType(order.getNFTType());
+                saleRequest.setNftType(order.getNFTType());
                 saleRequest.setIdentifier(order.getIdentifier());
-                saleRequest.setProductId(Long.parseLong(order.getProductId()));
-                productFacade.unsale(saleRequest);
+                saleRequest.setNFTId(Long.parseLong(order.getProductId()));
+                NFTResponse<Boolean> unsaleRes = nftFacade.unsale(saleRequest);
                 log.info("数据库库存回推请求已完成, orderId={}", orderId);
             } catch (Exception e) {
                 log.error("数据库库存回推异常, orderId={}", orderId, e);
             }
         }
-
         return result;
     }
 }

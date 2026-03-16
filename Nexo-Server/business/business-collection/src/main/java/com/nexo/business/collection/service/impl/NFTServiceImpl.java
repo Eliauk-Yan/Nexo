@@ -7,8 +7,8 @@ import com.nexo.business.collection.domain.entity.NFT;
 import com.nexo.business.collection.domain.entity.NFTInventoryStream;
 import com.nexo.business.collection.domain.entity.NFTSnapshot;
 import com.nexo.business.collection.domain.entity.NFTStream;
+import com.nexo.common.api.nft.response.data.NFTInfo;
 import com.nexo.business.collection.domain.exception.NFTException;
-import com.nexo.business.collection.interfaces.vo.NFTDetailVO;
 import com.nexo.business.collection.mapper.convert.NFTConvertor;
 import com.nexo.business.collection.mapper.mybatis.NFTInventoryStreamMapper;
 import com.nexo.business.collection.mapper.mybatis.NFTStreamMapper;
@@ -92,7 +92,7 @@ public class NFTServiceImpl extends ServiceImpl<NFTMapper, NFT> implements NFTSe
     public static final int DEFAULT_COMING_SOON_TIME = 60 * 24;
 
     @Override
-    public NFTDetailVO getNFTDetail(Long id) {
+    public NFTInfo getNFTInfo(Long id) {
         // 1. 通过ID查找NFT
         NFT nft = nftCacheService.getNFTById(id);
         if (nft == null) {
@@ -110,7 +110,7 @@ public class NFTServiceImpl extends ServiceImpl<NFTMapper, NFT> implements NFTSe
             inventory = response.getData();
         }
         // 5. 构造NFT详情VO
-        NFTDetailVO detail = NFTConvertor.toDetail(nft);
+        com.nexo.common.api.nft.response.data.NFTInfo detail = NFTConvertor.toInfo(nft);
         // 6. 设置库存
         detail.setInventory(inventory);
         // 7. 设置状态

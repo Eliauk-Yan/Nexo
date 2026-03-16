@@ -3,9 +3,9 @@ package com.nexo.business.collection.interfaces.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nexo.business.collection.domain.entity.NFT;
 import com.nexo.business.collection.interfaces.dto.NFTPageQueryDTO;
-import com.nexo.business.collection.interfaces.vo.NFTDetailVO;
 import com.nexo.business.collection.interfaces.vo.NFTVO;
 import com.nexo.business.collection.interfaces.vo.AssetVO;
+import com.nexo.common.api.nft.response.data.NFTInfo;
 import com.nexo.business.collection.mapper.convert.NFTConvertor;
 import com.nexo.business.collection.service.NFTService;
 import com.nexo.business.collection.service.AssetService;
@@ -49,8 +49,8 @@ public class NFTController {
      * 获取藏品详情
      */
     @GetMapping("/{id}")
-    public Result<NFTDetailVO> getNFTDetail(@PathVariable Long id) {
-        return Result.success(NFTService.getNFTDetail(id));
+    public Result<NFTInfo> getNFTDetail(@PathVariable Long id) {
+        return Result.success(NFTService.getNFTInfo(id));
     }
 
     /**

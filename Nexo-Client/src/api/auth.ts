@@ -66,7 +66,8 @@ export const authApi = {
       role: data?.role ?? '',
       phone: data?.phone,
       email: data?.email,
-      account: data?.account,
+      // 后端目前返回的是 address，这里兼容映射到前端使用的 account 字段
+      account: (data as any).address ?? (data as any).account,
       certification: data?.certification,
       state: data?.state,
     }))

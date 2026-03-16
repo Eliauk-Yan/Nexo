@@ -84,9 +84,13 @@ public class InventoryDecreaseTransactionListener implements TransactionListener
             MessageBody messageBody = JSON.parseObject(jsonString, MessageBody.class);
             // 从 MessageBody 中获取真正的业务请求 String 并解析
             OrderCreateRequest request = JSON.parseObject(messageBody.getBody(), OrderCreateRequest.class);
-
             // 2. 获取库存扣减日志
-            InventoryResponse<String> response = inventoryFacade.getInventoryDecreaseLog(request);
+            InventoryRequest inventoryRequest = new InventoryRequest();
+            inventoryRequest.setInventory(request.getItemCount());
+            inventoryRequest.setNFTType(request.getNFTType());
+            inventoryRequest.setIdentifier(request.getIdentifier());
+            inventoryRequest.setNftId(request.getProductId());
+            InventoryResponse<String> response = inventoryFacade.getInventoryDecreaseLog(inventoryRequest);
             // 3. 判断库存扣减日志是否存在，如果存在则表示本地事务已提交，否则表示本地事务已回滚
             return response.getSuccess() && response.getData() != null ? LocalTransactionState.COMMIT_MESSAGE
                     : LocalTransactionState.ROLLBACK_MESSAGE;

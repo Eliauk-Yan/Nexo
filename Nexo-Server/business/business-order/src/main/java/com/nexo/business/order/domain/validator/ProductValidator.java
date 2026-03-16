@@ -2,10 +2,10 @@ package com.nexo.business.order.domain.validator;
 
 import com.nexo.business.order.domain.exception.OrderException;
 import com.nexo.common.api.nft.NFTFacade;
-import com.nexo.common.api.nft.response.NFTQueryResponse;
-import com.nexo.common.api.nft.response.data.NFTDTO;
+import com.nexo.common.api.nft.constant.ProductState;
+import com.nexo.common.api.nft.response.NFTResponse;
+import com.nexo.common.api.nft.response.data.NFTInfo;
 import com.nexo.common.api.order.request.OrderCreateRequest;
-import com.nexo.common.api.product.response.data.ProductDTO;
 import lombok.RequiredArgsConstructor;
 
 import static com.nexo.business.order.domain.exception.OrderErrorCode.PRODUCT_NOT_AVAILABLE;
@@ -24,14 +24,14 @@ public class ProductValidator extends BaseOrderCreateValidator {
     @Override
     protected void doValidate(OrderCreateRequest request) throws OrderException {
         // 1. 调用商品服务获取商品信息
-        NFTQueryResponse<NFTDTO> response = nftFacade.getArtWorkById(Long.parseLong(request.getProductId()));
-        ProductDTO productDTO = response.getData();
+        NFTResponse<NFTInfo> response = nftFacade.getNFTInfoById(Long.parseLong(request.getProductId()));
+        NFTInfo data = response.getData();
         // 2. 判断商品是否可用
-        if (!productDTO.available()) {
+        if (data.getProductState() != ProductState.SELLING) {
             throw new OrderException(PRODUCT_NOT_AVAILABLE);
         }
         // 3. 判断商品价格是否变化
-        if (productDTO.getPrice().compareTo(request.getItemPrice()) != 0) {
+        if (data.getPrice().compareTo(request.getItemPrice()) != 0) {
             throw new OrderException(PRODUCT_PRICE_CHANGED);
         }
     }

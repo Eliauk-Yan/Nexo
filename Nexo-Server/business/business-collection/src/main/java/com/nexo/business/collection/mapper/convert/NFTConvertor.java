@@ -1,10 +1,11 @@
 package com.nexo.business.collection.mapper.convert;
 
+import com.nexo.business.collection.domain.entity.NFT;
 import com.nexo.business.collection.domain.entity.NFTSnapshot;
 import com.nexo.business.collection.domain.entity.NFTStream;
 import com.nexo.business.collection.interfaces.vo.NFTVO;
-import com.nexo.business.collection.interfaces.vo.NFTDetailVO;
 import com.nexo.common.api.nft.response.data.NFTDTO;
+import com.nexo.common.api.nft.response.data.NFTInfo;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -18,20 +19,20 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface NFTConvertor {
 
-    NFTVO toVO(com.nexo.business.collection.domain.entity.NFT NFT);
+    NFTVO toVO(NFT NFT);
 
-    List<NFTVO> toVOs(List<com.nexo.business.collection.domain.entity.NFT> NFTList);
+    List<NFTVO> toVOs(List<NFT> NFTList);
 
-    NFTDTO toDTO(com.nexo.business.collection.domain.entity.NFT NFT);
+    NFTDTO toDTO(NFT NFT);
 
-    List<NFTDTO> toDTOs(List<com.nexo.business.collection.domain.entity.NFT> NFTS);
+    List<NFTDTO> toDTOs(List<NFT> NFTS);
 
-    NFTDetailVO toDetail(com.nexo.business.collection.domain.entity.NFT NFT);
+    NFTInfo toInfo(NFT NFT);
 
     @Mapping(source = "createdAt", target = "createTime")
     @Mapping(source = "version", target = "updateVersion")
-    NFTSnapshot toSnapshot(com.nexo.business.collection.domain.entity.NFT NFT);
+    NFTSnapshot toSnapshot(NFT NFT);
 
     @Mapping(source = "createdAt", target = "createTime")
-    NFTStream toStream(com.nexo.business.collection.domain.entity.NFT NFT);
+    NFTStream toStream(NFT NFT);
 }

@@ -16,12 +16,10 @@ import com.nexo.common.api.inventory.response.InventoryResponse;
 import com.nexo.common.api.nft.NFTFacade;
 import com.nexo.common.api.nft.constant.NFTType;
 import com.nexo.common.api.nft.request.*;
-import com.nexo.common.api.nft.response.NFTQueryResponse;
 import com.nexo.common.api.nft.response.NFTResponse;
 import com.nexo.common.api.nft.response.NFTUpdateInventoryResponse;
 import com.nexo.common.api.nft.response.data.NFTDTO;
-import com.nexo.common.api.nft.response.data.ArtworkInventoryDTO;
-import com.nexo.common.api.nft.response.data.ArtworkInventoryStreamDTO;
+import com.nexo.common.api.nft.response.data.NFTInventoryStreamDTO;
 import com.nexo.common.api.blockchain.ChainFacade;
 import com.nexo.common.api.blockchain.constant.ChainOperationBizType;
 import com.nexo.common.api.blockchain.request.ChainRequest;
@@ -29,9 +27,8 @@ import com.nexo.common.api.blockchain.response.ChainResponse;
 import com.nexo.common.api.blockchain.response.data.ChainOperationData;
 import com.nexo.common.api.inventory.InventoryFacade;
 import com.nexo.common.api.inventory.request.InventoryRequest;
+import com.nexo.common.api.nft.response.data.NFTInfo;
 import com.nexo.common.base.response.PageResponse;
-import com.nexo.common.base.response.ResponseCode;
-import com.nexo.common.api.product.request.ProductSaleRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -75,11 +72,6 @@ public class NFTFacadeImpl implements NFTFacade {
     private final AssetService assetService;
 
     /**
-     * 藏品库存流水转换器
-     */
-    private final ArtworkInventoryStreamConvert artworkInventoryStreamConvert;
-
-    /**
      * 藏品库存流水Mapper
      */
     private final NFTInventoryStreamMapper nftInventoryStreamMapper;
@@ -87,143 +79,17 @@ public class NFTFacadeImpl implements NFTFacade {
     /**
      * 藏品Mapper
      */
-    private final NFTMapper artWorkMapper;
+    private final NFTMapper nftMapper;
 
     /**
      * NFT Convertor
      */
     private final NFTConvertor NFTConvertor;
 
-    @Override
-    public NFTQueryResponse<NFTDTO> getArtWorkById(Long id) {
-        // 1. 查询藏品
-        NFT artwork = nftService.getById(id);
-        // 2. 转换数据
-        NFTDTO data = NFTConvertor.toDTO(artwork);
-        // 3. 封装并返回数据
-        NFTQueryResponse<NFTDTO> response = new NFTQueryResponse<>();
-        response.setSuccess(true);
-        response.setCode(ResponseCode.SUCCESS.name());
-        response.setMessage(ResponseCode.SUCCESS.getMessage());
-        response.setData(data);
-        return response;
-    }
-
-    @Override
-    public NFTQueryResponse<ArtworkInventoryDTO> getArtworkInventory(Long id) {
-        // 1. 查询藏品
-        NFT artwork = nftService.getById(id);
-        // 2. 构造数据
-        ArtworkInventoryDTO dto = new ArtworkInventoryDTO();
-        dto.setQuantity(artwork.getQuantity());
-        // TODO 临时处理 后续需要从Redis中获取可售库存
-        dto.setSaleableInventory(artwork.getSaleableInventory());
-        // 3. 封装并返回数据
-        NFTQueryResponse<ArtworkInventoryDTO> response = new NFTQueryResponse<>();
-        response.setSuccess(true);
-        response.setCode(ResponseCode.SUCCESS.name());
-        response.setMessage(ResponseCode.SUCCESS.getMessage());
-        response.setData(dto);
-        return response;
-    }
-
-    @Override
-    public ArtworkInventoryStreamDTO getArtworkInventoryStream(Long productId, String identifier) {
-        // 1. 查询商品库存流水
-        NFTInventoryStream stream = nftInventoryStreamMapper.selectOne(
-                new LambdaQueryWrapper<NFTInventoryStream>()
-                        .eq(NFTInventoryStream::getNftId, productId)
-                        .eq(NFTInventoryStream::getIdentifier, identifier));
-        // 2. 转换并返回
-        return artworkInventoryStreamConvert.toDTO(stream);
-    }
-
-    @Transactional(rollbackFor = Exception.class) // 设计多表操作添加事务
-    @Override
-    public Boolean sale(ProductSaleRequest saleRequest) {
-        // 1. 查询商品库存流水
-        NFTInventoryStream InventoryStream = nftInventoryStreamMapper
-                .selectOne(new LambdaQueryWrapper<NFTInventoryStream>()
-                        .eq(NFTInventoryStream::getNftId, saleRequest.getProductId())
-                        .eq(NFTInventoryStream::getIdentifier, saleRequest.getIdentifier()));
-        if (InventoryStream != null) {
-            return true;
-        }
-        // 2. 查询出最新的值
-        NFT nft = artWorkMapper.selectById(saleRequest.getProductId());
-        // 3. 新增库存流水
-        NFTInventoryStream inventoryStream = new NFTInventoryStream();
-        inventoryStream.setNftId(nft.getId());
-        inventoryStream.setPrice(nft.getPrice());
-        inventoryStream.setQuantity(nft.getQuantity());
-        inventoryStream.setSaleableInventory(nft.getSaleableInventory());
-        inventoryStream.setFrozenInventory(nft.getFrozenInventory());
-        inventoryStream.setState(nft.getState());
-        inventoryStream.setVersion(nft.getVersion());
-        inventoryStream.setDeleted(nft.getDeleted());
-        inventoryStream.setStreamType(saleRequest.getEventType());
-        inventoryStream.setIdentifier(saleRequest.getIdentifier());
-        inventoryStream.setChangedQuantity(saleRequest.getQuantity());
-        int insertRow = nftInventoryStreamMapper.insert(inventoryStream);
-        if (insertRow <= 0) {
-            throw new NFTException(ARTWORK_INVENTORY_STREAM_SAVE_FAILED);
-        }
-        // 4. 更新数据库库存
-        nft.setSaleableInventory(nft.getSaleableInventory() - saleRequest.getQuantity());
-        int updateRow = artWorkMapper.update(nft, new LambdaQueryWrapper<NFT>()
-                .eq(NFT::getId, nft.getId())
-                .eq(NFT::getVersion, nft.getVersion())
-                // 可售库存必须大于等于扣减数量（乐观锁防止超卖）
-                .apply("saleable_inventory >= {0}", saleRequest.getQuantity()));
-        if (updateRow <= 0) {
-            throw new NFTException(NFT_UPDATE_FAILED);
-        }
-        return true;
-    }
-
-    @Transactional(rollbackFor = Exception.class) // 设计多表操作添加事务
-    @Override
-    public Boolean unsale(ProductSaleRequest saleRequest) {
-        // 1. 幂等性校验：查询是否已经有回退流向的商品库存流水
-        String increaseIdentifier = "UNSALE_" + saleRequest.getIdentifier(); // 使用前缀区分流向
-        NFTInventoryStream existingStream = nftInventoryStreamMapper
-                .selectOne(new LambdaQueryWrapper<NFTInventoryStream>()
-                        .eq(NFTInventoryStream::getNftId, saleRequest.getProductId())
-                        .eq(NFTInventoryStream::getIdentifier, increaseIdentifier));
-        if (existingStream != null) {
-            return true; // 已经回退过，直接返回成功
-        }
-
-        // 2. 查询出最新的值
-        NFT nft = artWorkMapper.selectById(saleRequest.getProductId());
-
-        // 3. 新增库存回退流水
-        NFTInventoryStream inventoryStream = new NFTInventoryStream();
-        inventoryStream.setNftId(nft.getId());
-        inventoryStream.setPrice(nft.getPrice());
-        inventoryStream.setQuantity(nft.getQuantity());
-        inventoryStream.setSaleableInventory(nft.getSaleableInventory());
-        inventoryStream.setFrozenInventory(nft.getFrozenInventory());
-        inventoryStream.setState(nft.getState());
-        inventoryStream.setVersion(nft.getVersion());
-        inventoryStream.setDeleted(nft.getDeleted());
-        inventoryStream.setStreamType(saleRequest.getEventType());
-        inventoryStream.setIdentifier(increaseIdentifier); // 这是关键，用前缀区别于售卖
-        inventoryStream.setChangedQuantity(-saleRequest.getQuantity()); // 回退记录可以记为负数，或者通过其他字段标识
-        int insertRow = nftInventoryStreamMapper.insert(inventoryStream);
-        if (insertRow <= 0) {
-            throw new NFTException(ARTWORK_INVENTORY_STREAM_SAVE_FAILED);
-        }
-
-        // 4. 更新数据库库存 (加回库存)
-        nft.setSaleableInventory(nft.getSaleableInventory() + saleRequest.getQuantity());
-        int updateRow = artWorkMapper.update(nft, new LambdaQueryWrapper<NFT>()
-                .eq(NFT::getId, nft.getId())); // 没有防超卖的限制，因为是加法
-        if (updateRow <= 0) {
-            throw new NFTException(NFT_UPDATE_FAILED);
-        }
-        return true;
-    }
+    /**
+     * 藏品库存流水转换器
+     */
+    private final ArtworkInventoryStreamConvert artworkInventoryStreamConvert;
 
 
     @Override
@@ -392,5 +258,95 @@ public class NFTFacadeImpl implements NFTFacade {
         }
         response.setSuccess(true);
         return response;
+    }
+
+    @Override
+    public NFTResponse<NFTInfo> getNFTInfoById(Long id) {
+        // 1. 查询藏品
+        NFTInfo nftInfo = nftService.getNFTInfo(id);
+        // 2. 封装并返回数据
+        return NFTResponse.success(nftInfo);
+    }
+
+    @Override
+    public NFTResponse<NFTInventoryStreamDTO> getNFTInventoryStream(Long productId, String identifier) {
+        // 1. 查询商品库存流水
+        NFTInventoryStream stream = nftInventoryStreamMapper.selectOne(new LambdaQueryWrapper<NFTInventoryStream>().eq(NFTInventoryStream::getNftId, productId).eq(NFTInventoryStream::getIdentifier, identifier));
+        // 2. 转换并返回
+        return NFTResponse.success(artworkInventoryStreamConvert.toDTO(stream));
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public NFTResponse<Boolean> sale(NFTSaleRequest request) {
+        // 1. 查询商品库存流水 防止重复扣除
+        NFTInventoryStream InventoryStream = nftInventoryStreamMapper.selectOne(new LambdaQueryWrapper<NFTInventoryStream>().eq(NFTInventoryStream::getNftId, request.getNFTId()).eq(NFTInventoryStream::getIdentifier, request.getIdentifier()));
+        if (InventoryStream != null) {
+            return NFTResponse.success(true);
+        }
+        // 2. 查询出最新的值
+        NFT nft = nftMapper.selectById(request.getNFTId());
+        // 3. 新增库存流水
+        NFTInventoryStream inventoryStream = new NFTInventoryStream();
+        inventoryStream.setNftId(nft.getId());
+        inventoryStream.setPrice(nft.getPrice());
+        inventoryStream.setQuantity(nft.getQuantity());
+        inventoryStream.setSaleableInventory(nft.getSaleableInventory());
+        inventoryStream.setFrozenInventory(nft.getFrozenInventory());
+        inventoryStream.setState(nft.getState());
+        inventoryStream.setVersion(nft.getVersion());
+        inventoryStream.setDeleted(nft.getDeleted());
+        inventoryStream.setStreamType(request.getEventType());
+        inventoryStream.setIdentifier(request.getIdentifier());
+        inventoryStream.setChangedQuantity(request.getQuantity());
+        boolean insertRes = nftInventoryStreamMapper.insert(inventoryStream) == 1;
+        if (!insertRes) {
+            throw new NFTException(ARTWORK_INVENTORY_STREAM_SAVE_FAILED);
+        }
+        // 4. 更新数据库库存
+        nft.setSaleableInventory(nft.getSaleableInventory() - request.getQuantity());
+        boolean updateRes = nftMapper.update(nft, new LambdaQueryWrapper<NFT>().eq(NFT::getId, nft.getId()).apply("saleable_inventory >= {0}", request.getQuantity())) == 1;
+        if (!updateRes) {
+            throw new NFTException(NFT_UPDATE_FAILED);
+        }
+        return NFTResponse.success(true);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public NFTResponse<Boolean> unsale(NFTSaleRequest saleRequest) {
+        // 1. 幂等性校验：查询是否已经有回退流向的商品库存流水
+        String increaseIdentifier = "UNSALE_" + saleRequest.getIdentifier(); // 使用前缀区分流向
+        NFTInventoryStream existingStream = nftInventoryStreamMapper.selectOne(new LambdaQueryWrapper<NFTInventoryStream>().eq(NFTInventoryStream::getNftId, saleRequest.getNFTId()).eq(NFTInventoryStream::getIdentifier, increaseIdentifier));
+        if (existingStream != null) {
+            return NFTResponse.success(true);
+        }
+        // 2. 查询出最新的值
+        NFT nft = nftMapper.selectById(saleRequest.getNFTId());
+        // 3. 新增库存回退流水
+        NFTInventoryStream inventoryStream = new NFTInventoryStream();
+        inventoryStream.setNftId(nft.getId());
+        inventoryStream.setPrice(nft.getPrice());
+        inventoryStream.setQuantity(nft.getQuantity());
+        inventoryStream.setSaleableInventory(nft.getSaleableInventory());
+        inventoryStream.setFrozenInventory(nft.getFrozenInventory());
+        inventoryStream.setState(nft.getState());
+        inventoryStream.setVersion(nft.getVersion());
+        inventoryStream.setDeleted(nft.getDeleted());
+        inventoryStream.setStreamType(saleRequest.getEventType());
+        inventoryStream.setIdentifier(increaseIdentifier); // 这是关键，用前缀区别于售卖
+        inventoryStream.setChangedQuantity(-saleRequest.getQuantity()); // 回退记录可以记为负数，或者通过其他字段标识
+        int insertRow = nftInventoryStreamMapper.insert(inventoryStream);
+        if (insertRow <= 0) {
+            throw new NFTException(ARTWORK_INVENTORY_STREAM_SAVE_FAILED);
+        }
+        // 4. 更新数据库库存 (加回库存)
+        nft.setSaleableInventory(nft.getSaleableInventory() + saleRequest.getQuantity());
+        int updateRow = nftMapper.update(nft, new LambdaQueryWrapper<NFT>()
+                .eq(NFT::getId, nft.getId())); // 没有防超卖的限制，因为是加法
+        if (updateRow <= 0) {
+            throw new NFTException(NFT_UPDATE_FAILED);
+        }
+        return NFTResponse.success(true);
     }
 }

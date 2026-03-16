@@ -11,8 +11,8 @@ export type PaymentType = 'WECHAT' | 'ALIPAY' | 'APPLE_PAY' | 'MOCK'
 export interface BuyRequest {
   /** 商品ID */
   productId: string
-  /** 商品类型：ARTWORK-藏品, BLIND_BOX-盲盒 */
-  productType: string
+  /** 商品类型：与后端 NFTType 枚举保持一致 */
+  nftType: 'NFT'
   /** 商品数量 */
   itemCount: number
 }
