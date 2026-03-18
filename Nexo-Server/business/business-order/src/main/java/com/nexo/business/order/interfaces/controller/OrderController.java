@@ -26,11 +26,6 @@ public class OrderController {
 
     /**
      * 获取订单列表
-     * 
-     * @param state   订单状态
-     * @param current 当前页码
-     * @param size    页大小
-     * @return 订单列表
      */
     @GetMapping("/list")
     public MultiResult<OrderVO> getOrderList(TradeOrderState state, Long current, Long size) {
@@ -39,9 +34,6 @@ public class OrderController {
 
     /**
      * 获取单个订单详情
-     * 
-     * @param orderId 订单号
-     * @return 订单详情
      */
     @GetMapping("/get")
     public Result<OrderVO> getOrder(@RequestParam String orderId) {
@@ -55,9 +47,6 @@ public class OrderController {
 
     /**
      * 取消订单
-     * 
-     * @param orderId 订单号
-     * @return 是否成功
      */
     @PostMapping("/cancel")
     public Result<Boolean> cancelOrder(@RequestParam String orderId) {
