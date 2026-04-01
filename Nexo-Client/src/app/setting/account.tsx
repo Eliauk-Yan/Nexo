@@ -1,56 +1,68 @@
-import { LiquidGlassButton } from '@/components/ui'
-import ListItem, { ListItemData } from '@/components/ui/ListItem'
-import { colors, spacing } from '@/config/theme'
 import { userApi, UserInfo } from '@/api/user'
 import { useSession } from '@/utils/ctx'
 import * as ImagePicker from 'expo-image-picker'
-import { useRouter } from 'expo-router'
-import React, { useEffect, useState } from 'react'
-import { Alert, ScrollView, StyleSheet, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import Spinner from 'react-native-loading-spinner-overlay'
+import { Stack, useRouter } from 'expo-router'
+import {
+  Button,
+  Host,
+  LabeledContent,
+  List,
+  Popover,
+  Section,
+  Text,
+  VStack,
+} from '@expo/ui/swift-ui'
+import {
+  buttonStyle,
+  controlSize,
+  listStyle,
+  onTapGesture,
+  padding,
+  tint,
+} from '@expo/ui/swift-ui/modifiers'
+import React, { useEffect, useMemo, useState } from 'react'
+import { Alert } from 'react-native'
 
 const defaultProfile: UserInfo = {
   id: '',
   nickName: '未设置',
   avatarUrl: '',
   phone: '未绑定',
+  account: '',
 }
 
 const AccountSecurity = () => {
   const router = useRouter()
-  const insets = useSafeAreaInsets()
   const { session, user, signIn, isLoading: isSessionLoading } = useSession()
-  const [loading, setLoading] = useState(false)
   const [profile, setProfile] = useState<UserInfo>(defaultProfile)
+  const [isAccountPopoverPresented, setIsAccountPopoverPresented] = useState(false)
 
-  const fetchProfile = async () => {
-    setLoading(true)
-    try {
-      const res = await userApi.getUserProfile()
-      // 用 session 中的 user 补全接口可能未返回的字段（如 phone）
-      const merged = res ? { ...defaultProfile, ...user, ...res } : defaultProfile
-      setProfile(merged)
-      return res
-    } finally {
-      setLoading(false)
-    }
+  const refreshProfile = async () => {
+    const res = await userApi.getUserProfile()
+    const merged = res ? { ...defaultProfile, ...user, ...res } : defaultProfile
+    setProfile(merged)
+    return res
   }
 
-  // 未登录时进入即跳转登录页，不请求接口
   useEffect(() => {
     if (isSessionLoading) return
     if (!session) {
       router.replace('/(auth)/sign-in')
       return
     }
-    fetchProfile().catch((err) => console.error(err))
-  }, [isSessionLoading, session])
+    refreshProfile().catch((err) => console.error(err))
+  }, [isSessionLoading, refreshProfile, router, session])
 
-  const avatar = profile?.avatarUrl || ''
   const nickname = profile?.nickName || '未设置'
   const phone = profile?.phone || '未绑定'
+  const account = profile?.account || '未绑定'
   const isRealNameAuth = profile?.certification === true
+
+  const shortAccount = useMemo(() => {
+    if (!profile?.account) return '未绑定'
+    if (profile.account.length <= 18) return profile.account
+    return `${profile.account.slice(0, 8)}...${profile.account.slice(-6)}`
+  }, [profile?.account])
 
   const deleteAccount = () => {
     Alert.alert('账号注销', '注销账号后，所有数据将被永久删除且无法恢复。确定要继续吗？', [
@@ -59,8 +71,7 @@ const AccountSecurity = () => {
         text: '确定注销',
         style: 'destructive',
         onPress: () => {
-          // TODO: 实现账号注销逻辑
-          console.log('Index deletion requested')
+          console.log('Account deletion requested')
         },
       },
     ])
@@ -97,7 +108,7 @@ const AccountSecurity = () => {
                     }
                     try {
                       await userApi.realNameAuthentication({ realName: name, idCardNo: idCard })
-                      await fetchProfile()
+                      await refreshProfile()
                     } catch (err) {
                       console.error('实名认证提交失败', err)
                       Alert.alert('提交失败', '请稍后重试')
@@ -130,7 +141,7 @@ const AccountSecurity = () => {
             if (text !== undefined) {
               try {
                 await userApi.updateNickName({ nickName: text })
-                const newProfile = await fetchProfile()
+                const newProfile = await refreshProfile()
                 if (session && newProfile) {
                   signIn(session, { ...user, ...newProfile } as any)
                 }
@@ -154,11 +165,11 @@ const AccountSecurity = () => {
       return
     }
 
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'], // 只选图片
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
       allowsEditing: true,
-      aspect: [1, 1], // 1:1 裁减
-      quality: 0.8, // 适当压缩质量
+      aspect: [1, 1],
+      quality: 0.8,
     })
 
     if (!result.canceled) {
@@ -172,7 +183,7 @@ const AccountSecurity = () => {
 
       try {
         await userApi.updateAvatar(formData)
-        const newProfile = await fetchProfile()
+        const newProfile = await refreshProfile()
         if (session && newProfile) {
           signIn(session, { ...user, ...newProfile } as any)
         }
@@ -183,86 +194,67 @@ const AccountSecurity = () => {
     }
   }
 
-  const menuItems: ListItemData[] = [
-    {
-      label: '头像',
-      type: 'avatar',
-      value: avatar,
-      onPress: updateAvatar,
-    },
-    {
-      label: '昵称',
-      type: 'text',
-      value: nickname,
-      onPress: updateUsername,
-    },
-    {
-      label: '手机号',
-      type: 'text',
-      value: phone,
-      onPress: () => {},
-    },
-    {
-      label: '实名认证',
-      type: 'text',
-      value: isRealNameAuth ? '已认证' : '未认证',
-      onPress: realNameAuthentication,
-    },
-    {
-      label: '账号注销',
-      type: 'delete',
-      onPress: deleteAccount,
-    },
-  ]
-
-  const buttonTop = insets.top + spacing.md
-
-  // 未登录或仍在确认登录状态时，不渲染页面内容，直接跳转或显示加载
-  if (isSessionLoading || !session) {
-    return (
-      <View style={[styles.container, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
-        <Spinner visible={true} />
-      </View>
-    )
-  }
-
   return (
-    <View style={styles.container}>
-      <Spinner visible={loading} />
-      <View style={[styles.backButton, { top: buttonTop }]}>
-        <LiquidGlassButton icon="chevron-left" onPress={() => router.back()} />
-      </View>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: buttonTop + 50 + spacing.lg }]}
-        showsVerticalScrollIndicator={false}
-      >
-        {menuItems.map((item) => (
-          <ListItem key={item.label} item={item} />
-        ))}
-      </ScrollView>
-    </View>
+    <>
+      <Stack.Screen
+        options={{
+          title: '个人信息',
+          headerLargeTitle: true,
+        }}
+      />
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.back()} />
+      </Stack.Toolbar>
+      <Host style={{ flex: 1 }}>
+        <List modifiers={[listStyle('insetGrouped')]}>
+          <Section title="个人信息">
+            <LabeledContent label="头像" modifiers={[onTapGesture(updateAvatar)]}>
+              <Text>点击修改</Text>
+            </LabeledContent>
+            <LabeledContent label="昵称" modifiers={[onTapGesture(updateUsername)]}>
+              <Text>{nickname}</Text>
+            </LabeledContent>
+            <LabeledContent label="链账户">
+              <Popover
+                isPresented={isAccountPopoverPresented}
+                onIsPresentedChange={setIsAccountPopoverPresented}
+                attachmentAnchor="trailing"
+                arrowEdge="top"
+              >
+                <Popover.Trigger>
+                  <Button
+                    label={shortAccount}
+                    systemImage="doc.text.magnifyingglass"
+                    onPress={() => setIsAccountPopoverPresented(true)}
+                    modifiers={[buttonStyle('borderless'), controlSize('small'), tint('#007AFF')]}
+                  />
+                </Popover.Trigger>
+                <Popover.Content>
+                  <VStack spacing={8} modifiers={[padding({ all: 16 })]}>
+                    <Text>链账户地址</Text>
+                    <Text>{account}</Text>
+                  </VStack>
+                </Popover.Content>
+              </Popover>
+            </LabeledContent>
+            <LabeledContent label="手机号">
+              <Text>{phone}</Text>
+            </LabeledContent>
+          </Section>
+
+          <Section title="安全设置">
+            <LabeledContent label="实名认证" modifiers={[onTapGesture(realNameAuthentication)]}>
+              <Text>{isRealNameAuth ? '已认证' : '未认证'}</Text>
+            </LabeledContent>
+          </Section>
+
+          <Section>
+            <Button role="destructive" label="账号注销" onPress={deleteAccount} />
+          </Section>
+        </List>
+      </Host>
+    </>
   )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  backButton: {
-    position: 'absolute',
-    left: spacing.md,
-    zIndex: 10,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.xl,
-    gap: spacing.sm,
-  },
-})
 
 export default AccountSecurity

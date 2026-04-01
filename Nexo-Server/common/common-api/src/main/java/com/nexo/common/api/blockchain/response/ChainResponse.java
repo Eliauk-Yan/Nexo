@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * @classname BlockchainResponse
@@ -14,7 +13,7 @@ import java.io.Serializable;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class ChainResponse<T> extends BaseResponse implements Serializable {
+public class ChainResponse<T> extends BaseResponse {
 
     @Serial
     private static final long serialVersionUID = 1L;

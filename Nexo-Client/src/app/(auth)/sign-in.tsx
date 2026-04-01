@@ -1,278 +1,291 @@
-import Feather from '@expo/vector-icons/Feather'
-import { useRouter } from 'expo-router'
-import Loading from '@/components/shared/Loading'
-import React, { useState } from 'react'
-import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Ionicons } from '@expo/vector-icons'
+import { Stack, useRouter } from 'expo-router'
+import React, { useMemo, useState } from 'react'
+import { Alert, StyleSheet, Text as RNText, TouchableOpacity, View } from 'react-native'
+import Spinner from 'react-native-loading-spinner-overlay'
 
 import { authApi } from '@/api'
 import { LiquidGlassButton } from '@/components/ui'
-import { ROUTES } from '@/constants/routes'
-import { borderRadius, colors, spacing, typography } from '@/config/theme'
-import Spinner from 'react-native-loading-spinner-overlay'
+import { useSession } from '@/utils/ctx'
+import {
+  Button,
+  Host,
+  HStack,
+  List,
+  Section,
+  TextField,
+  VStack,
+  Text,
+  RNHostView,
+} from '@expo/ui/swift-ui'
+import {
+  disabled,
+  font,
+  foregroundStyle,
+  listRowBackground,
+  listStyle,
+} from '@expo/ui/swift-ui/modifiers'
 
-const Login = () => {
+export default function SignIn() {
   const router = useRouter()
-  const insets = useSafeAreaInsets()
+  const { signIn } = useSession()
   const [phone, setPhone] = useState('')
-  // 加载状态
+  const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [agreed, setAgreed] = useState(false)
 
+  const isPhoneValid = useMemo(() => {
+    return phone.trim().length === 11 && /^1[3-9]\d{9}$/.test(phone)
+  }, [phone])
+
+  const isCodeValid = useMemo(() => code.trim().length === 6, [code])
+  const canSendCode = isPhoneValid && agreed && !loading
+  const canLogin = isPhoneValid && isCodeValid && agreed && !loading
+
   const handleSendCode = async () => {
-    if (loading || !canSubmit) return
+    if (!canSendCode) return
+
     setLoading(true)
     try {
       await authApi.sendVerificationCode(phone)
-      router.push({ pathname: ROUTES.AUTH.VERIFY, params: { phone } })
+      Alert.alert('提示', `验证码已发送至 ${phone}`)
     } catch (error) {
-      Alert.alert('错误', error instanceof Error ? error.message : '发送验证码失败')
+      Alert.alert('提示', error instanceof Error ? error.message : '发送验证码失败')
     } finally {
       setLoading(false)
     }
   }
 
-  const isPhoneValid = phone.trim().length === 11 && /^1[3-9]\d{9}$/.test(phone)
-  const canSubmit = isPhoneValid && agreed
+  const handleLogin = async () => {
+    if (!canLogin) return
+
+    setLoading(true)
+    try {
+      const response = await authApi.login({
+        phone,
+        verifyCode: code,
+        rememberMe: true,
+      })
+      const token = response.token
+      let userInfo = response.userInfo
+
+      if (!userInfo?.nickName && !userInfo?.avatarUrl) {
+        try {
+          userInfo = await authApi.getCurrentUser(token)
+        } catch {
+          userInfo = { id: '', nickName: '', avatarUrl: '', role: '' }
+        }
+      }
+
+      signIn(token, userInfo!)
+      router.replace('/account/account')
+    } catch (error) {
+      Alert.alert('登录失败', error instanceof Error ? error.message : '登录失败')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
-    <View style={styles.container}>
+    <>
+      <Stack.Screen
+        options={{
+          title: '登录',
+          headerTransparent: true,
+        }}
+      />
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.back()} />
+      </Stack.Toolbar>
+
       <Spinner visible={loading} />
-      <View style={[styles.header, { top: insets.top }]}>
-        <View>
-          <LiquidGlassButton icon="chevron-left" size={14} onPress={() => router.back()} />
-        </View>
-      </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={styles.logoBlock}>
-          <Text style={styles.logoTitle}>NEXO</Text>
-          <Text style={styles.logoSubtitle}>开启数字藏品之旅</Text>
-        </View>
+      <Host style={styles.container}>
+        <List modifiers={[listStyle('insetGrouped')]}>
+          <Section modifiers={[listRowBackground('clear')]}>
+            <VStack alignment="leading" spacing={4}>
+              <Text modifiers={[font({ size: 70, weight: 'bold' }), foregroundStyle('primary')]}>
+                NEXO
+              </Text>
 
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>手机号</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="请输入手机号"
-            placeholderTextColor={colors.textSecondary}
-            keyboardType="phone-pad"
-            value={phone}
-            onChangeText={setPhone}
-            selectionColor={colors.primary}
-            autoCapitalize="none"
-            autoCorrect={false}
-            maxLength={11}
-          />
-        </View>
+              <Text modifiers={[font({ size: 14 }), foregroundStyle('secondary')]}>
+                开启数字藏品之旅
+              </Text>
+            </VStack>
+          </Section>
 
-        <View style={styles.agreementRow}>
-          <TouchableOpacity
-            onPress={() => setAgreed(!agreed)}
-            activeOpacity={0.7}
-            style={styles.checkboxContainer}
-          >
-            <Feather
-              name={agreed ? 'check-square' : 'square'}
-              size={20}
-              color={agreed ? colors.primary : colors.border}
-            />
-          </TouchableOpacity>
-          <Text style={styles.agreementText}>
-            同意
-            <Text
-              style={styles.linkText}
-              onPress={() => {
-                // TODO: 跳转到用户协议页面
-                console.log('打开用户协议')
-              }}
-            >
-              《用户协议》
-            </Text>
-            与
-            <Text
-              style={styles.linkText}
-              onPress={() => {
-                // TODO: 跳转到隐私政策页面
-                console.log('打开隐私政策')
-              }}
-            >
-              《隐私政策》
-            </Text>
-          </Text>
-        </View>
+          <Section title="手机号登录">
+            <HStack spacing={12}>
+              <TextField
+                placeholder="请输入手机号"
+                keyboardType="default"
+                autocorrection={false}
+                allowNewlines={false}
+                defaultValue={phone}
+                onChangeText={(value) => setPhone(value.replace(/\D/g, '').slice(0, 11))}
+              />
+              <Button
+                label="发送验证码"
+                onPress={() => void handleSendCode()}
+                modifiers={[disabled(!canSendCode)]}
+              />
+            </HStack>
+          </Section>
 
-        <TouchableOpacity
-          style={[styles.submitBtn, (!canSubmit || loading) && styles.submitBtnDisabled]}
-          activeOpacity={0.8}
-          onPress={handleSendCode}
-          disabled={!canSubmit || loading}
-        >
-          <Text style={styles.submitBtnText}>发送手机验证码</Text>
-        </TouchableOpacity>
+          <Section title="验证码">
+            <HStack spacing={12}>
+              <TextField
+                placeholder="请输入验证码"
+                keyboardType="default"
+                autocorrection={false}
+                allowNewlines={false}
+                defaultValue={code}
+                onChangeText={(value) => setCode(value.replace(/\D/g, '').slice(0, 6))}
+              />
+              <Button
+                label="登录"
+                onPress={() => void handleLogin()}
+                modifiers={[disabled(!canLogin)]}
+              />
+            </HStack>
+          </Section>
 
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>其他登录方式</Text>
-          <View style={styles.dividerLine} />
-        </View>
-
-        <View style={styles.otherLoginRow}>
-          <LiquidGlassButton
-            icon="weixin"
-            size={24}
-            color="#07C160"
-            onPress={() => {
-              // TODO: 微信登录
-              console.log('微信登录')
-            }}
-          />
-          <LiquidGlassButton
-            icon="alipay"
-            size={24}
-            color="#1677FF"
-            onPress={() => {
-              // TODO: 支付宝登录
-              console.log('支付宝登录')
-            }}
-          />
-          <LiquidGlassButton
-            icon="apple"
-            size={24}
-            color="#FFFFFF"
-            onPress={() => {
-              // TODO: 苹果登录
-              console.log('苹果登录')
-            }}
-          />
-        </View>
-      </ScrollView>
-    </View>
+          <Section modifiers={[listRowBackground('clear')]}>
+            <RNHostView matchContents={true}>
+              <View style={styles.socialArea}>
+                <RNText style={styles.socialTitle}>其他登录方式</RNText>
+                <View style={styles.socialButtons}>
+                  <LiquidGlassButton
+                    icon="weixin"
+                    size={22}
+                    color="#07C160"
+                    onPress={() => Alert.alert('提示', '微信登录暂未接入')}
+                  />
+                  <LiquidGlassButton
+                    icon="alipay"
+                    size={22}
+                    color="#1677FF"
+                    onPress={() => Alert.alert('提示', '支付宝登录暂未接入')}
+                  />
+                  <LiquidGlassButton
+                    icon="apple"
+                    size={22}
+                    color="#111827"
+                    onPress={() => Alert.alert('提示', 'Apple 登录暂未接入')}
+                  />
+                </View>
+              </View>
+            </RNHostView>
+            <RNHostView matchContents={true}>
+              <View style={styles.bottomArea}>
+                <TouchableOpacity
+                  activeOpacity={0.82}
+                  onPress={() => setAgreed((prev) => !prev)}
+                  style={styles.agreementRow}
+                >
+                  <Ionicons
+                    name={agreed ? 'checkmark-circle' : 'ellipse-outline'}
+                    size={16}
+                    color={agreed ? '#007AFF' : '#C7C7CC'}
+                  />
+                  <RNText style={styles.agreementText}>
+                    已阅读并同意
+                    <RNText style={styles.linkText}>《用户协议》</RNText>
+                    <RNText style={styles.linkText}>《隐私政策》</RNText>
+                  </RNText>
+                </TouchableOpacity>
+              </View>
+            </RNHostView>
+          </Section>
+        </List>
+      </Host>
+    </>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
   },
-  safeArea: {
-    flex: 1,
+  hero: {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 6,
   },
-  header: {
-    position: 'absolute',
-    left: spacing.lg,
-    zIndex: 10,
+  heroEyebrow: {
+    color: '#8E8E93',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1.2,
+    marginBottom: 6,
   },
-  content: {
-    flexGrow: 1,
+  heroTitle: {
+    color: '#111827',
+    fontSize: 28,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  heroSubtitle: {
+    color: '#6B7280',
+    fontSize: 14,
+  },
+  socialArea: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 6,
+    paddingBottom: 18,
+  },
+  socialTitle: {
+    color: '#8E8E93',
+    fontSize: 13,
+    marginBottom: 14,
+  },
+  socialButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xxl + spacing.lg,
-    paddingBottom: spacing.xl,
+    gap: 20,
   },
-  logoBlock: {
-    alignItems: 'flex-start',
-    marginBottom: 82,
-  },
-  logoTitle: {
-    fontSize: 86,
-    fontWeight: typography.fontWeight.bold,
-    color: colors.text,
-    letterSpacing: 0.5,
-  },
-  logoSubtitle: {
-    marginTop: spacing.xs,
-    fontSize: 18,
-    color: colors.textSecondary,
-    lineHeight: typography.fontSize.md * 1.4,
-  },
-  fieldGroup: {
-    marginBottom: spacing.md,
-  },
-  label: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  input: {
-    height: 50,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.backgroundSecondary,
-    paddingHorizontal: spacing.md,
-    color: colors.text,
-    fontSize: typography.fontSize.md,
+  bottomArea: {
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 24,
   },
   agreementRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.md,
-    gap: spacing.xs,
-  },
-  checkboxContainer: {
-    padding: spacing.xs,
+    justifyContent: 'center',
+    gap: 6,
   },
   agreementText: {
-    color: colors.textSecondary,
-    fontSize: typography.fontSize.sm,
-    flex: 1,
-    flexWrap: 'wrap',
+    fontSize: 12,
+    color: '#8E8E93',
   },
   linkText: {
-    color: colors.primary,
-    textDecorationLine: 'underline',
+    color: '#007AFF',
   },
-  submitBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.lg,
-    paddingVertical: spacing.md,
+  logoWrap: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  logoTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#111827',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+
+  logoSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
+  logoBlock: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 10,
     alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 50,
-    marginTop: spacing.md,
-  },
-  submitBtnDisabled: {
-    opacity: 0.6,
-  },
-  submitBtnText: {
-    color: colors.text,
-    fontWeight: typography.fontWeight.bold,
-    fontSize: typography.fontSize.xl,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: spacing.xl,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  dividerText: {
-    color: colors.textSecondary,
-    fontSize: typography.fontSize.sm,
-    marginHorizontal: spacing.sm,
-  },
-  otherLoginRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.lg,
   },
 })
-
-export default Login

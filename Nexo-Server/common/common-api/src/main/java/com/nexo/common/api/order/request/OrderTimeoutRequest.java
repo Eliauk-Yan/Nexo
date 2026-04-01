@@ -5,14 +5,13 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * 订单超时请求
  */
 @Getter
 @Setter
-public class OrderTimeoutRequest extends OrderUpdateRequest implements Serializable {
+public class OrderTimeoutRequest extends OrderUpdateRequest {
 
     @Serial
     private static final long serialVersionUID = 1L;

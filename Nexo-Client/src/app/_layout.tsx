@@ -5,23 +5,16 @@ import { StatusBar } from 'expo-status-bar'
 import React, { useEffect } from 'react'
 import { SessionProvider, useSession } from '@/utils/ctx'
 
-/**
- * 根布局组件
- * 包裹 SessionProvider 以提供全局认证状态
- */
 const RootLayout = () => {
   return (
     <SessionProvider>
-      <StatusBar translucent backgroundColor="transparent" style="light" />
+      <StatusBar style="light" />
       <SplashScreenController />
       <AuthLayout />
     </SessionProvider>
   )
 }
 
-/**
- * 认证导航布局 - 统一路由卫士
- */
 const AuthLayout = () => {
   const { session, isLoading } = useSession()
   const segments = useSegments()
@@ -31,17 +24,62 @@ const AuthLayout = () => {
     if (isLoading) return
 
     if (session && segments[0] === '(auth)') {
-      // 已登录且想去登录页 -> 返回首页
-      router.replace('/(tabs)/home')
+      router.replace('/home/home')
     }
-  }, [session, segments, isLoading])
+  }, [session, segments, isLoading, router])
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="(auth)" />
-      <Stack.Screen name="notification" options={{ title: '通知' }} />
+    <Stack>
+      <Stack.Screen
+        name="index"
+        options={{
+          headerShown: false,
+        }}
+      />
+
+      <Stack.Screen
+        name="(tabs)"
+        options={{
+          headerShown: false,
+        }}
+      />
+
+      <Stack.Screen
+        name="(auth)"
+        options={{
+          headerShown: false,
+        }}
+      />
+
+      <Stack.Screen
+        name="notification"
+        options={{
+          headerShown: false,
+        }}
+      />
+
+      <Stack.Screen
+        name="setting"
+        options={{
+          headerShown: false,
+        }}
+      />
+
+      <Stack.Screen
+        name="order"
+        options={{
+          title: '订单',
+          headerShown: true,
+        }}
+      />
+
+      <Stack.Screen
+        name="nft"
+        options={{
+          title: '藏品详情',
+          headerShown: true,
+        }}
+      />
     </Stack>
   )
 }

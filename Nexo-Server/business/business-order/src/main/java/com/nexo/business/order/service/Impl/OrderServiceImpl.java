@@ -13,7 +13,6 @@ import com.nexo.business.order.service.OrderService;
 import com.nexo.common.api.inventory.InventoryFacade;
 import com.nexo.common.api.inventory.request.InventoryRequest;
 import com.nexo.common.api.nft.request.NFTSaleRequest;
-import com.nexo.common.api.nft.response.NFTResponse;
 import com.nexo.common.api.order.constant.TradeOrderState;
 import com.nexo.common.api.order.request.OrderPayRequest;
 import com.nexo.common.api.nft.NFTFacade;
@@ -136,7 +135,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
     @Override
     public boolean cancelOrder(String orderId, Long userId) {
         // 1. 查询订单
-        TradeOrder order = orderMapper.selectOne(new LambdaQueryWrapper<TradeOrder>().eq(TradeOrder::getOrderId, orderId).eq(TradeOrder::getBuyerId, userId));
+        TradeOrder order = orderMapper.selectOne(new LambdaQueryWrapper<TradeOrder>()
+                .eq(TradeOrder::getOrderId, orderId).eq(TradeOrder::getBuyerId, userId));
         if (order == null) {
             log.error("订单不存在或不属于当前用户, orderId={}, userId={}", orderId, userId);
             return false;
@@ -177,7 +177,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
                 saleRequest.setNftType(order.getNFTType());
                 saleRequest.setIdentifier(order.getIdentifier());
                 saleRequest.setNFTId(Long.parseLong(order.getProductId()));
-                NFTResponse<Boolean> unsaleRes = nftFacade.unsale(saleRequest);
+                nftFacade.unsale(saleRequest);
                 log.info("数据库库存回推请求已完成, orderId={}", orderId);
             } catch (Exception e) {
                 log.error("数据库库存回推异常, orderId={}", orderId, e);

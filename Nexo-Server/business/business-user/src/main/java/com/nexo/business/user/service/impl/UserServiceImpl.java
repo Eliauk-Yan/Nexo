@@ -4,14 +4,12 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.RandomUtil;
 import com.alicp.jetcache.Cache;
 import com.alicp.jetcache.CacheManager;
-import com.alicp.jetcache.anno.CacheInvalidate;
 import com.alicp.jetcache.anno.CacheType;
 import com.alicp.jetcache.template.QuickConfig;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.nexo.business.user.config.encrypt.AesUtil;
 import com.nexo.business.user.domain.entity.User;
 import com.nexo.business.user.domain.exception.UserErrorCode;
 import com.nexo.business.user.domain.exception.UserException;
@@ -294,7 +292,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public PageResponse<User> pageQueryByState(String keyword, String state, String nickName, String role, Boolean certification, int current, int size) {
+    public PageResponse<User> pageQueryByState(String keyword, String state, String nickName, String role,
+            Boolean certification, int current, int size) {
         // 1. 构建页面
         Page<User> page = new Page<>(current, size);
         // 2. 构造查询条件

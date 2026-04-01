@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * @classname OrderBaseRequest
@@ -16,7 +15,7 @@ import java.io.Serializable;
  */
 @Getter
 @Setter
-public abstract class OrderBaseRequest extends BaseRequest implements Serializable {
+public abstract class OrderBaseRequest extends BaseRequest {
 
     @Serial
     private static final long serialVersionUID = 1L;

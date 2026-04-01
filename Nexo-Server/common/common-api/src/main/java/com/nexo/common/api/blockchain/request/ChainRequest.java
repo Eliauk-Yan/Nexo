@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serial;
-import java.io.Serializable;
 
 /**
  * @classname BlockchainRequest
@@ -14,7 +13,7 @@ import java.io.Serializable;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class ChainRequest extends BaseRequest implements Serializable {
+public class ChainRequest extends BaseRequest {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -23,7 +22,6 @@ public class ChainRequest extends BaseRequest implements Serializable {
      * 幂等号
      */
     private String identifier;
-
 
     /**
      * 藏品类别ID

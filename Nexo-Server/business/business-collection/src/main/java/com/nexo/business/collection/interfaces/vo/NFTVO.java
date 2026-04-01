@@ -24,4 +24,6 @@ public class NFTVO {
 
     private Long inventory;
 
+    private String description;
+
 }

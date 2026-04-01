@@ -23,10 +23,7 @@ export interface ArtworkDetail {
   quantity: number
   inventory: number | null
   saleTime: string | null
-  bookStartTime: string | null
-  bookEndTime: string | null
-  canBook: boolean
-  hasBooked: boolean | null
+  description: string | null
   productState: 'NOT_FOR_SALE' | 'SELLING' | 'SOLD_OUT' | 'COMING_SOON' | 'WAIT_FOR_SALE'
 }
 

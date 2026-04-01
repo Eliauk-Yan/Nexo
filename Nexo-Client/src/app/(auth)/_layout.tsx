@@ -6,10 +6,9 @@ import React from 'react'
  * 设置统一的滑动动画
  */
 export default function AuthLayout() {
-    return (
-        <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="sign-in" />
-            <Stack.Screen name="verify" />
-        </Stack>
-    )
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="sign-in" />
+    </Stack>
+  )
 }

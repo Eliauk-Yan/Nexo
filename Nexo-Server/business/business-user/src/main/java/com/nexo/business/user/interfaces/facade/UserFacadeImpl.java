@@ -62,7 +62,9 @@ public class UserFacadeImpl implements UserFacade {
 
     @Override
     public PageResponse<UserInfo> pageQuery(UserPageQueryRequest request) {
-        PageResponse<User> queryResult = userService.pageQueryByState(request.getKeyword(), request.getState(), request.getNickName(), request.getRole(), request.getCertification(), request.getCurrent(), request.getSize());
+        PageResponse<User> queryResult = userService.pageQueryByState(request.getKeyword(), request.getState(),
+                request.getNickName(), request.getRole(), request.getCertification(), request.getCurrent(),
+                request.getSize());
         PageResponse<UserInfo> response = new PageResponse<>();
         if (!queryResult.getSuccess()) {
             response.setSuccess(false);
@@ -79,7 +81,7 @@ public class UserFacadeImpl implements UserFacade {
     @Override
     public UserResponse freeze(Long userId) {
         // 1. 冻结用户
-        Boolean result = userService.freeze(userId);
+        userService.freeze(userId);
         // 2. 组装响应结果
         return UserResponse.success();
     }
@@ -87,7 +89,7 @@ public class UserFacadeImpl implements UserFacade {
     @Override
     public UserResponse unfreeze(Long userId) {
         // 1. 解冻用户
-        Boolean result = userService.unfreeze(userId);
+        userService.unfreeze(userId);
         // 2. 组装响应结果
         return UserResponse.success();
     }

@@ -5,14 +5,11 @@ import com.alicp.jetcache.anno.CacheRefresh;
 import com.alicp.jetcache.anno.CacheType;
 import com.alicp.jetcache.anno.Cached;
 import com.nexo.business.user.domain.entity.User;
-import com.nexo.business.user.domain.exception.UserException;
 import com.nexo.business.user.mapper.mybatis.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
-
-import static com.nexo.business.user.domain.exception.UserErrorCode.USER_UPDATE_FAILED;
 
 /**
  * @classname UserCacheService

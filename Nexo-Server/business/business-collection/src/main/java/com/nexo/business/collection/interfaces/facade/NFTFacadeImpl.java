@@ -137,6 +137,7 @@ public class NFTFacadeImpl implements NFTFacade {
                 chainRequest.setClassName(NFT.getName());
                 chainRequest.setBizType(ChainOperationBizType.ASSET.getCode());
                 chainRequest.setBizId(asset.getId().toString()); // 将入库后的资产ID填入
+                // TODO 铸造
                 ChainResponse<ChainOperationData> chainResponse = chainFacade.onChain(chainRequest);
 
                 if (chainResponse.getSuccess() && chainResponse.getData() != null) {

@@ -6,7 +6,6 @@ import cn.hutool.crypto.symmetric.SymmetricAlgorithm;
 import org.apache.commons.lang3.StringUtils;
 
 import java.nio.charset.StandardCharsets;
-import org.springframework.stereotype.Component;
 
 /**
  * AES 加解密工具（Hutool）
@@ -20,8 +19,7 @@ public class AesUtil {
         String key = "2026恭喜发财,代码全过!!!";
         byte[] keyBytes = SecureUtil.generateKey(
                 SymmetricAlgorithm.AES.getValue(),
-                key.getBytes(StandardCharsets.UTF_8)
-        ).getEncoded();
+                key.getBytes(StandardCharsets.UTF_8)).getEncoded();
 
         aes = SecureUtil.aes(keyBytes);
     }

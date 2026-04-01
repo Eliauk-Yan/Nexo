@@ -3,7 +3,6 @@ package com.nexo.business.order.listener;
 import com.nexo.business.order.domain.entity.TradeOrder;
 import com.nexo.business.order.domain.validator.OrderCreateValidator;
 import com.nexo.business.order.mapper.mybatis.OrderMapper;
-import com.nexo.business.order.service.OrderService;
 import com.nexo.common.api.inventory.InventoryFacade;
 import com.nexo.common.api.inventory.request.InventoryRequest;
 import com.nexo.common.api.nft.NFTFacade;
@@ -77,7 +76,8 @@ public class BuyMsgListener {
                 // 前置校验失败，记录日志并退出，不再继续执行
                 log.error("订单校验失败, orderId={}, 原因={}", orderCreateAndConfirmRequest.getOrderId(), e.getMessage(), e);
                 // 回滚Redis库存
-                rollbackInventory(orderCreateRequest.getProductId(), orderCreateRequest.getNFTType(), orderCreateRequest.getIdentifier(), orderCreateRequest.getItemCount());
+                rollbackInventory(orderCreateRequest.getProductId(), orderCreateRequest.getNFTType(),
+                        orderCreateRequest.getIdentifier(), orderCreateRequest.getItemCount());
                 return;
             }
             // 2.2 同步扣减数据库库存
@@ -92,7 +92,8 @@ public class BuyMsgListener {
             if (!response.getSuccess()) {
                 log.error("数据库库存扣减失败, orderId={}", orderCreateAndConfirmRequest.getOrderId());
                 // 回滚Redis库存
-                rollbackInventory(orderCreateRequest.getProductId(), orderCreateRequest.getNFTType(), orderCreateRequest.getIdentifier(), orderCreateRequest.getItemCount());
+                rollbackInventory(orderCreateRequest.getProductId(), orderCreateRequest.getNFTType(),
+                        orderCreateRequest.getIdentifier(), orderCreateRequest.getItemCount());
                 return;
             }
             // 2.3 创建订单记录
@@ -117,7 +118,8 @@ public class BuyMsgListener {
             if (!result) {
                 log.error("订单创建失败, orderId={}", orderCreateAndConfirmRequest.getOrderId());
                 // 回滚数据库库存和Redis库存
-                rollbackInventory(orderCreateRequest.getProductId(), orderCreateRequest.getNFTType(), orderCreateRequest.getIdentifier(), orderCreateRequest.getItemCount());
+                rollbackInventory(orderCreateRequest.getProductId(), orderCreateRequest.getNFTType(),
+                        orderCreateRequest.getIdentifier(), orderCreateRequest.getItemCount());
                 return;
             }
             log.info("订单创建成功, orderId={}", orderCreateAndConfirmRequest.getOrderId());

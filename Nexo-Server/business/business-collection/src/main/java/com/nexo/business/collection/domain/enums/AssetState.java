@@ -1,6 +1,5 @@
 package com.nexo.business.collection.domain.enums;
 
-import com.baomidou.mybatisplus.annotation.EnumValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -8,15 +7,10 @@ import lombok.Getter;
 @Getter
 public enum AssetState {
 
-    INIT("init", "初始化"),
+    INIT("INIT", "初始化"),
 
-    ACTIVE("active", "激活"),
+    ACTIVE("ACTIVE", "激活");
 
-    INACTIVE("inactive", "非激活"),
-
-    ARCHIVED("archived", "已归档");
-
-    @EnumValue
     private final String code;  // 状态码
 
     private final String description;  // 状态描述

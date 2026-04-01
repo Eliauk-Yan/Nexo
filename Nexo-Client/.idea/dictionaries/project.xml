@@ -2,11 +2,15 @@
   <dictionary name="project">
     <words>
       <w>Nexo</w>
+      <w>alipay</w>
+      <w>applepay</w>
+      <w>nepu</w>
       <w>nexo</w>
       <w>satoken</w>
       <w>shiie</w>
       <w>uilib</w>
       <w>urlcat</w>
+      <w>wechat</w>
     </words>
   </dictionary>
 </component>

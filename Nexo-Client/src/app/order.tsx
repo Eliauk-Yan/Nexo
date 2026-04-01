@@ -1,32 +1,52 @@
-import { LiquidGlassButton } from '@/components/ui'
-import { colors, spacing, borderRadius, typography, shadows } from '@/config/theme'
+import { colors, spacing, typography } from '@/config/theme'
 import { Stack, useRouter } from 'expo-router'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
-  Animated,
-  Dimensions,
   FlatList,
   Image,
-  Modal,
-  RefreshControl,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
+  useColorScheme,
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { GlassView } from 'expo-glass-effect'
 import { orderApi, OrderVO, OrderState } from '@/api/order'
 import { tradeApi, PaymentType } from '@/api/trade'
 import { useSession } from '@/utils/ctx'
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6'
 import Feather from '@expo/vector-icons/Feather'
-import Spinner from 'react-native-loading-spinner-overlay'
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window')
+import {
+  Host,
+  Picker,
+  Text as SwiftUIText,
+  HStack,
+  VStack,
+  Button,
+  Spacer,
+  BottomSheet,
+  Group,
+  List,
+  Section,
+  ProgressView,
+  Label,
+} from '@expo/ui/swift-ui'
+import {
+  pickerStyle,
+  tag,
+  buttonStyle,
+  controlSize,
+  tint,
+  presentationDragIndicator,
+  presentationDetents,
+  listStyle,
+  foregroundStyle,
+  font,
+  padding,
+  frame,
+  disabled,
+  multilineTextAlignment,
+} from '@expo/ui/swift-ui/modifiers'
 
 /** 前端 ID → 后端 PaymentType 映射 */
 const PAYMENT_METHOD_MAP: Record<string, PaymentType> = {
@@ -34,13 +54,6 @@ const PAYMENT_METHOD_MAP: Record<string, PaymentType> = {
   alipay: 'ALIPAY',
   applepay: 'APPLE_PAY',
 }
-
-/** 支付方式配置 */
-const PAYMENT_METHODS = [
-  { id: 'wechat', label: '微信支付', icon: 'weixin', color: '#07C160', desc: '推荐使用' },
-  { id: 'alipay', label: '支付宝', icon: 'alipay', color: '#1677FF', desc: '' },
-  { id: 'applepay', label: 'Apple Pay', icon: 'apple-pay', color: '#FFFFFF', desc: '' },
-]
 
 /**
  * Tab 配置
@@ -59,12 +72,12 @@ const TABS: { id: string; label: string; state?: OrderState }[] = [
 ]
 
 /** 订单状态显示配置 */
-const ORDER_STATE_MAP: Record<string, { label: string; color: string }> = {
-  CREATE: { label: '待付款', color: '#FFBB33' },
-  CONFIRM: { label: '待付款', color: '#FFBB33' },
-  PAID: { label: '已付款', color: colors.primary },
-  FINISH: { label: '已完成', color: colors.success },
-  CLOSED: { label: '已关闭', color: colors.textSecondary },
+const ORDER_STATE_MAP: Record<string, { label: string; color: string; bgColor: string }> = {
+  CREATE: { label: '待付款', color: '#FFB800', bgColor: 'rgba(255,184,0,0.14)' },
+  CONFIRM: { label: '待付款', color: '#FFB800', bgColor: 'rgba(255,184,0,0.14)' },
+  PAID: { label: '已付款', color: colors.success, bgColor: 'rgba(52,199,89,0.14)' },
+  FINISH: { label: '已完成', color: colors.success, bgColor: 'rgba(52,199,89,0.14)' },
+  CLOSED: { label: '已关闭', color: 'rgba(255,255,255,0.5)', bgColor: 'rgba(255,255,255,0.08)' },
 }
 
 /** 格式化时间 */
@@ -91,10 +104,19 @@ const OrderPage = () => {
   const insets = useSafeAreaInsets()
   const router = useRouter()
   const { session, isLoading: isSessionLoading } = useSession()
+  const colorScheme = useColorScheme()
+  // 严格判断是否为 dark，防止返回 null 时误判为黑夜模式导致“自己变黑”
+  const isDark = colorScheme === 'dark'
+  const systemBg = isDark ? '#000000' : '#F2F2F7'
+  const cardBg = isDark ? 'rgba(255,255,255,0.06)' : '#ffffff'
+  const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'
+  const textMain = isDark ? '#fff' : '#000'
+  const textSub = isDark ? 'rgba(255,255,255,0.62)' : 'rgba(0,0,0,0.5)'
+  const textTime = isDark ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.4)'
+  const imageBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.03)'
   const [activeTab, setActiveTab] = useState('all')
   const [orders, setOrders] = useState<OrderVO[]>([])
   const [loading, setLoading] = useState(false)
-  const [refreshing, setRefreshing] = useState(false)
 
   // 支付弹窗状态
   const [payModalVisible, setPayModalVisible] = useState(false)
@@ -102,10 +124,7 @@ const OrderPage = () => {
   const [payingOrder, setPayingOrder] = useState<OrderVO | null>(null)
   const [paying, setPaying] = useState(false)
   const [paySuccess, setPaySuccess] = useState(false)
-  const slideAnim = useRef(new Animated.Value(SCREEN_HEIGHT)).current
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
-  const HEADER_HEIGHT = 44
 
   /** 根据当前选中 tab 获取订单列表 */
   const fetchOrders = useCallback(
@@ -129,7 +148,6 @@ const OrderPage = () => {
         setOrders([])
       } finally {
         setLoading(false)
-        setRefreshing(false)
       }
     },
     [activeTab],
@@ -142,20 +160,13 @@ const OrderPage = () => {
       router.replace('/(auth)/sign-in')
       return
     }
-    fetchOrders(activeTab)
-  }, [isSessionLoading, session, activeTab])
+    fetchOrders(activeTab).catch()
+  }, [isSessionLoading, session, activeTab, fetchOrders, router])
 
   /** 切换 Tab */
-  const handleTabPress = (tabId: string) => {
-    if (tabId === activeTab) return
+  const handleTabChange = (tabId: string) => {
     setActiveTab(tabId)
-    setOrders([]) // 清空当前列表，显示 loading
-  }
-
-  /** 下拉刷新 */
-  const handleRefresh = () => {
-    setRefreshing(true)
-    fetchOrders()
+    setOrders([])
   }
 
   /** 获取订单状态显示信息 */
@@ -164,12 +175,6 @@ const OrderPage = () => {
     setPayingOrder(order)
     setSelectedPayMethod('wechat')
     setPayModalVisible(true)
-    Animated.spring(slideAnim, {
-      toValue: 0,
-      useNativeDriver: true,
-      tension: 65,
-      friction: 11,
-    }).start()
   }
 
   /** 关闭支付弹窗 */
@@ -179,16 +184,10 @@ const OrderPage = () => {
       clearInterval(pollingRef.current)
       pollingRef.current = null
     }
-    Animated.timing(slideAnim, {
-      toValue: SCREEN_HEIGHT,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(() => {
-      setPayModalVisible(false)
-      setPayingOrder(null)
-      setPaying(false)
-      setPaySuccess(false)
-    })
+    setPayModalVisible(false)
+    setPayingOrder(null)
+    setPaying(false)
+    setPaySuccess(false)
   }
 
   /** 轮询订单状态（等待MockPay异步回调后订单变PAID） */
@@ -276,7 +275,7 @@ const OrderPage = () => {
           try {
             await orderApi.cancel(order.orderId)
             Alert.alert('提示', '订单已取消')
-            fetchOrders(activeTab)
+            await fetchOrders(activeTab)
           } catch (error) {
             console.error('取消订单失败:', error)
           }
@@ -286,7 +285,15 @@ const OrderPage = () => {
   }
 
   const getStateInfo = (state: string) => {
-    return ORDER_STATE_MAP[state] || { label: state, color: colors.textSecondary }
+    const info = ORDER_STATE_MAP[state] || {
+      label: state,
+      color: colors.textSecondary,
+      bgColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+    }
+    if (!isDark && state === 'CLOSED') {
+      return { ...info, color: 'rgba(0,0,0,0.4)', bgColor: 'rgba(0,0,0,0.06)' }
+    }
+    return info
   }
 
   /** 渲染单个订单卡片 */
@@ -294,61 +301,209 @@ const OrderPage = () => {
     const stateInfo = getStateInfo(item.orderState)
 
     return (
-      <View style={styles.orderCard}>
-        {/* 卡片顶部：订单号 + 状态 */}
-        <View style={styles.cardHeader}>
-          <Text style={styles.orderId} numberOfLines={1}>
-            订单号: {item.orderId}
+      <View
+        style={{
+          width: '100%',
+          backgroundColor: cardBg,
+          borderRadius: 24,
+          borderWidth: 1,
+          borderColor: cardBorder,
+          padding: 18,
+          marginBottom: 16,
+        }}
+      >
+        {/* 顶部 */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Text
+            numberOfLines={1}
+            style={{
+              flex: 1,
+              color: textSub,
+              fontSize: 13,
+              marginRight: 12,
+            }}
+          >
+            订单号：{item.orderId}
           </Text>
-          <Text style={[styles.orderState, { color: stateInfo.color }]}>{stateInfo.label}</Text>
+
+          <View
+            style={{
+              paddingHorizontal: 10,
+              paddingVertical: 5,
+              borderRadius: 999,
+              backgroundColor: stateInfo.bgColor,
+            }}
+          >
+            <Text
+              style={{
+                color: stateInfo.color,
+                fontSize: 13,
+                fontWeight: '600',
+              }}
+            >
+              {stateInfo.label}
+            </Text>
+          </View>
         </View>
 
         {/* 分割线 */}
-        <View style={styles.divider} />
+        <View
+          style={{
+            height: 1,
+            backgroundColor: cardBorder,
+            marginVertical: 14,
+          }}
+        />
 
-        {/* 商品信息 */}
-        <View style={styles.goodsInfo}>
+        {/* 商品区 */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+          }}
+        >
           {item.productCoverUrl ? (
             <Image
               source={{ uri: item.productCoverUrl }}
-              style={styles.goodsImage}
-              resizeMode="cover"
+              style={{
+                width: 88,
+                height: 88,
+                borderRadius: 16,
+                backgroundColor: imageBg,
+              }}
             />
           ) : (
-            <View style={[styles.goodsImage, styles.goodsImagePlaceholder]}>
+            <View
+              style={{
+                width: 88,
+                height: 88,
+                borderRadius: 16,
+                backgroundColor: imageBg,
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderWidth: 1,
+                borderColor: cardBorder,
+              }}
+            >
               <Text style={styles.placeholderText}>藏品</Text>
             </View>
           )}
-          <View style={styles.goodsDetail}>
-            <Text style={styles.goodsName} numberOfLines={2}>
+
+          <View
+            style={{
+              flex: 1,
+              marginLeft: 14,
+              minHeight: 88,
+              justifyContent: 'space-between',
+            }}
+          >
+            <Text
+              numberOfLines={2}
+              style={{
+                color: textMain,
+                fontSize: 16,
+                fontWeight: '600',
+                lineHeight: 22,
+                marginBottom: 8,
+              }}
+            >
               {item.productName || '未知商品'}
             </Text>
-            <Text style={styles.goodsCount}>数量: {item.quantity}</Text>
-            <Text style={styles.goodsPrice}>¥ {formatPrice(item.unitPrice)}</Text>
+
+            <Text
+              style={{
+                color: textSub,
+                fontSize: 14,
+                marginBottom: 6,
+              }}
+            >
+              数量：{item.quantity}
+            </Text>
+
+            <Text
+              style={{
+                color: textMain,
+                fontSize: 15,
+                fontWeight: '500',
+              }}
+            >
+              单价：¥ {formatPrice(item.unitPrice)}
+            </Text>
           </View>
         </View>
 
-        {/* 卡片底部：金额 + 时间 */}
-        <View style={styles.divider} />
-        <View style={styles.cardFooter}>
-          <Text style={styles.footerTime}>
+        {/* 分割线 */}
+        <View
+          style={{
+            height: 1,
+            backgroundColor: cardBorder,
+            marginVertical: 14,
+          }}
+        />
+
+        {/* 金额区 */}
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'flex-end',
+            justifyContent: 'space-between',
+          }}
+        >
+          <Text
+            style={{
+              color: textTime,
+              fontSize: 13,
+            }}
+          >
             {item.confirmTime ? formatTime(item.confirmTime) : ''}
           </Text>
-          <View style={styles.totalAmount}>
-            <Text style={styles.totalLabel}>合计: </Text>
-            <Text style={styles.totalPrice}>¥ {formatPrice(item.totalPrice)}</Text>
+
+          <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+            <Text
+              style={{
+                color: textSub,
+                fontSize: 13,
+                marginRight: 6,
+              }}
+            >
+              合计
+            </Text>
+            <Text
+              style={{
+                color: '#007AFF', // iOS default native blue tint
+                fontSize: 24,
+                fontWeight: '700',
+              }}
+            >
+              ¥ {formatPrice(item.totalPrice)}
+            </Text>
           </View>
         </View>
 
-        {/* 待付款状态显示操作按钮 */}
+        {/* 动态按钮区 */}
         {(item.orderState === 'CREATE' || item.orderState === 'CONFIRM') && (
-          <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.btnSecondary} onPress={() => handleCancelOrder(item)}>
-              <Text style={styles.btnSecondaryText}>取消订单</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.btnPrimary} onPress={() => openPayModal(item)}>
-              <Text style={styles.btnPrimaryText}>去付款</Text>
-            </TouchableOpacity>
+          <View style={{ marginTop: 16 }}>
+            <Host matchContents>
+              <HStack spacing={12}>
+                <Button
+                  label="取消订单"
+                  modifiers={[buttonStyle('glassProminent'), controlSize('large'), tint('#FF3B30')]}
+                  onPress={() => handleCancelOrder(item)}
+                />
+                <Spacer />
+                <Button
+                  label="去付款"
+                  modifiers={[buttonStyle('glassProminent'), controlSize('large')]}
+                  onPress={() => openPayModal(item)}
+                />
+              </HStack>
+            </Host>
           </View>
         )}
       </View>
@@ -357,7 +512,6 @@ const OrderPage = () => {
 
   /** 渲染空状态 */
   const renderEmpty = () => {
-    if (loading) return null
     return (
       <View style={styles.emptyContainer}>
         <Feather name="inbox" size={48} color={colors.textSecondary} />
@@ -369,172 +523,175 @@ const OrderPage = () => {
   // 未登录或仍在确认登录状态时，不渲染订单页，直接跳转或显示加载
   if (isSessionLoading || !session) {
     return (
-      <View style={[styles.rootContainer, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
-        <Spinner visible={true} />
-      </View>
+      <View
+        style={[styles.rootContainer, { flex: 1, justifyContent: 'center', alignItems: 'center' }]}
+      ></View>
     )
   }
 
   return (
-    <View style={styles.rootContainer}>
-      {/* 订单列表加载与刷新时的全局遮罩 */}
-      <Spinner visible={loading || refreshing} />
-      <Stack.Screen options={{ headerShown: false }} />
+    <>
+      <Stack.Screen
+        options={{
+          title: '我的订单',
+          headerTransparent: true,
+        }}
+      />
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.back()} />
+      </Stack.Toolbar>
 
-      {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top }]}>
-        <LiquidGlassButton icon="chevron-left" onPress={() => router.back()} />
-        <Text style={styles.headerTitle}>我的订单</Text>
-        <View style={{ width: 44 }} />
-      </View>
-
-      <View style={[styles.container, { paddingTop: insets.top + HEADER_HEIGHT + 16 }]}>
-        {/* Tabs Section - 使用 expo-glass-effect 实现液态玻璃分段控制 */}
-        <GlassView style={styles.tabsBlurWrapper} glassEffectStyle="regular" isInteractive>
-          <View style={styles.tabsContainer}>
-            {TABS.map((tab) => {
-              const isActive = activeTab === tab.id
-              return (
-                <TouchableOpacity
-                  key={tab.id}
-                  style={[styles.tabItem, isActive && styles.tabItemActive]}
-                  onPress={() => handleTabPress(tab.id)}
-                  activeOpacity={0.85}
-                >
-                  <Text style={[styles.tabLabel, isActive && styles.activeTabLabel]}>
-                    {tab.label}
-                  </Text>
-                </TouchableOpacity>
-              )
-            })}
+      <FlatList
+        style={[styles.rootContainer, { backgroundColor: systemBg }]}
+        contentInsetAdjustmentBehavior="automatic"
+        data={orders}
+        renderItem={renderOrderCard}
+        keyExtractor={(item) => item.orderId}
+        ListHeaderComponent={
+          /* Tabs Section 放入 Header 当中，确保外层容器和列表不割裂，大标题顺滑折叠 */
+          <View style={[styles.pickerWrapper, { marginTop: 16 }]}>
+            <Host matchContents>
+              <Picker
+                modifiers={[pickerStyle('segmented')]}
+                label="订单状态"
+                selection={activeTab}
+                onSelectionChange={(selection) => handleTabChange(selection as string)}
+              >
+                {TABS.map((t) => (
+                  <SwiftUIText key={t.id} modifiers={[tag(t.id)]}>
+                    {t.label}
+                  </SwiftUIText>
+                ))}
+              </Picker>
+            </Host>
           </View>
-        </GlassView>
-
-        {/* Order List */}
-        <FlatList
-          data={orders}
-          renderItem={renderOrderCard}
-          keyExtractor={(item) => item.orderId}
-          contentContainerStyle={{
-            paddingHorizontal: spacing.md,
-            paddingTop: spacing.md,
-            paddingBottom: insets.bottom + 32,
-          }}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={renderEmpty}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.primary}
-              colors={[colors.primary]}
-            />
-          }
-        />
-      </View>
+        }
+        contentContainerStyle={{
+          paddingHorizontal: spacing.md,
+          paddingBottom: insets.bottom + 32,
+        }}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={renderEmpty}
+        ListFooterComponent={loading ? <ActivityIndicator size={'large'} /> : null}
+      />
 
       {/* ===== 支付弹窗 ===== */}
-      <Modal
-        visible={payModalVisible}
-        transparent
-        animationType="none"
-        onRequestClose={closePayModal}
-      >
-        <TouchableWithoutFeedback onPress={closePayModal}>
-          <View style={styles.modalOverlay} />
-        </TouchableWithoutFeedback>
-
-        <Animated.View
-          style={[
-            styles.modalContainer,
-            { transform: [{ translateY: slideAnim }], paddingBottom: insets.bottom + 16 },
-          ]}
+      <Host matchContents>
+        <BottomSheet
+          isPresented={payModalVisible}
+          onIsPresentedChange={(isVisible) => {
+            if (!isVisible) closePayModal()
+            else setPayModalVisible(isVisible)
+          }}
         >
-          {/* 顶部拖拽条 */}
-          <View style={styles.modalDragBar} />
-
-          {/* 金额区域 */}
-          <View style={styles.modalAmountSection}>
-            <Text style={styles.modalAmountLabel}>支付金额</Text>
-            <View style={styles.modalAmountRow}>
-              <Text style={styles.modalCurrency}>¥</Text>
-              <Text style={styles.modalAmountValue}>
-                {formatPrice(payingOrder?.totalPrice)}
-              </Text>
-            </View>
-            <Text style={styles.modalOrderHint}>
-              订单号: {payingOrder?.orderId}
-            </Text>
-          </View>
-
-          {/* 分割线 */}
-          <View style={styles.modalDivider} />
-
-          {/* 选择支付方式标题 */}
-          <Text style={styles.modalSectionTitle}>选择支付方式</Text>
-
-          {/* 支付方式列表 */}
-          {PAYMENT_METHODS.map((method) => {
-            const isSelected = selectedPayMethod === method.id
-            return (
-              <TouchableOpacity
-                key={method.id}
-                style={[
-                  styles.payMethodItem,
-                  isSelected && styles.payMethodItemActive,
-                ]}
-                onPress={() => setSelectedPayMethod(method.id)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.payMethodLeft}>
-                  <FontAwesome6 name={method.icon} size={22} color={method.color} style={styles.payMethodIcon} />
-                  <View>
-                    <Text style={styles.payMethodLabel}>{method.label}</Text>
-                    {method.desc ? (
-                      <Text style={styles.payMethodDesc}>{method.desc}</Text>
-                    ) : null}
-                  </View>
-                </View>
-                <View
-                  style={[
-                    styles.radioOuter,
-                    isSelected && styles.radioOuterActive,
-                  ]}
-                >
-                  {isSelected && <View style={styles.radioInner} />}
-                </View>
-              </TouchableOpacity>
-            )
-          })}
-
-          {/* 确认支付按钮 */}
-          <TouchableOpacity
-            style={[styles.confirmPayBtn, paying && styles.confirmPayBtnDisabled]}
-            onPress={handleConfirmPay}
-            activeOpacity={0.8}
-            disabled={paying}
+          <Group
+            modifiers={[
+              presentationDragIndicator('visible'),
+              presentationDetents(['medium', 'large']),
+            ]}
           >
-            {paying ? (
-              <View style={styles.payingRow}>
-                {paySuccess ? (
-                  <>
-                    <FontAwesome6 name="circle-check" size={18} color="#000" solid />
-                    <Text style={[styles.confirmPayText, { marginLeft: 8 }]}>支付成功</Text>
-                  </>
+            <VStack spacing={0}>
+              {/* 金额区域 (无背景，自然居中) */}
+              <VStack spacing={8} modifiers={[padding({ top: 32, bottom: 16 })]}>
+                <SwiftUIText modifiers={[foregroundStyle('secondary'), font({ size: 14 })]}>
+                  支付金额
+                </SwiftUIText>
+                <HStack spacing={4}>
+                  <SwiftUIText
+                    modifiers={[font({ size: 24, weight: 'bold' }), foregroundStyle('primary')]}
+                  >
+                    ¥
+                  </SwiftUIText>
+                  <SwiftUIText
+                    modifiers={[font({ size: 36, weight: 'bold' }), foregroundStyle('primary')]}
+                  >
+                    {formatPrice(payingOrder?.totalPrice)}
+                  </SwiftUIText>
+                </HStack>
+                <SwiftUIText modifiers={[foregroundStyle('secondary'), font({ size: 12 })]}>
+                  订单号: {payingOrder?.orderId}
+                </SwiftUIText>
+              </VStack>
+
+              <List modifiers={[listStyle('insetGrouped')]}>
+                {/* 支付方式列表 */}
+                <Section title="选择支付方式">
+                  <Picker
+                    selection={selectedPayMethod}
+                    onSelectionChange={(val) => setSelectedPayMethod(val as string)}
+                    modifiers={[pickerStyle('inline')]}
+                  >
+                    <Label
+                      title="微信支付 (推荐)"
+                      systemImage="message.fill"
+                      modifiers={[tag('wechat')]}
+                    />
+                    <Label
+                      title="支付宝"
+                      systemImage="yensign.circle.fill"
+                      modifiers={[tag('alipay')]}
+                    />
+                    <Label
+                      title="Apple Pay"
+                      systemImage="applelogo"
+                      modifiers={[tag('applepay')]}
+                    />
+                  </Picker>
+                </Section>
+              </List>
+
+              {/* 底部悬浮操作按钮区 */}
+              <VStack modifiers={[padding({ horizontal: 20, bottom: 32, top: 8 })]}>
+                {paying ? (
+                  <Button
+                    modifiers={[
+                      buttonStyle('glassProminent'),
+                      controlSize('large'),
+                      disabled(true),
+                    ]}
+                  >
+                    <HStack spacing={8} modifiers={[frame({ maxWidth: 'infinity' as any })]}>
+                      {paySuccess ? (
+                        <SwiftUIText
+                          modifiers={[
+                            foregroundStyle('green'),
+                            font({ weight: 'bold' }),
+                            multilineTextAlignment('center'),
+                          ]}
+                        >
+                          ✓ 支付成功
+                        </SwiftUIText>
+                      ) : (
+                        <>
+                          <ProgressView />
+                          <SwiftUIText modifiers={[multilineTextAlignment('center')]}>
+                            支付处理中...
+                          </SwiftUIText>
+                        </>
+                      )}
+                    </HStack>
+                  </Button>
                 ) : (
-                  <>
-                    <ActivityIndicator size="small" color="#000" />
-                    <Text style={[styles.confirmPayText, { marginLeft: 8 }]}>支付处理中...</Text>
-                  </>
+                  <Button
+                    onPress={handleConfirmPay}
+                    modifiers={[buttonStyle('glassProminent'), controlSize('large')]}
+                  >
+                    <SwiftUIText
+                      modifiers={[
+                        frame({ maxWidth: 'infinity' as any }),
+                        multilineTextAlignment('center'),
+                      ]}
+                    >
+                      确认支付
+                    </SwiftUIText>
+                  </Button>
                 )}
-              </View>
-            ) : (
-              <Text style={styles.confirmPayText}>确认支付</Text>
-            )}
-          </TouchableOpacity>
-        </Animated.View>
-      </Modal>
-    </View>
+              </VStack>
+            </VStack>
+          </Group>
+        </BottomSheet>
+      </Host>
+    </>
   )
 }
 
@@ -543,353 +700,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
-  header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingBottom: 10,
-  },
-  headerTitle: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  container: {
-    flex: 1,
-  },
-  /* ---- Tabs ---- */
-  tabsBlurWrapper: {
+  pickerWrapper: {
     marginHorizontal: spacing.md,
-    borderRadius: 999,
-    overflow: 'hidden',
     marginBottom: spacing.sm,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    padding: spacing.xs,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-  },
-  tabItem: {
-    flex: 1,
-    paddingVertical: 8,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabItemActive: {
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    shadowColor: '#ffffff',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  tabLabel: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  activeTabLabel: {
-    color: colors.text,
-    fontWeight: '600',
-  },
-  /* ---- Loading ---- */
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 100,
-  },
-  loadingText: {
-    marginTop: spacing.sm,
-    color: colors.textSecondary,
-    fontSize: typography.fontSize.sm,
-  },
-  /* ---- Order Card ---- */
-  orderCard: {
-    backgroundColor: colors.backgroundCard,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    marginBottom: spacing.md,
-    padding: spacing.md,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  orderId: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  orderState: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    marginVertical: spacing.sm,
-  },
-  /* ---- Goods Info ---- */
-  goodsInfo: {
-    flexDirection: 'row',
-  },
-  goodsImage: {
-    width: 80,
-    height: 80,
-    borderRadius: borderRadius.sm,
-    backgroundColor: colors.backgroundTertiary,
-  },
-  goodsImagePlaceholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderLight,
   },
   placeholderText: {
     color: colors.textTertiary,
     fontSize: typography.fontSize.xs,
   },
-  goodsDetail: {
-    flex: 1,
-    marginLeft: spacing.md,
-    justifyContent: 'space-between',
-  },
-  goodsName: {
-    fontSize: typography.fontSize.md,
-    color: colors.text,
-    fontWeight: typography.fontWeight.medium,
-    lineHeight: 20,
-  },
-  goodsCount: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-  },
-  goodsPrice: {
-    fontSize: typography.fontSize.md,
-    color: colors.text,
-    fontWeight: typography.fontWeight.semibold,
-  },
-  /* ---- Card Footer ---- */
-  cardFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  footerTime: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textTertiary,
-  },
-  totalAmount: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  totalLabel: {
-    fontSize: typography.fontSize.sm,
-    color: colors.textSecondary,
-  },
-  totalPrice: {
-    fontSize: typography.fontSize.lg,
-    color: colors.primary,
-    fontWeight: typography.fontWeight.bold,
-  },
-  /* ---- Action Buttons ---- */
-  actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: spacing.md,
-    gap: spacing.sm,
-  },
-  btnSecondary: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  btnSecondaryText: {
-    color: colors.textSecondary,
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-  },
-  btnPrimary: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.primary,
-  },
-  btnPrimaryText: {
-    color: '#000',
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.semibold,
-  },
-  /* ---- Empty State ---- */
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    // 适当下移一点，让整体更接近屏幕中间
     paddingTop: 200,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: spacing.md,
   },
   emptyText: {
     color: colors.textSecondary,
     fontSize: typography.fontSize.md,
-  },
-  /* ---- Payment Modal ---- */
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-  },
-  modalContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#141414',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-  },
-  modalDragBar: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignSelf: 'center',
-    marginBottom: spacing.lg,
-  },
-  modalAmountSection: {
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-  },
-  modalAmountLabel: {
-    fontSize: typography.fontSize.md,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  modalAmountRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-  },
-  modalCurrency: {
-    fontSize: typography.fontSize.xl,
-    color: colors.text,
-    fontWeight: typography.fontWeight.bold,
-    marginRight: 2,
-    marginBottom: 4,
-  },
-  modalAmountValue: {
-    fontSize: 36,
-    color: colors.text,
-    fontWeight: typography.fontWeight.bold,
-  },
-  modalOrderHint: {
-    fontSize: typography.fontSize.xs,
-    color: colors.textTertiary,
-    marginTop: spacing.sm,
-  },
-  modalDivider: {
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    marginVertical: spacing.md,
-  },
-  modalSectionTitle: {
-    fontSize: typography.fontSize.md,
-    color: colors.textSecondary,
-    fontWeight: typography.fontWeight.medium,
-    marginBottom: spacing.md,
-  },
-  payMethodItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    marginBottom: spacing.sm,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  payMethodItemActive: {
-    borderColor: colors.primary,
-    backgroundColor: 'rgba(0, 212, 255, 0.06)',
-  },
-  payMethodLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  payMethodIcon: {
-    fontSize: 24,
-    marginRight: spacing.md,
-  },
-  payMethodLabel: {
-    fontSize: typography.fontSize.lg,
-    color: colors.text,
-    fontWeight: typography.fontWeight.medium,
-  },
-  payMethodDesc: {
-    fontSize: typography.fontSize.xs,
-    color: colors.primary,
-    marginTop: 2,
-  },
-  radioOuter: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioOuterActive: {
-    borderColor: colors.primary,
-  },
-  radioInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.primary,
-  },
-  confirmPayBtn: {
-    marginTop: spacing.lg,
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.xl,
-    paddingVertical: 16,
-    alignItems: 'center',
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 8,
-  },
-  confirmPayBtnDisabled: {
-    opacity: 0.7,
-  },
-  payingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  confirmPayText: {
-    fontSize: typography.fontSize.lg,
-    color: '#000',
-    fontWeight: typography.fontWeight.bold,
   },
 })
 

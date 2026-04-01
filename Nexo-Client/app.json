@@ -7,29 +7,25 @@
     "icon": "./src/assets/images/icon.png",
     "scheme": "nexo",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.nexo.app",
-      "associatedDomains": [
-        "applinks:your.domain.com"
-      ],
+      "bundleIdentifier": "com.shijieyan.nexo",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       }
     },
     "android": {
+      "package": "com.shijieyan.nexo",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./src/assets/images/android-icon-foreground.png",
         "backgroundImage": "./src/assets/images/android-icon-background.png",
         "monochromeImage": "./src/assets/images/android-icon-monochrome.png"
       },
-      "edgeToEdgeEnabled": true,
-      "package": "com.nexo.app",
-      "permissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+      "permissions": ["android.permission.RECORD_AUDIO"]
     },
     "web": {
       "output": "static",
@@ -53,8 +49,7 @@
             "extraProguardRules": "-keep class com.tencent.mm.opensdk.** {\n    *;\n}\n\n-keep class com.tencent.wxop.** {\n    *;\n}\n\n-keep class com.tencent.mm.sdk.** {\n    *;\n}"
           }
         }
-      ],
-      "expo-wechat"
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

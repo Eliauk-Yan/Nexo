@@ -16,4 +16,4 @@ dubbo:
     serialize-check-status: WARN # 或 DISABLE（彻底关闭，不建议线上用）
     # 多应用同机部署时默认 22222 端口冲突，关闭 QOS 避免 Address already in use
     qos-enable: false
-#    qos-accept-foreign-ip: false # QOS 是否接受非本机 IP 的连接（安全设置）
+#    qos-accept-foreign-ip: false #  QOS 是否接受非本机 IP 的连接（安全设置）

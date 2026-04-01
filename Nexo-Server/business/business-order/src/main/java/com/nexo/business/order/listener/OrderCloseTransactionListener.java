@@ -1,7 +1,6 @@
 package com.nexo.business.order.listener;
 
 import com.alibaba.fastjson2.JSON;
-import com.nexo.business.order.service.OrderService;
 import com.nexo.common.api.order.constant.TradeOrderEvent;
 import com.nexo.common.api.order.request.OrderTimeoutRequest;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +18,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class OrderCloseTransactionListener implements TransactionListener {
 
-    private final OrderService orderService;
-
     @Override
     public LocalTransactionState executeLocalTransaction(Message message, Object o) {
         Map<String, String> headers = message.getProperties();
@@ -30,7 +27,8 @@ public class OrderCloseTransactionListener implements TransactionListener {
             // 订单取消
         } else if (TradeOrderEvent.TIME_OUT.getCode().equals(closeType)) {
             // 订单超时
-            OrderTimeoutRequest timeoutRequest = JSON.parseObject(JSON.parseObject(message.getBody()).getString("body"), OrderTimeoutRequest.class);
+            JSON.parseObject(JSON.parseObject(message.getBody()).getString("body"),
+                    OrderTimeoutRequest.class);
 
         } else {
             throw new UnsupportedOperationException("不支持的关闭订单事件类型 " + closeType);

@@ -299,7 +299,7 @@ public class NFTServiceImpl extends ServiceImpl<NFTMapper, NFT> implements NFTSe
         // 1. 构建页面
         Page<NFT> page = new Page<>(current, size);
         // 2. 构造查询条件
-        LambdaQueryWrapper<NFT> condition = new LambdaQueryWrapper<NFT>().eq(StringUtils.isNotBlank(state), NFT::getState, state).like(keyword != null, NFT::getName, keyword).orderByAsc(NFT::getCreatedAt);
+        LambdaQueryWrapper<NFT> condition = new LambdaQueryWrapper<NFT>().eq(StringUtils.isNotBlank(state), NFT::getState, state).like(keyword != null, NFT::getName, keyword).orderByDesc(NFT::getCreatedAt);
         // 3. Mapper查询
         Page<NFT> nftPage = nftMapper.selectPage(page, condition);
         // 4. 返回响应

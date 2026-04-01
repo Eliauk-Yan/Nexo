@@ -1,82 +1,92 @@
-import { LiquidGlassButton } from '@/components/ui'
-import { colors, spacing } from '@/config/theme'
-import { useRouter } from 'expo-router'
-import React, { useState } from 'react'
-import { StyleSheet, View, ScrollView, Text, Switch } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Stack, useRouter } from 'expo-router'
+import { Host, List, Section, Toggle, LabeledContent, Text } from '@expo/ui/swift-ui'
+import { listStyle } from '@expo/ui/swift-ui/modifiers'
+import React, { useEffect, useState } from 'react'
+import { Appearance } from 'react-native'
+
+type ThemeMode = 'system' | 'light' | 'dark'
 
 const GeneralSetting = () => {
-    const router = useRouter()
-    const insets = useSafeAreaInsets()
-    const buttonTop = insets.top + spacing.md
+  const router = useRouter()
 
-    // 仅做前端展示，实际主题仍为统一深色
-    const [isDark, setIsDark] = useState(true)
+  const [pushNotification, setPushNotification] = useState(true)
 
-    return (
-        <View style={styles.container}>
-            <View style={[styles.backButton, { top: buttonTop }]}>
-                <LiquidGlassButton icon="chevron-left" onPress={() => router.back()} />
-            </View>
-            <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={[styles.scrollContent, { paddingTop: buttonTop + 50 + spacing.lg }]}
-                showsVerticalScrollIndicator={false}
-            >
-                <View style={styles.itemRow}>
-                    <View>
-                        <Text style={styles.itemLabel}>夜间模式</Text>
-                    </View>
-                    <Switch
-                        value={isDark}
-                        onValueChange={setIsDark}
-                        trackColor={{ false: colors.border, true: colors.primary }}
-                        thumbColor={isDark ? '#000' : '#f4f3f4'}
-                        style={styles.switchControl}
-                    />
-                </View>
-            </ScrollView>
-        </View>
-    )
+  // 默认跟随系统
+  const [themeMode, setThemeMode] = useState<ThemeMode>('system')
+
+  useEffect(() => {
+    if (themeMode === 'system') {
+      Appearance.setColorScheme(null as any)
+      return
+    }
+    Appearance.setColorScheme(themeMode)
+  }, [themeMode])
+
+  return (
+    <>
+      <Stack.Screen
+        options={{
+          title: '通用设置',
+          headerLargeTitle: true,
+        }}
+      />
+      <Stack.Toolbar placement="left">
+        <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.back()} />
+      </Stack.Toolbar>
+
+      <Host style={{ flex: 1 }}>
+        <List modifiers={[listStyle('insetGrouped')]}>
+          <Section title="外观">
+            <Toggle
+              label="跟随系统"
+              systemImage="iphone"
+              isOn={themeMode === 'system'}
+              onIsOnChange={(value) => {
+                if (value) {
+                  setThemeMode('system')
+                } else {
+                  setThemeMode('light')
+                }
+              }}
+            />
+            <Toggle
+              label="夜间模式"
+              systemImage="moon.fill"
+              isOn={themeMode === 'dark'}
+              onIsOnChange={(value) => {
+                if (value) {
+                  setThemeMode('dark')
+                } else {
+                  setThemeMode('light')
+                }
+              }}
+            />
+            <LabeledContent label="当前外观模式">
+              <Text>
+                {themeMode === 'system' ? '跟随系统' : themeMode === 'dark' ? '深色' : '浅色'}
+              </Text>
+            </LabeledContent>
+          </Section>
+          <Section title="通知">
+            <Toggle
+              label="推送通知"
+              systemImage="bell.fill"
+              isOn={pushNotification}
+              onIsOnChange={setPushNotification}
+            />
+          </Section>
+          <Section title="关于">
+            <LabeledContent label="版本号">
+              <Text>1.0.0</Text>
+            </LabeledContent>
+            <LabeledContent label="构建版本">
+              <Text>2026.03.31</Text>
+            </LabeledContent>
+          </Section>
+        </List>
+      </Host>
+    </>
+  )
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.background,
-    },
-    backButton: {
-        position: 'absolute',
-        left: spacing.md,
-        zIndex: 10,
-    },
-    scrollView: {
-        flex: 1,
-    },
-    scrollContent: {
-        paddingHorizontal: spacing.md,
-        paddingBottom: spacing.xl,
-        gap: spacing.sm,
-    },
-    itemRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: colors.backgroundCard,
-        borderRadius: 28,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-        minHeight: 64,
-        width: '100%',
-    },
-    itemLabel: {
-        fontSize: 16,
-        color: colors.text,
-        fontWeight: '600',
-    },
-    switchControl: {
-        alignSelf: 'center',
-    },
-})
 
 export default GeneralSetting

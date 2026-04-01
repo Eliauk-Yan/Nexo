@@ -1,6 +1,5 @@
 package com.nexo.common.api.order.request;
 
-import com.nexo.common.api.order.constant.TradeOrderEvent;
 import com.nexo.common.api.user.constant.UserType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -8,7 +7,6 @@ import lombok.Setter;
 
 import java.io.Serial;
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Getter
 @Setter
