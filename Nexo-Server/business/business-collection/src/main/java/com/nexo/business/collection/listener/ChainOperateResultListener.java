@@ -3,6 +3,7 @@ package com.nexo.business.collection.listener;
 
 import com.nexo.business.collection.domain.entity.NFT;
 import com.nexo.business.collection.domain.exception.NFTException;
+import com.nexo.business.collection.service.AssetService;
 import com.nexo.business.collection.service.NFTService;
 import com.nexo.common.api.nft.constant.NFTState;
 import com.nexo.common.api.blockchain.model.ChainOperateBody;
@@ -41,6 +42,11 @@ public class ChainOperateResultListener extends StreamConsumer {
     private final NFTService NFTService;
 
     /**
+     * 资产服务
+     */
+    private final AssetService assetService;
+
+    /**
      * 库存服务门面
      */
     @DubboReference(version = "1.0.0")
@@ -72,6 +78,12 @@ public class ChainOperateResultListener extends StreamConsumer {
                         throw new NFTException(NFT_UPDATE_FAILED);
                     }
                     break;
+                case NFT_MINT:
+//
+//                    if (null == mintNft) {
+//                        throw new NFTException(NFT_QUERY_FAILED);
+//                    }
+
                 default:
                     throw new IllegalStateException("Unexpected value: " + chainOperateBody.getBizType().getCode());
             }

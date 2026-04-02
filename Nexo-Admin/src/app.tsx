@@ -1,8 +1,7 @@
-import { LinkOutlined } from '@ant-design/icons';
 import type { Settings as LayoutSettings } from '@ant-design/pro-components';
 import { SettingDrawer } from '@ant-design/pro-components';
 import type { RequestConfig, RunTimeLayoutConfig } from '@umijs/max';
-import { history, Link } from '@umijs/max';
+import { history } from '@umijs/max';
 import React from 'react';
 import {
   AvatarDropdown,
@@ -11,18 +10,15 @@ import {
   Question,
   SelectLang,
 } from '@/components';
+import { getCurrentUser } from '@/services/api/auth';
+import '@ant-design/v5-patch-for-react-19';
 
 import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
-import { getCurrentUser } from '@/services/api/auth';
-import '@ant-design/v5-patch-for-react-19';
 
 const isDev = process.env.NODE_ENV === 'development';
 const loginPath = '/user/login';
 
-/**
- * @see https://umijs.org/docs/api/runtime-config#getinitialstate
- * */
 export async function getInitialState(): Promise<{
   settings?: Partial<LayoutSettings>;
   currentUser?: API.CurrentUser;
@@ -32,16 +28,13 @@ export async function getInitialState(): Promise<{
   const fetchUserInfo = async () => {
     try {
       const res = await getCurrentUser({ skipErrorHandler: true });
-      // 兼容多种响应格式：Result<UserInfo> 的 data、或直接返回用户对象（参考 NFTurbo msg.data）
       const raw = res?.data ?? res;
       const data = raw?.data ?? raw;
+
       if (data && (data.nickName != null || data.id != null)) {
-        // 昵称/头像可能为空，提供兜底显示（参考 NFTurbo 的 profilePhotoUrl / nickName）
-        const nickName = data.nickName ?? data.phone ?? '管理员';
-        const avatarUrl = data.avatarUrl ?? data.profilePhotoUrl;
         return {
-          name: nickName,
-          avatar: avatarUrl,
+          name: data.nickName ?? data.phone ?? 'Admin',
+          avatar: data.avatarUrl ?? data.profilePhotoUrl,
           userid: data.id,
           access: data.role,
         };
@@ -49,10 +42,12 @@ export async function getInitialState(): Promise<{
     } catch (error) {
       console.error('fetchUserInfo error:', error);
     }
+
     return undefined;
   };
-  // 如果不是登录页面，执行
+
   const { location } = history;
+
   if (
     ![loginPath, '/user/register', '/user/register-result'].includes(
       location.pathname,
@@ -65,13 +60,13 @@ export async function getInitialState(): Promise<{
       settings: defaultSettings as Partial<LayoutSettings>,
     };
   }
+
   return {
     fetchUserInfo,
     settings: defaultSettings as Partial<LayoutSettings>,
   };
 }
 
-// ProLayout 支持的api https://procomponents.ant.design/components/layout
 export const layout: RunTimeLayoutConfig = ({
   initialState,
   setInitialState,
@@ -94,7 +89,7 @@ export const layout: RunTimeLayoutConfig = ({
     footerRender: () => <Footer />,
     onPageChange: () => {
       const { location } = history;
-      // 如果没有登录，重定向到 login
+
       if (!initialState?.currentUser && location.pathname !== loginPath) {
         history.push(loginPath);
       }
@@ -119,20 +114,9 @@ export const layout: RunTimeLayoutConfig = ({
         width: '331px',
       },
     ],
-    links: isDev
-      ? [
-        <Link key="openapi" to="/umi/plugin/openapi" target="_blank">
-          <LinkOutlined />
-          <span>OpenAPI 文档</span>
-        </Link>,
-      ]
-      : [],
+    links: [],
     menuHeaderRender: undefined,
-    // 自定义 403 页面
-    // unAccessible: <div>unAccessible</div>,
-    // 增加一个 loading 的状态
     childrenRender: (children) => {
-      // if (initialState?.loading) return <PageLoading />;
       return (
         <>
           {children}
@@ -156,11 +140,6 @@ export const layout: RunTimeLayoutConfig = ({
   };
 };
 
-/**
- * @name request 配置，可以配置错误处理
- * 它基于 axios 和 ahooks 的 useRequest 提供了一套统一的网络请求和错误处理方案。
- * @doc https://umijs.org/docs/max/request#配置
- */
 export const request: RequestConfig = {
   ...errorConfig,
 };

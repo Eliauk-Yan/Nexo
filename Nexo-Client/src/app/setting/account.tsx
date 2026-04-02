@@ -2,25 +2,9 @@ import { userApi, UserInfo } from '@/api/user'
 import { useSession } from '@/utils/ctx'
 import * as ImagePicker from 'expo-image-picker'
 import { Stack, useRouter } from 'expo-router'
-import {
-  Button,
-  Host,
-  LabeledContent,
-  List,
-  Popover,
-  Section,
-  Text,
-  VStack,
-} from '@expo/ui/swift-ui'
-import {
-  buttonStyle,
-  controlSize,
-  listStyle,
-  onTapGesture,
-  padding,
-  tint,
-} from '@expo/ui/swift-ui/modifiers'
-import React, { useEffect, useMemo, useState } from 'react'
+import { Button, Host, LabeledContent, List, Section, Text } from '@expo/ui/swift-ui'
+import { listStyle, onTapGesture } from '@expo/ui/swift-ui/modifiers'
+import React, { useEffect, useState } from 'react'
 import { Alert } from 'react-native'
 
 const defaultProfile: UserInfo = {
@@ -35,7 +19,6 @@ const AccountSecurity = () => {
   const router = useRouter()
   const { session, user, signIn, isLoading: isSessionLoading } = useSession()
   const [profile, setProfile] = useState<UserInfo>(defaultProfile)
-  const [isAccountPopoverPresented, setIsAccountPopoverPresented] = useState(false)
 
   const refreshProfile = async () => {
     const res = await userApi.getUserProfile()
@@ -55,14 +38,7 @@ const AccountSecurity = () => {
 
   const nickname = profile?.nickName || '未设置'
   const phone = profile?.phone || '未绑定'
-  const account = profile?.account || '未绑定'
   const isRealNameAuth = profile?.certification === true
-
-  const shortAccount = useMemo(() => {
-    if (!profile?.account) return '未绑定'
-    if (profile.account.length <= 18) return profile.account
-    return `${profile.account.slice(0, 8)}...${profile.account.slice(-6)}`
-  }, [profile?.account])
 
   const deleteAccount = () => {
     Alert.alert('账号注销', '注销账号后，所有数据将被永久删除且无法恢复。确定要继续吗？', [
@@ -213,29 +189,6 @@ const AccountSecurity = () => {
             </LabeledContent>
             <LabeledContent label="昵称" modifiers={[onTapGesture(updateUsername)]}>
               <Text>{nickname}</Text>
-            </LabeledContent>
-            <LabeledContent label="链账户">
-              <Popover
-                isPresented={isAccountPopoverPresented}
-                onIsPresentedChange={setIsAccountPopoverPresented}
-                attachmentAnchor="trailing"
-                arrowEdge="top"
-              >
-                <Popover.Trigger>
-                  <Button
-                    label={shortAccount}
-                    systemImage="doc.text.magnifyingglass"
-                    onPress={() => setIsAccountPopoverPresented(true)}
-                    modifiers={[buttonStyle('borderless'), controlSize('small'), tint('#007AFF')]}
-                  />
-                </Popover.Trigger>
-                <Popover.Content>
-                  <VStack spacing={8} modifiers={[padding({ all: 16 })]}>
-                    <Text>链账户地址</Text>
-                    <Text>{account}</Text>
-                  </VStack>
-                </Popover.Content>
-              </Popover>
             </LabeledContent>
             <LabeledContent label="手机号">
               <Text>{phone}</Text>

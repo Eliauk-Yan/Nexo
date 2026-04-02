@@ -58,7 +58,8 @@ public class MockChainServiceImpl extends AbstractChainService {
 
     @Override
     public ChainResponse<ChainOperationData> mint(ChainRequest request) {
-        return null;
+        return (ChainResponse<ChainOperationData>) doPostExecute(request, ChainOperationBizType.NFT, ChainOperateType.NFT_MINT, _ -> {
+        });
     }
 
     @Override
