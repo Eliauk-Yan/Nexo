@@ -1,6 +1,7 @@
 package com.nexo.common.api.order;
 
 import com.nexo.common.api.order.request.OrderPayRequest;
+import com.nexo.common.api.order.request.OrderFinishRequest;
 import com.nexo.common.api.order.request.OrderTimeoutRequest;
 import com.nexo.common.api.order.response.OrderResponse;
 import com.nexo.common.api.order.response.data.OrderDTO;
@@ -35,5 +36,13 @@ public interface OrderFacade {
      * @return 响应
      */
     OrderResponse<?> paySuccess(OrderPayRequest request);
+
+    /**
+     * 订单完成
+     *
+     * @param request 订单完成请求
+     * @return 响应
+     */
+    OrderResponse<?> finish(OrderFinishRequest request);
 
 }

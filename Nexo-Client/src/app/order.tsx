@@ -2,10 +2,10 @@ import { colors, spacing, typography } from '@/config/theme'
 import { Stack, useRouter } from 'expo-router'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Image,
+  RefreshControl,
   StyleSheet,
   Text,
   useColorScheme,
@@ -117,6 +117,7 @@ const OrderPage = () => {
   const [activeTab, setActiveTab] = useState('all')
   const [orders, setOrders] = useState<OrderVO[]>([])
   const [loading, setLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   // 支付弹窗状态
   const [payModalVisible, setPayModalVisible] = useState(false)
@@ -124,15 +125,18 @@ const OrderPage = () => {
   const [payingOrder, setPayingOrder] = useState<OrderVO | null>(null)
   const [paying, setPaying] = useState(false)
   const [paySuccess, setPaySuccess] = useState(false)
+  const [payStatusText, setPayStatusText] = useState('支付请求处理中...')
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   /** 根据当前选中 tab 获取订单列表 */
   const fetchOrders = useCallback(
-    async (tabId?: string) => {
+    async (tabId?: string, silent = false) => {
       const currentTab = tabId || activeTab
       const tabConfig = TABS.find((t) => t.id === currentTab)
       try {
-        setLoading(true)
+        if (!silent) {
+          setLoading(true)
+        }
         const params: any = {
           current: 1,
           size: PAGE_SIZE,
@@ -147,7 +151,9 @@ const OrderPage = () => {
         console.error('获取订单列表失败:', error)
         setOrders([])
       } finally {
-        setLoading(false)
+        if (!silent) {
+          setLoading(false)
+        }
       }
     },
     [activeTab],
@@ -164,6 +170,15 @@ const OrderPage = () => {
   }, [isSessionLoading, session, activeTab, fetchOrders, router])
 
   /** 切换 Tab */
+  const handleRefresh = useCallback(async () => {
+    try {
+      setRefreshing(true)
+      await fetchOrders(activeTab, true)
+    } finally {
+      setRefreshing(false)
+    }
+  }, [activeTab, fetchOrders])
+
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId)
     setOrders([])
@@ -188,9 +203,10 @@ const OrderPage = () => {
     setPayingOrder(null)
     setPaying(false)
     setPaySuccess(false)
+    setPayStatusText('支付请求处理中...')
   }
 
-  /** 轮询订单状态（等待MockPay异步回调后订单变PAID） */
+  /** 轮询订单状态（等待支付完成并最终铸造完成） */
   const pollOrderStatus = (orderId: string) => {
     let attempts = 0
     const maxAttempts = 20 // 最多轮询20次（约40秒）
@@ -199,8 +215,17 @@ const OrderPage = () => {
       attempts++
       try {
         const order = await orderApi.getOrder(orderId)
-        if (order && order.orderState === 'PAID') {
-          // 支付成功
+        if (!order) {
+          return
+        }
+
+        if (order.orderState === 'PAID') {
+          setPayStatusText('支付成功，正在铸造资产...')
+          return
+        }
+
+        if (order.orderState === 'FINISH') {
+          // 支付成功且资产已完成发放
           if (pollingRef.current) {
             clearInterval(pollingRef.current)
             pollingRef.current = null
@@ -222,7 +247,7 @@ const OrderPage = () => {
           pollingRef.current = null
         }
         setPaying(false)
-        Alert.alert('提示', '支付处理中，请稍后在订单列表查看结果')
+        Alert.alert('提示', '支付已受理，资产可能仍在铸造中，请稍后在订单列表查看最终结果')
       }
     }, 2000)
   }
@@ -238,6 +263,7 @@ const OrderPage = () => {
     }
 
     setPaying(true)
+    setPayStatusText('正在发起支付...')
     try {
       // 调用后端支付接口
       const result = await tradeApi.pay({
@@ -247,7 +273,8 @@ const OrderPage = () => {
 
       console.log('支付创建成功:', result)
 
-      // 开始轮询订单状态（等待Mock支付回调）
+      setPayStatusText('支付请求已提交，等待支付确认...')
+      // 开始轮询订单状态（等待支付回调和铸造完成）
       pollOrderStatus(payingOrder.orderId)
     } catch (error: any) {
       console.error('发起支付失败:', error)
@@ -570,9 +597,16 @@ const OrderPage = () => {
           paddingHorizontal: spacing.md,
           paddingBottom: insets.bottom + 32,
         }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              handleRefresh().catch()
+            }}
+          />
+        }
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={renderEmpty}
-        ListFooterComponent={loading ? <ActivityIndicator size={'large'} /> : null}
       />
 
       {/* ===== 支付弹窗 ===== */}
@@ -665,7 +699,7 @@ const OrderPage = () => {
                         <>
                           <ProgressView />
                           <SwiftUIText modifiers={[multilineTextAlignment('center')]}>
-                            支付处理中...
+                            {payStatusText}
                           </SwiftUIText>
                         </>
                       )}

@@ -52,13 +52,13 @@ public class MockChainServiceImpl extends AbstractChainService {
 
     @Override
     public ChainResponse<ChainOperationData> onChain(ChainRequest request) {
-        return (ChainResponse<ChainOperationData>) doPostExecute(request, ChainOperationBizType.NFT, ChainOperateType.NFT_ON_CHAIN, _ -> {
+        return (ChainResponse<ChainOperationData>) doPostExecute(request, resolveBizType(request), ChainOperateType.NFT_ON_CHAIN, _ -> {
         });
     }
 
     @Override
     public ChainResponse<ChainOperationData> mint(ChainRequest request) {
-        return (ChainResponse<ChainOperationData>) doPostExecute(request, ChainOperationBizType.NFT, ChainOperateType.NFT_MINT, _ -> {
+        return (ChainResponse<ChainOperationData>) doPostExecute(request, resolveBizType(request), ChainOperateType.NFT_MINT, _ -> {
         });
     }
 
@@ -94,4 +94,15 @@ public class MockChainServiceImpl extends AbstractChainService {
         return response;
     }
 
+    private ChainOperationBizType resolveBizType(ChainRequest request) {
+        if (request == null || request.getBizType() == null || request.getBizType().isBlank()) {
+            return ChainOperationBizType.NFT;
+        }
+        for (ChainOperationBizType type : ChainOperationBizType.values()) {
+            if (type.getCode().equalsIgnoreCase(request.getBizType())) {
+                return type;
+            }
+        }
+        return ChainOperationBizType.NFT;
+    }
 }

@@ -7,6 +7,7 @@ import com.nexo.business.order.service.OrderService;
 import com.nexo.common.base.response.ResponseCode;
 import com.nexo.common.api.order.OrderFacade;
 import com.nexo.common.api.order.constant.TradeOrderState;
+import com.nexo.common.api.order.request.OrderFinishRequest;
 import com.nexo.common.api.order.request.OrderPayRequest;
 import com.nexo.common.api.order.request.OrderTimeoutRequest;
 import com.nexo.common.api.order.response.OrderResponse;
@@ -84,6 +85,28 @@ public class OrderFacadeImpl implements OrderFacade {
             response.setSuccess(false);
             response.setCode("PAY_SUCCESS_ERROR");
             response.setMessage("订单支付推进异常: " + e.getMessage());
+        }
+        return response;
+    }
+
+    @Override
+    public OrderResponse<?> finish(OrderFinishRequest request) {
+        OrderResponse<?> response = new OrderResponse<>();
+        try {
+            boolean result = orderService.finish(request);
+            response.setSuccess(result);
+            if (result) {
+                response.setCode(ResponseCode.SUCCESS.getCode());
+                response.setMessage(ResponseCode.SUCCESS.getMessage());
+            } else {
+                response.setCode("ORDER_FINISH_FAILED");
+                response.setMessage("订单完成推进失败");
+            }
+        } catch (Exception e) {
+            log.error("订单完成推进异常, orderId={}", request.getOrderId(), e);
+            response.setSuccess(false);
+            response.setCode("ORDER_FINISH_ERROR");
+            response.setMessage("订单完成推进异常: " + e.getMessage());
         }
         return response;
     }

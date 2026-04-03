@@ -2,18 +2,21 @@ package com.nexo.business.collection.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.nexo.business.collection.domain.entity.NFT;
 import com.nexo.business.collection.domain.entity.Asset;
+import com.nexo.business.collection.domain.entity.NFT;
+import com.nexo.business.collection.domain.enums.AssetState;
 import com.nexo.business.collection.interfaces.vo.AssetVO;
 import com.nexo.business.collection.mapper.mybatis.AssetMapper;
-import com.nexo.business.collection.service.NFTService;
 import com.nexo.business.collection.service.AssetService;
+import com.nexo.business.collection.service.NFTService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -75,5 +78,30 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
 
         voPage.setRecords(vos);
         return voPage;
+    }
+
+    @Override
+    public Asset getByBusinessNo(String businessNo, String businessType) {
+        return this.getOne(new LambdaQueryWrapper<Asset>()
+                .eq(Asset::getBusinessNo, businessNo)
+                .eq(Asset::getBusinessType, businessType)
+                .last("limit 1"));
+    }
+
+    @Override
+    public boolean activateAsset(Long assetId, String transactionHash) {
+        Asset asset = this.getById(assetId);
+        if (asset == null) {
+            return false;
+        }
+        if (asset.getState() == AssetState.ACTIVE) {
+            return true;
+        }
+        LambdaUpdateWrapper<Asset> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(Asset::getId, assetId)
+                .set(Asset::getState, AssetState.ACTIVE)
+                .set(Asset::getTransactionHash, transactionHash)
+                .set(Asset::getSyncChainTime, LocalDateTime.now());
+        return this.update(updateWrapper);
     }
 }

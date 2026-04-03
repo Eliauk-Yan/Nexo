@@ -3,8 +3,8 @@ import { artworkApi } from '@/api'
 import { Artwork } from '@/api/artwork'
 import { Stack, useFocusEffect, useRouter } from 'expo-router'
 import {
-  ActivityIndicator,
   FlatList,
+  RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -93,13 +93,16 @@ const Home = () => {
 
   const [artworks, setArtworks] = useState<Artwork[]>([])
   const [loading, setLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
 
   const [keyword, setKeyword] = useState('')
   const [searchText, setSearchText] = useState('')
 
-  const fetchTrending = useCallback(async (searchKeyword = '') => {
+  const fetchTrending = useCallback(async (searchKeyword = '', silent = false) => {
     try {
-      setLoading(true)
+      if (!silent) {
+        setLoading(true)
+      }
       const response = await artworkApi.list({
         currentPage: 1,
         pageSize: 10,
@@ -110,7 +113,9 @@ const Home = () => {
       console.error('获取藏品失败:', error)
       setArtworks([])
     } finally {
-      setLoading(false)
+      if (!silent) {
+        setLoading(false)
+      }
     }
   }, [])
 
@@ -127,6 +132,15 @@ const Home = () => {
       fetchTrending(keyword).catch()
     }, [fetchTrending, keyword]),
   )
+
+  const handleRefresh = useCallback(async () => {
+    try {
+      setRefreshing(true)
+      await fetchTrending(keyword, true)
+    } finally {
+      setRefreshing(false)
+    }
+  }, [fetchTrending, keyword])
 
   const renderItem = ({ item }: { item: Artwork }) => (
     <View style={styles.itemContainer}>
@@ -180,9 +194,16 @@ const Home = () => {
         contentContainerStyle={{
           paddingHorizontal: 16,
         }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              handleRefresh().catch()
+            }}
+          />
+        }
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={!loading ? renderEmpty : null}
-        ListFooterComponent={loading ? <ActivityIndicator size={'large'} /> : null}
       />
     </>
   )
@@ -200,12 +221,6 @@ const styles = StyleSheet.create({
   itemContainer: {
     width: '48%',
     marginBottom: 16,
-  },
-
-  loading: {
-    paddingVertical: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 
   emptyContainer: {

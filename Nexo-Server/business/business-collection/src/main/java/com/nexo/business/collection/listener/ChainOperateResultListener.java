@@ -1,17 +1,21 @@
 package com.nexo.business.collection.listener;
 
-
+import com.nexo.business.collection.domain.entity.Asset;
 import com.nexo.business.collection.domain.entity.NFT;
 import com.nexo.business.collection.domain.exception.NFTException;
 import com.nexo.business.collection.service.AssetService;
 import com.nexo.business.collection.service.NFTService;
-import com.nexo.common.api.nft.constant.NFTState;
+import com.nexo.common.api.blockchain.constant.ChainOperationBizType;
 import com.nexo.common.api.blockchain.model.ChainOperateBody;
 import com.nexo.common.api.blockchain.response.data.ChainResultData;
 import com.nexo.common.api.inventory.InventoryFacade;
 import com.nexo.common.api.inventory.request.InventoryRequest;
 import com.nexo.common.api.inventory.response.InventoryResponse;
+import com.nexo.common.api.nft.constant.NFTState;
 import com.nexo.common.api.nft.constant.NFTType;
+import com.nexo.common.api.order.OrderFacade;
+import com.nexo.common.api.order.request.OrderFinishRequest;
+import com.nexo.common.api.user.constant.UserType;
 import com.nexo.common.mq.consumer.StreamConsumer;
 import com.nexo.common.mq.message.MessageBody;
 import lombok.RequiredArgsConstructor;
@@ -24,85 +28,126 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.function.Consumer;
 
-import static com.nexo.business.collection.domain.exception.ArtWorkErrorCode.*;
+import static com.nexo.business.collection.domain.exception.ArtWorkErrorCode.NFT_INVENTORY_INIT_FAILED;
+import static com.nexo.business.collection.domain.exception.ArtWorkErrorCode.NFT_QUERY_FAILED;
+import static com.nexo.business.collection.domain.exception.ArtWorkErrorCode.NFT_UPDATE_FAILED;
 
 /**
- * @classname ChainOperateResultListener
- * @description 链操作结果监听器
- * @date 2026/02/25 01:18
+ * 链上操作结果监听器
  */
 @RequiredArgsConstructor
 @Component
 @Slf4j
 public class ChainOperateResultListener extends StreamConsumer {
 
-    /**
-     * 藏品服务
-     */
     private final NFTService NFTService;
 
-    /**
-     * 资产服务
-     */
     private final AssetService assetService;
 
-    /**
-     * 库存服务门面
-     */
     @DubboReference(version = "1.0.0")
     private InventoryFacade inventoryFacade;
+
+    @DubboReference(version = "1.0.0")
+    private OrderFacade orderFacade;
 
     @Bean
     Consumer<Message<MessageBody>> chain() {
         return msg -> {
-            // 1. 获取MQ消息并反序列化为对象
             ChainOperateBody chainOperateBody = getMessage(msg, ChainOperateBody.class);
-            // 2. 获取链结果信息
             ChainResultData chainResultData = chainOperateBody.getChainResultData();
-            // 3. 成功情况处理
+
             switch (chainOperateBody.getOperateType()) {
-                // 3.1 藏品上链
                 case NFT_ON_CHAIN:
-                    // 3.1.1 获取藏品 藏品上链成功更新,只有一个txHash
-                    NFT nft = NFTService.getById(chainOperateBody.getBizId());
-                    if (null == nft) {
-                        throw new NFTException(NFT_QUERY_FAILED);
-                    }
-                    // 3.1.2 先写缓存，写成功再更新状态
-                    initInventory(nft.getId().toString(), NFTType.NFT,  nft.getQuantity(), nft.getIdentifier());
-                    // 3.1.3 更新状态
-                    nft.setState(NFTState.SUCCESS);
-                    nft.setSyncChainTime(LocalDateTime.now());
-                    boolean result = NFTService.updateById(nft);
-                    if (!result) {
-                        throw new NFTException(NFT_UPDATE_FAILED);
+                case NFT_MINT:
+                    if (chainOperateBody.getBizType() == ChainOperationBizType.ASSET) {
+                        handleAssetActivated(chainOperateBody, chainResultData);
+                    } else if (chainOperateBody.getBizType() == ChainOperationBizType.NFT) {
+                        handleNftActivated(chainOperateBody, chainResultData);
+                    } else {
+                        log.warn("未处理的链回调业务类型, bizType={}, operateType={}",
+                                chainOperateBody.getBizType(), chainOperateBody.getOperateType());
                     }
                     break;
-                case NFT_MINT:
-//
-//                    if (null == mintNft) {
-//                        throw new NFTException(NFT_QUERY_FAILED);
-//                    }
-
                 default:
-                    throw new IllegalStateException("Unexpected value: " + chainOperateBody.getBizType().getCode());
+                    log.warn("未处理的链回调操作类型, bizType={}, operateType={}",
+                            chainOperateBody.getBizType(), chainOperateBody.getOperateType());
             }
         };
     }
 
+    private void handleNftActivated(ChainOperateBody chainOperateBody, ChainResultData chainResultData) {
+        NFT nft = NFTService.getById(chainOperateBody.getBizId());
+        if (nft == null) {
+            Long bizId = parseBizId(chainOperateBody.getBizId());
+            Asset asset = bizId == null ? null : assetService.getById(bizId);
+            if (asset != null) {
+                log.warn("链回调业务类型与数据不一致, bizId={}, declaredBizType={}, fallback=ASSET",
+                        chainOperateBody.getBizId(), chainOperateBody.getBizType());
+                handleAssetActivated(chainOperateBody, chainResultData);
+                return;
+            }
+            log.error("链回调未找到对应NFT或资产记录, bizId={}, operateType={}, bizType={}",
+                    chainOperateBody.getBizId(), chainOperateBody.getOperateType(), chainOperateBody.getBizType());
+            return;
+        }
+        initInventory(nft.getId().toString(), NFTType.NFT, nft.getQuantity(), nft.getIdentifier());
+        nft.setState(NFTState.SUCCESS);
+        nft.setSyncChainTime(LocalDateTime.now());
+        if (!NFTService.updateById(nft)) {
+            throw new NFTException(NFT_UPDATE_FAILED);
+        }
+    }
+
+    private void handleAssetActivated(ChainOperateBody chainOperateBody, ChainResultData chainResultData) {
+        Long assetId = parseBizId(chainOperateBody.getBizId());
+        if (assetId == null) {
+            log.error("链回调资产业务ID非法, bizId={}, operateType={}",
+                    chainOperateBody.getBizId(), chainOperateBody.getOperateType());
+            return;
+        }
+        boolean activated = assetService.activateAsset(assetId, chainResultData != null ? chainResultData.getTxHash() : null);
+        if (!activated) {
+            throw new NFTException(NFT_UPDATE_FAILED);
+        }
+
+        Asset asset = assetService.getById(assetId);
+        if (asset == null) {
+            throw new NFTException(NFT_QUERY_FAILED);
+        }
+        if (asset.getBusinessNo() == null || asset.getBusinessNo().isBlank()) {
+            return;
+        }
+
+        OrderFinishRequest request = new OrderFinishRequest();
+        request.setIdentifier("asset_finish_" + assetId);
+        request.setOrderId(asset.getBusinessNo());
+        request.setOperateTime(LocalDateTime.now());
+        request.setOperator(UserType.PLATFORM.getCode());
+        request.setOperatorType(UserType.PLATFORM);
+
+        var response = orderFacade.finish(request);
+        if (!response.getSuccess()) {
+            throw new NFTException(NFT_UPDATE_FAILED);
+        }
+    }
+
     private void initInventory(String productId, NFTType nftType, Long inventory, String identifier) {
-        // 1. 构造库存请求
         InventoryRequest inventoryRequest = new InventoryRequest();
         inventoryRequest.setNftId(productId);
         inventoryRequest.setNFTType(nftType);
         inventoryRequest.setInventory(inventory);
         inventoryRequest.setIdentifier(identifier);
-        // 2. 初始化Redis库存
         InventoryResponse<Boolean> inventoryResponse = inventoryFacade.init(inventoryRequest);
-        // 3. 请求失败，抛出异常
         if (!inventoryResponse.getSuccess()) {
             throw new NFTException(NFT_INVENTORY_INIT_FAILED);
         }
     }
 
+    private Long parseBizId(String bizId) {
+        try {
+            return Long.valueOf(bizId);
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }
