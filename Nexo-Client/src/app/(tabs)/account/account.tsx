@@ -188,20 +188,13 @@ export default function ProfileScreen() {
 
           {!isLogin ? (
             <Section title="数字资产">
-              <VStack spacing={12} modifiers={[padding({ vertical: 12 })]}>
+              <VStack alignment="center" spacing={40} modifiers={[padding({ vertical: 32 })]}>
                 <Host matchContents>
                   <Image systemName="shippingbox.fill" size={40} color="#8E8E93" />
                 </Host>
-
                 <Text modifiers={[font({ size: 16, weight: 'medium' })]}>
                   请登录以查看你的数字藏品
                 </Text>
-
-                <Button
-                  label="立即登录"
-                  onPress={() => router.push('/(auth)/sign-in')}
-                  modifiers={[buttonStyle('glassProminent'), controlSize('large')]}
-                />
               </VStack>
             </Section>
           ) : (
