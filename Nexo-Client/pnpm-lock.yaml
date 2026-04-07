@@ -27,8 +27,8 @@ importers:
         specifier: ~55.0.9
         version: 55.0.9(@babel/core@7.28.5)(@expo/dom-webview@55.0.3)(@expo/metro-runtime@55.0.7)(expo-router@55.0.8)(react-dom@19.2.0(react@19.2.0))(react-native@0.83.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)(typescript@5.9.3)
       expo-apple-authentication:
-        specifier: ~55.0.9
-        version: 55.0.9(expo@55.0.9)(react-native@0.83.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.2.0))
+        specifier: ~55.0.12
+        version: 55.0.12(expo@55.0.9)(react-native@0.83.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.2.0))
       expo-blur:
         specifier: ~55.0.10
         version: 55.0.10(expo@55.0.9)(react-native@0.83.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)
@@ -2284,8 +2284,8 @@ packages:
     resolution: {integrity: sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==}
     engines: {node: '>=6'}
 
-  expo-apple-authentication@55.0.9:
-    resolution: {integrity: sha512-0+RKdvrNOfi262klXjvFqsFI/OkWZ7b46fNOjrJFhiI33Qi/c2DC2vuM/XR/sy0Ssa1wGnLdImcN4TJCBJwQ1w==}
+  expo-apple-authentication@55.0.12:
+    resolution: {integrity: sha512-agfdz+9UfK6KVTqfn4EilmI5KJJT/v5ZooKWCq1YGSx+W8RlrXQenhH09QPPQ2FfMLyQu1ytZqehY5hIwF2vzg==}
     peerDependencies:
       expo: '*'
       react-native: '*'
@@ -7097,7 +7097,7 @@ snapshots:
 
   event-target-shim@5.0.1: {}
 
-  expo-apple-authentication@55.0.9(expo@55.0.9)(react-native@0.83.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.2.0)):
+  expo-apple-authentication@55.0.12(expo@55.0.9)(react-native@0.83.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.2.0)):
     dependencies:
       expo: 55.0.9(@babel/core@7.28.5)(@expo/dom-webview@55.0.3)(@expo/metro-runtime@55.0.7)(expo-router@55.0.8)(react-dom@19.2.0(react@19.2.0))(react-native@0.83.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.2.0))(react@19.2.0)(typescript@5.9.3)
       react-native: 0.83.4(@babel/core@7.28.5)(@types/react@19.2.14)(react@19.2.0)

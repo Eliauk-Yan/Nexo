@@ -1,6 +1,7 @@
 package com.nexo.auth.interfaces.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.nexo.auth.interfaces.dto.AppleLoginDTO;
 import com.nexo.auth.interfaces.dto.LoginDTO;
 import com.nexo.auth.interfaces.dto.TokenDTO;
 import com.nexo.auth.interfaces.vo.LoginVO;
@@ -40,6 +41,22 @@ public class AuthController {
     @PostMapping("/login")
     public Result<LoginVO> login(@RequestBody LoginDTO request) {
         return Result.success(authService.login(request));
+    }
+
+    /**
+     * 苹果登录
+     */
+    @PostMapping("/login/apple")
+    public Result<LoginVO> login(@RequestBody AppleLoginDTO dto) {
+        return Result.success(authService.loginByApple(dto));
+    }
+
+    /**
+     * 绑定苹果账号
+     */
+    @PostMapping("/bind/apple")
+    public Result<Boolean> bindByApple(@RequestBody AppleLoginDTO dto) {
+        return Result.success(authService.bindByApple(dto));
     }
 
     /**

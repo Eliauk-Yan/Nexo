@@ -286,7 +286,6 @@ const OrderPage = () => {
         style: 'destructive',
         onPress: async () => {
           try {
-            console.log(order.orderId)
             await orderApi.cancel(order.orderId)
             Alert.alert('提示', '订单已取消')
             await fetchOrders(activeTab)

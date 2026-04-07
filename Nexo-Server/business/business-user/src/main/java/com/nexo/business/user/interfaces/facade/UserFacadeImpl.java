@@ -61,6 +61,20 @@ public class UserFacadeImpl implements UserFacade {
     }
 
     @Override
+    public UserQueryResponse<UserInfo> loginOrRegisterByAuth(String authType, String authKey, String name, String email) {
+        UserInfo info = userService.loginOrRegisterByAuth(authType, authKey, name, email);
+        return UserQueryResponse.success(info);
+    }
+
+    @Override
+    public UserResponse bindUserAuth(Long userId, String authType, String authKey) {
+        Boolean result = userService.bindUserAuth(userId, authType, authKey);
+        UserResponse response = new UserResponse();
+        response.setSuccess(result);
+        return response;
+    }
+
+    @Override
     public PageResponse<UserInfo> pageQuery(UserPageQueryRequest request) {
         PageResponse<User> queryResult = userService.pageQueryByState(request.getKeyword(), request.getState(),
                 request.getNickName(), request.getRole(), request.getCertification(), request.getCurrent(),

@@ -17,7 +17,9 @@ import com.nexo.business.user.interfaces.dto.RealNameAuthDTO;
 import com.nexo.business.user.service.UserAuthService;
 import com.nexo.business.user.service.UserService;
 import com.nexo.business.user.mapper.mybatis.UserMapper;
+import com.nexo.business.user.mapper.UserAuthMapper;
 import com.nexo.business.user.mapper.convert.UserConverter;
+import com.nexo.business.user.domain.entity.UserAuth;
 import com.nexo.common.api.blockchain.ChainFacade;
 import com.nexo.common.api.blockchain.request.ChainRequest;
 import com.nexo.common.api.blockchain.response.ChainResponse;
@@ -62,6 +64,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private final UserConverter userConverter;
 
     private final UserMapper userMapper;
+
+    private final UserAuthMapper userAuthMapper;
 
     private final FileService fileService;
 
@@ -165,12 +169,59 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return userConverter.toInfo(user);
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public UserInfo loginOrRegisterByAuth(String authType, String authKey, String name, String email) {
+        // 1.查询是否有用户绑定
+        UserAuth userAuth = userAuthMapper.selectOne(new LambdaQueryWrapper<UserAuth>()
+                .eq(UserAuth::getAuthType, authType)
+                .eq(UserAuth::getAuthKey, authKey));
+        // 2. 如果绑定获取用户信息
+        User user = null;
+        if (userAuth != null) {
+            user = this.getById(userAuth.getUserId());
+        }
+        // 3. 如果没有绑定返回null让调用者处
+        if (user == null) {
+            return null;
+        }
+        return userConverter.toInfo(user);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public Boolean bindUserAuth(Long userId, String authType, String authKey) {
+        // 先检查该authKey是否已被绑定
+        Long count = userAuthMapper.selectCount(new LambdaQueryWrapper<UserAuth>()
+                .eq(UserAuth::getAuthType, authType)
+                .eq(UserAuth::getAuthKey, authKey));
+        if (count != null && count > 0) {
+            throw new UserException(UserErrorCode.USER_UPDATE_FAILED); // 已被其他用户绑定
+        }
+        
+        UserAuth newUserAuth = new UserAuth();
+        newUserAuth.setUserId(userId);
+        newUserAuth.setAuthType(authType);
+        newUserAuth.setAuthKey(authKey);
+        int rows = userAuthMapper.insert(newUserAuth);
+        return rows > 0;
+    }
+
     @Override
     public UserInfo queryUserById(Long id) {
         // 1. 根据手机号查询用户信息
         User user = userCacheService.getUserById(id);
         // 2. 实体转换为DTO
-        return userConverter.toInfo(user);
+        UserInfo userInfo = userConverter.toInfo(user);
+        // 3. 是否苹果认证
+        if (userInfo != null) {
+            Long count = userAuthMapper.selectCount(new LambdaQueryWrapper<UserAuth>()
+                    .eq(UserAuth::getUserId, id)
+                    .eq(UserAuth::getAuthType, "apple"));
+            userInfo.setHasAppleBound(count != null && count > 0);
+        }
+        
+        return userInfo;
     }
 
     @Transactional(rollbackFor = Exception.class)

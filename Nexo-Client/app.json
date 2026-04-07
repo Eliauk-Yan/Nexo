@@ -8,8 +8,10 @@
     "scheme": "nexo",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "usesAppleSignIn": true,
       "supportsTablet": true,
       "bundleIdentifier": "com.shijieyan.nexo",
+      "associatedDomains": ["applinks:nexusvault.art"],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSAppTransportSecurity": {
@@ -49,7 +51,9 @@
             "extraProguardRules": "-keep class com.tencent.mm.opensdk.** {\n    *;\n}\n\n-keep class com.tencent.wxop.** {\n    *;\n}\n\n-keep class com.tencent.mm.sdk.** {\n    *;\n}"
           }
         }
-      ]
+      ],
+      "expo-wechat",
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true,

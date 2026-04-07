@@ -41,6 +41,16 @@ public interface UserService extends IService<User> {
     UserInfo queryUserByPhone(String phone);
 
     /**
+     * 根据第三方授权鉴权并创建绑定
+     */
+    UserInfo loginOrRegisterByAuth(String authType, String authKey, String name, String email);
+
+    /**
+     * 绑定第三方授权
+     */
+    Boolean bindUserAuth(Long userId, String authType, String authKey);
+
+    /**
      * 冻结用户
      */
     Boolean freeze(Long userId);

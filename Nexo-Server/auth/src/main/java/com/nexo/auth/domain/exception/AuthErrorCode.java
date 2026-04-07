@@ -20,7 +20,11 @@ public enum AuthErrorCode implements ErrorCode {
 
     TOKEN_KEY_ERROR("TOKEN_KEY_ERROR", "TOKEN KEY 错误"),
 
-    USER_NOT_LOGIN("USER_NOT_LOGIN", "用户未登录");
+    USER_NOT_LOGIN("USER_NOT_LOGIN", "用户未登录"),
+
+    THIRD_PARTY_UNBOUND("THIRD_PARTY_UNBOUND", "没有绑定用户请先使用手机号登录"),
+
+    APPLE_ALREADY_BOUND("APPLE_ALREADY_BOUND", "该 Apple 账号已被其他用户绑定");
 
     private final String code;
 

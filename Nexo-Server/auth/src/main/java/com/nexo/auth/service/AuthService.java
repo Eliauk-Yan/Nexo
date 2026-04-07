@@ -1,5 +1,6 @@
 package com.nexo.auth.service;
 
+import com.nexo.auth.interfaces.dto.AppleLoginDTO;
 import com.nexo.auth.interfaces.dto.LoginDTO;
 import com.nexo.auth.interfaces.vo.LoginVO;
 
@@ -19,4 +20,14 @@ public interface AuthService {
      * 管理员登录
      */
     LoginVO loginAdmin(LoginDTO request);
+
+    /**
+     * 苹果登录
+     */
+    LoginVO loginByApple(AppleLoginDTO dto);
+
+    /**
+     * 绑定苹果账号
+     */
+    Boolean bindByApple(AppleLoginDTO dto);
 }

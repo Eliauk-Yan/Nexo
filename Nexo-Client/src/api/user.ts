@@ -13,6 +13,8 @@ export interface UserInfo {
   account?: string
   /** 实名认证状态 */
   certification?: boolean
+  /** 是否绑定了苹果账号 */
+  hasAppleBound?: boolean
 }
 
 export interface UpdateUserRequest {

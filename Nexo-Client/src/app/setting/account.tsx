@@ -1,6 +1,8 @@
 import { userApi, UserInfo } from '@/api/user'
+import { authApi } from '@/api/auth'
 import { useSession } from '@/utils/ctx'
 import * as ImagePicker from 'expo-image-picker'
+import * as AppleAuthentication from 'expo-apple-authentication'
 import { Stack, useRouter } from 'expo-router'
 import { Host, LabeledContent, List, Section, Text } from '@expo/ui/swift-ui'
 import { listStyle, onTapGesture } from '@expo/ui/swift-ui/modifiers'
@@ -157,6 +159,44 @@ const AccountSecurity = () => {
     }
   }
 
+  const isAppleBound = profile?.hasAppleBound === true
+
+  const bindAppleAccount = async () => {
+    if (isAppleBound) {
+      Alert.alert('提示', '您已绑定 Apple 账号')
+      return
+    }
+    try {
+      const isAvailable = await AppleAuthentication.isAvailableAsync()
+      if (!isAvailable) {
+        Alert.alert('提示', '当前设备不支持 Apple 登录')
+        return
+      }
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      })
+      await authApi.bindApple({
+        identityToken: credential.identityToken!,
+        authorizationCode: credential.authorizationCode,
+        user: credential.fullName?.givenName
+          ? `${credential.fullName?.familyName || ''}${credential.fullName?.givenName || ''}`
+          : null,
+      })
+      Alert.alert('成功', '已成功绑定 Apple 账号')
+      // 绑定成功后刷新 profile 以更新状态
+      await refreshProfile()
+    } catch (e: any) {
+      if (e.code === 'ERR_REQUEST_CANCELED') {
+        // 用户取消，忽略
+      } else {
+        // 错误已由 request 拦截器统一弹窗处理
+      }
+    }
+  }
+
   return (
     <>
       <Stack.Screen
@@ -185,6 +225,12 @@ const AccountSecurity = () => {
           <Section title="安全设置">
             <LabeledContent label="实名认证" modifiers={[onTapGesture(realNameAuthentication)]}>
               <Text>{isRealNameAuth ? '已认证' : '未认证'}</Text>
+            </LabeledContent>
+          </Section>
+
+          <Section title="第三方绑定">
+            <LabeledContent label="Apple 账号" modifiers={[onTapGesture(bindAppleAccount)]}>
+              <Text>{isAppleBound ? '已绑定' : '点击绑定'}</Text>
             </LabeledContent>
           </Section>
         </List>

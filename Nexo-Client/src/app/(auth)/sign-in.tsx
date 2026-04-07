@@ -7,6 +7,7 @@ import Spinner from 'react-native-loading-spinner-overlay'
 import { authApi } from '@/api'
 import { LiquidGlassButton } from '@/components/ui'
 import { useSession } from '@/utils/ctx'
+import * as AppleAuthentication from 'expo-apple-authentication'
 import {
   Button,
   Host,
@@ -156,22 +157,57 @@ export default function SignIn() {
                 <RNText style={styles.socialTitle}>其他登录方式</RNText>
                 <View style={styles.socialButtons}>
                   <LiquidGlassButton
-                    icon="weixin"
-                    size={22}
-                    color="#07C160"
-                    onPress={() => Alert.alert('提示', '微信登录暂未接入')}
-                  />
-                  <LiquidGlassButton
-                    icon="alipay"
-                    size={22}
-                    color="#1677FF"
-                    onPress={() => Alert.alert('提示', '支付宝登录暂未接入')}
-                  />
-                  <LiquidGlassButton
                     icon="apple"
                     size={22}
                     color="#111827"
-                    onPress={() => Alert.alert('提示', 'Apple 登录暂未接入')}
+                    onPress={async () => {
+                      if (!agreed) {
+                        return Alert.alert('提示', '请先阅读并同意《用户协议》和《隐私政策》')
+                      }
+                      try {
+                        const isAvailable = await AppleAuthentication.isAvailableAsync()
+                        if (!isAvailable) {
+                          Alert.alert('提示', '当前设备不支持 Apple 登录')
+                          return
+                        }
+                        const credential = await AppleAuthentication.signInAsync({
+                          requestedScopes: [
+                            AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+                            AppleAuthentication.AppleAuthenticationScope.EMAIL,
+                          ],
+                        })
+                        setLoading(true)
+                        try {
+                          const response = await authApi.appleLogin({
+                            identityToken: credential.identityToken!,
+                            authorizationCode: credential.authorizationCode,
+                            user: credential.fullName?.givenName
+                              ? `${credential.fullName?.familyName || ''}${credential.fullName?.givenName || ''}`
+                              : null,
+                          })
+
+                          const token = response.token
+                          let userInfo = response.userInfo
+
+                          if (!userInfo?.nickName && !userInfo?.avatarUrl) {
+                            try {
+                              userInfo = await authApi.getCurrentUser(token)
+                            } catch {
+                              userInfo = { id: '', nickName: '', avatarUrl: '', role: '' }
+                            }
+                          }
+
+                          signIn(token, userInfo!)
+                          router.replace('/account/account')
+                        } finally {
+                          setLoading(false)
+                        }
+                      } catch (e: any) {
+                        if (e.code === 'ERR_REQUEST_CANCELED') {
+                          // 用户取消，可以忽略
+                        }
+                      }
+                    }}
                   />
                 </View>
               </View>

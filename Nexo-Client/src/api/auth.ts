@@ -48,6 +48,20 @@ export const authApi = {
   },
 
   /**
+   * Apple 登录
+   */
+  appleLogin: (data: { identityToken: string; authorizationCode: string | null; user: string | null }) => {
+    return post('/auth/login/apple', data)
+  },
+
+  /**
+   * Apple 绑定
+   */
+  bindApple: (data: { identityToken: string; authorizationCode: string | null; user: string | null }) => {
+    return post('/auth/bind/apple', data)
+  },
+
+  /**
    * 登出
    */
   logout: () => {

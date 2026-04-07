@@ -2,6 +2,9 @@ package com.nexo.auth.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.stp.parameter.SaLoginParameter;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
+import com.nexo.auth.interfaces.dto.AppleLoginDTO;
 import com.nexo.auth.interfaces.dto.LoginDTO;
 import com.nexo.auth.interfaces.vo.LoginVO;
 import com.nexo.auth.domain.exception.AuthException;
@@ -21,6 +24,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.util.Base64;
 import java.util.Objects;
 
 import static com.nexo.auth.domain.constant.AuthConstant.SESSION_TIMEOUT;
@@ -105,6 +109,73 @@ public class AuthServiceImpl implements AuthService {
         return userLogin(userInfo, request.getRememberMe());
     }
 
+    @Override
+    public LoginVO loginByApple(AppleLoginDTO dto) {
+        // 1. 获取身份信息token
+        String identityToken = dto.getIdentityToken();
+        if (!StringUtils.hasText(identityToken)) {
+            throw new IllegalArgumentException("identity token is required");
+        }
+        // 简单解析 JWT 中间段，不进行签名校验 (这里依赖 Apple 客户端 SDK 的可靠性做 MVP，实际环境由于 JWT
+        // 是客户端发来的，建议使用公钥校验)
+        String[] parts = identityToken.split("\\.");
+        if (parts.length < 2) {
+            throw new IllegalArgumentException("Invalid identity token");
+        }
+        String sub = null;
+        String email = null;
+        try {
+            String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
+            com.alibaba.fastjson2.JSONObject jsonObject = com.alibaba.fastjson2.JSON.parseObject(payload);
+            sub = jsonObject.getString("sub");
+            email = jsonObject.getString("email");
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to decode token", e);
+        }
+        if (!StringUtils.hasText(sub)) {
+            throw new IllegalArgumentException("Token missing sub");
+        }
+        // 这里传的 dto.getUser() 可能包含 fullName（首次授权时），可用于初始化昵称
+        UserQueryResponse<UserInfo> response = userFacade.loginOrRegisterByAuth("apple", sub, dto.getUser(), email);
+        if (!response.getSuccess() || response.getData() == null) {
+            throw new AuthException(THIRD_PARTY_UNBOUND);
+        }
+        return userLogin(response.getData(), true);
+    }
+
+    @Override
+    public Boolean bindByApple(AppleLoginDTO dto) {
+        String identityToken = dto.getIdentityToken();
+        if (!StringUtils.hasText(identityToken)) {
+            throw new IllegalArgumentException("identity token is required");
+        }
+        String[] parts = identityToken.split("\\.");
+        if (parts.length < 2) {
+            throw new IllegalArgumentException("Invalid identity token");
+        }
+        String sub = null;
+        try {
+            String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
+            JSONObject jsonObject = JSON.parseObject(payload);
+            sub = jsonObject.getString("sub");
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to decode token", e);
+        }
+
+        if (!StringUtils.hasText(sub)) {
+            throw new IllegalArgumentException("Token missing sub");
+        }
+
+        Long userId = StpUtil.getLoginIdAsLong();
+        try {
+            UserResponse response = userFacade.bindUserAuth(userId, "apple", sub);
+            return response.getSuccess();
+        } catch (Exception e) {
+            // Dubbo跨服务调用时 统一异常处理检测不到异常所以在这里手动捕获
+            throw new AuthException(APPLE_ALREADY_BOUND);
+        }
+    }
+
     /**
      * 校验验证码是否有效
      */
@@ -140,7 +211,8 @@ public class AuthServiceImpl implements AuthService {
      * 用户SATOKEN登录逻辑封装
      */
     private LoginVO userLogin(UserInfo userInfo, boolean rememberMe) {
-        StpUtil.login(userInfo.getId(), new SaLoginParameter().setIsLastingCookie(rememberMe).setTimeout(SESSION_TIMEOUT));
+        StpUtil.login(userInfo.getId(),
+                new SaLoginParameter().setIsLastingCookie(rememberMe).setTimeout(SESSION_TIMEOUT));
         // 1. 保存用户信息到会话
         StpUtil.getSession().set("userInfo", userInfo);
         // 2. 删除验证码

@@ -37,4 +37,6 @@ public class UserInfo implements Serializable {
 
     private Boolean certification;
 
+    private Boolean hasAppleBound;
+
 }

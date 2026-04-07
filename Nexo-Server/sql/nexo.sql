@@ -312,7 +312,7 @@ create table assets
     updated_at         timestamp default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '记录更新时间',
     version            int       default 1                 null comment '乐观锁版本号',
     constraint assets_ibfk_1
-        foreign key (artwork_id) references artworks (id)
+        foreign key (artwork_id) references nft (id)
             on delete cascade
 )
     comment '资产表';
@@ -340,4 +340,21 @@ create table asset_stream
 create index idx_held_id
     on asset_stream (asset_id);
 
-
+CREATE TABLE user_auths
+(
+    id             BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    user_id        BIGINT UNSIGNED                          NOT NULL COMMENT '用户ID',
+    auth_type      VARCHAR(32)                              NOT NULL COMMENT '登录类型: phone/apple/wechat',
+    auth_key       VARCHAR(255)                             NOT NULL COMMENT '唯一标识: phone/ apple sub / wechat openid',
+    auth_union_key VARCHAR(255)                             NULL COMMENT '联合唯一标识: wechat unionid 等',
+    credential     VARCHAR(512)                             NULL COMMENT '临时凭证(可选,一般不存)',
+    deleted        TINYINT(1)  DEFAULT 0                    NOT NULL COMMENT '是否删除',
+    version        INT         DEFAULT 1                    NOT NULL COMMENT '乐观锁版本号',
+    created_at     DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3) NOT NULL COMMENT '创建时间',
+    updated_at     DATETIME(3) DEFAULT CURRENT_TIMESTAMP(3)
+        ON UPDATE CURRENT_TIMESTAMP(3)                      NOT NULL COMMENT '更新时间',
+    UNIQUE KEY uk_auth_type_key (auth_type, auth_key),
+    KEY idx_user_id (user_id),
+    KEY idx_union_key (auth_union_key)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8mb4 COMMENT ='用户第三方登录绑定表';
