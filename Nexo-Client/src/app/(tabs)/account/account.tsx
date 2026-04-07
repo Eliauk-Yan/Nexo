@@ -206,18 +206,7 @@ export default function ProfileScreen() {
             </Section>
           ) : (
             <Section title="我的数字资产">
-              {loading ? (
-                <Text modifiers={[padding({ vertical: 8 }), foregroundStyle('secondary')]}>
-                  正在加载...
-                </Text>
-              ) : assets.length === 0 ? (
-                <VStack spacing={10} modifiers={[padding({ vertical: 12 })]}>
-                  <Host matchContents>
-                    <Image systemName="tray.fill" size={38} color="#8E8E93" />
-                  </Host>
-                  <Text modifiers={[foregroundStyle('secondary')]}>暂无数字资产</Text>
-                </VStack>
-              ) : (
+              {assets.length > 0 ? (
                 <ScrollView>
                   <VStack spacing={12} modifiers={[padding({ vertical: 8 })]}>
                     {assetRows.map((row, rowIndex) => (
@@ -235,7 +224,14 @@ export default function ProfileScreen() {
                     ))}
                   </VStack>
                 </ScrollView>
-              )}
+              ) : !loading ? (
+                <VStack spacing={10} modifiers={[padding({ vertical: 12 })]}>
+                  <Host matchContents>
+                    <Image systemName="tray.fill" size={38} color="#8E8E93" />
+                  </Host>
+                  <Text modifiers={[foregroundStyle('secondary')]}>暂无数字资产</Text>
+                </VStack>
+              ) : null}
             </Section>
           )}
         </List>

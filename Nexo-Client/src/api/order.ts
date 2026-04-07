@@ -88,6 +88,6 @@ export const orderApi = {
    * 取消订单
    */
   cancel: (orderId: string) => {
-    return post('/order/cancel', { params: { orderId } })
+    return post(`/order/cancel?orderId=${encodeURIComponent(orderId)}`, undefined)
   },
 }

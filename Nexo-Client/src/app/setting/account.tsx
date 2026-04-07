@@ -2,7 +2,7 @@ import { userApi, UserInfo } from '@/api/user'
 import { useSession } from '@/utils/ctx'
 import * as ImagePicker from 'expo-image-picker'
 import { Stack, useRouter } from 'expo-router'
-import { Button, Host, LabeledContent, List, Section, Text } from '@expo/ui/swift-ui'
+import { Host, LabeledContent, List, Section, Text } from '@expo/ui/swift-ui'
 import { listStyle, onTapGesture } from '@expo/ui/swift-ui/modifiers'
 import React, { useEffect, useState } from 'react'
 import { Alert } from 'react-native'
@@ -39,19 +39,6 @@ const AccountSecurity = () => {
   const nickname = profile?.nickName || '未设置'
   const phone = profile?.phone || '未绑定'
   const isRealNameAuth = profile?.certification === true
-
-  const deleteAccount = () => {
-    Alert.alert('账号注销', '注销账号后，所有数据将被永久删除且无法恢复。确定要继续吗？', [
-      { text: '取消', style: 'cancel' },
-      {
-        text: '确定注销',
-        style: 'destructive',
-        onPress: () => {
-          console.log('Account deletion requested')
-        },
-      },
-    ])
-  }
 
   const realNameAuthentication = () => {
     if (isRealNameAuth) {
@@ -199,10 +186,6 @@ const AccountSecurity = () => {
             <LabeledContent label="实名认证" modifiers={[onTapGesture(realNameAuthentication)]}>
               <Text>{isRealNameAuth ? '已认证' : '未认证'}</Text>
             </LabeledContent>
-          </Section>
-
-          <Section>
-            <Button role="destructive" label="账号注销" onPress={deleteAccount} />
           </Section>
         </List>
       </Host>

@@ -349,7 +349,7 @@ export default function NftDetail() {
             <RNText
               style={[
                 styles.glassButtonText,
-                { color: colorScheme === 'dark' ? '#000000' : '#F2F2F7' },
+                { color: colorScheme === 'dark' ? '#F2F2F2' : '#000000' },
               ]}
             >
               {artwork.productState === 'SELLING'
