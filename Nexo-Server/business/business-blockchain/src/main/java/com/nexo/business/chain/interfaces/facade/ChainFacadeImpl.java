@@ -42,7 +42,7 @@ public class ChainFacadeImpl implements ChainFacade {
 
     @Override
     public ChainResponse<ChainOperationData> mint(ChainRequest request) {
-        return null;
+        return getChainService().mint(request);
     }
 
     @Override

@@ -172,7 +172,7 @@ const Home = () => {
     <>
       <Stack.Screen
         options={{
-          title: '热门藏品',
+          title: '数字藏品',
           headerLargeTitle: true,
         }}
       />

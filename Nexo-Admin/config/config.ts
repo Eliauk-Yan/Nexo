@@ -8,7 +8,9 @@ import routes from './routes';
 const { REACT_APP_ENV = 'dev' } = process.env;
 const PUBLIC_PATH = '/';
 
-const config = defineConfig({
+type UmiConfig = Parameters<typeof defineConfig>[0];
+
+const config: UmiConfig = {
   hash: true,
   publicPath: PUBLIC_PATH,
   routes,
@@ -17,7 +19,7 @@ const config = defineConfig({
   fastRefresh: true,
   model: {},
   initialState: {},
-  title: 'Ant Design Pro',
+  title: '数字藏品交易平台后台',
   layout: {
     locale: true,
     ...defaultSettings,
@@ -44,15 +46,13 @@ const config = defineConfig({
   },
   request: {},
   access: {},
-  headScripts: [
-    { src: join(PUBLIC_PATH, 'scripts/loading.js'), async: true },
-  ],
+  headScripts: [{ src: join(PUBLIC_PATH, 'scripts/loading.js'), async: true }],
   presets: ['umi-presets-pro'],
   mock: false,
   mako: {},
   esbuildMinifyIIFE: true,
   requestRecord: {},
   exportStatic: {},
-});
+};
 
 export default config;

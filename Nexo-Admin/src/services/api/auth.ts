@@ -2,10 +2,10 @@ import { request } from '@umijs/max';
 
 /**
  * 获取当前登录用户信息（头像、昵称等），需在登录后携带 token 调用
- * @returns {Promise<API.CurrentUser>}
+ * @returns {Promise<any>}
  */
 export async function getCurrentUser(options?: { [key: string]: any }) {
-    return request<API.CurrentUser>('/admin/user/info', {
+    return request<any>('/admin/user/info', {
         method: 'GET',
         ...(options || {}),
     });

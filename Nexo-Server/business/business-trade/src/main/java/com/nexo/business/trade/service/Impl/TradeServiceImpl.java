@@ -155,18 +155,18 @@ public class TradeServiceImpl implements TradeService {
 
     @Override
     public PayVO pay(PayDTO payParams) {
+        // 1. 获取要支付的订单
         Long userId = StpUtil.getLoginIdAsLong();
         OrderResponse<OrderDTO> response = orderFacade.getOrder(payParams.getOrderId(), userId);
         OrderDTO order = response.getData();
-
+        // 2. 校验订单
         if (order == null) {
             throw new TradeException(ORDER_NOT_EXIST);
         }
-
         if (order.getOrderState() != TradeOrderState.CONFIRM) {
             throw new TradeException(ORDER_IS_CANNOT_PAY);
         }
-
+        // 3. 如果订单超时取消订单
         if (Boolean.TRUE.equals(order.getTimeout())) {
             Thread.ofVirtual().start(() -> {
                 OrderTimeoutRequest cancelRequest = new OrderTimeoutRequest();
@@ -179,11 +179,11 @@ public class TradeServiceImpl implements TradeService {
             });
             throw new TradeException(ORDER_IS_CANNOT_PAY);
         }
-
+        // 4. 校验买家
         if (!order.getBuyerId().equals(userId.toString())) {
             throw new TradeException(PAY_PERMISSION_DENIED);
         }
-
+        // 5. 创建支付单
         PayCreateRequest payCreateRequest = new PayCreateRequest();
         payCreateRequest.setBizNo(order.getOrderId());
         payCreateRequest.setBizType("TRADE_ORDER");
@@ -194,13 +194,11 @@ public class TradeServiceImpl implements TradeService {
         payCreateRequest.setPayeeType(PLATFORM);
         payCreateRequest.setPayChannel(payParams.getPaymentType());
         payCreateRequest.setMemo(order.getProductName());
-
         PayResponse<PayOrderDTO> payResponse = payFacade.createPayOrder(payCreateRequest);
         if (!payResponse.getSuccess()) {
             log.error("创建支付单失败, orderId={}, msg={}", order.getOrderId(), payResponse.getMessage());
             throw new TradeException(ORDER_IS_CANNOT_PAY);
         }
-
         PayOrderDTO payOrderDTO = payResponse.getData();
         PayVO payVO = new PayVO();
         payVO.setPayOrderId(payOrderDTO.getPayOrderId());

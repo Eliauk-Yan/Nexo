@@ -24,16 +24,15 @@ import org.apache.dubbo.config.annotation.DubboService;
 public class PayFacadeImpl implements PayFacade {
 
     private final PayOrderService payOrderService;
+
     private final PayChannelServiceFactory payChannelServiceFactory;
 
     @Override
     public PayResponse<PayOrderDTO> createPayOrder(PayCreateRequest request) {
         PayResponse<PayOrderDTO> response = new PayResponse<>();
-
         try {
             // 1. 创建支付单（含幂等）
             PayOrder payOrder = payOrderService.create(request);
-
             // 2. 如果支付单已在支付中，直接返回
             if (payOrder.getOrderState() == PayState.PAYING) {
                 response.setData(toDTO(payOrder));
@@ -42,7 +41,6 @@ public class PayFacadeImpl implements PayFacade {
                 response.setMessage(ResponseCode.SUCCESS.getMessage());
                 return response;
             }
-
             // 3. 如果支付单已支付，返回错误
             if (payOrder.isPaid()) {
                 response.setSuccess(false);
@@ -50,18 +48,15 @@ public class PayFacadeImpl implements PayFacade {
                 response.setMessage("订单已支付");
                 return response;
             }
-
             // 4. 调用支付渠道发起支付
             PayChannelRequest channelRequest = new PayChannelRequest();
             channelRequest.setOrderId(payOrder.getPayOrderId());
             channelRequest.setAmount(yuanToCent(request.getOrderAmount()));
             channelRequest.setDescription(request.getMemo());
             channelRequest.setAttach(request.getBizNo());
-
             PayChannelResponse channelResponse = payChannelServiceFactory
                     .get(request.getPayChannel())
                     .pay(channelRequest);
-
             // 5. 处理渠道响应
             if (channelResponse.getSuccess()) {
                 // 更新支付单状态为支付中

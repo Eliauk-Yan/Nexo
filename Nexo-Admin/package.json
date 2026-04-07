@@ -30,7 +30,9 @@
     "test:update": "npm run jest -- -u",
     "tsc": "tsc --noEmit"
   },
-  "browserslist": ["defaults"],
+  "browserslist": [
+    "defaults"
+  ],
   "dependencies": {
     "@ant-design/icons": "^5.6.1",
     "@ant-design/pro-components": "^2.7.19",
@@ -57,6 +59,7 @@
     "@types/react-dom": "^19.1.5",
     "@types/react-helmet": "^6.1.11",
     "@umijs/max": "^4.3.24",
+    "@umijs/preset-umi": "^4.6.39",
     "cross-env": "^7.0.3",
     "express": "^4.21.1",
     "gh-pages": "^6.1.1",
@@ -69,5 +72,7 @@
     "umi-presets-pro": "^2.0.3",
     "umi-serve": "^1.9.11"
   },
-  "engines": { "node": ">=20.0.0" }
+  "engines": {
+    "node": ">=20.0.0"
+  }
 }

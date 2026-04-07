@@ -17,7 +17,7 @@ import defaultSettings from '../config/defaultSettings';
 import { errorConfig } from './requestErrorConfig';
 
 const isDev = process.env.NODE_ENV === 'development';
-const loginPath = '/user/login';
+const loginPath = '/auth';
 
 export async function getInitialState(): Promise<{
   settings?: Partial<LayoutSettings>;
@@ -49,9 +49,7 @@ export async function getInitialState(): Promise<{
   const { location } = history;
 
   if (
-    ![loginPath, '/user/register', '/user/register-result'].includes(
-      location.pathname,
-    )
+    ![loginPath].includes(location.pathname)
   ) {
     const currentUser = await fetchUserInfo();
     return {

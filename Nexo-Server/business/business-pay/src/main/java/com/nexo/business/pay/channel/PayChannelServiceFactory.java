@@ -1,6 +1,7 @@
 package com.nexo.business.pay.channel;
 
 import com.nexo.common.api.pay.constant.PaymentType;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 在开发环境下，统一使用 MockPayChannelService
  */
 @Service
+@RequiredArgsConstructor
 public class PayChannelServiceFactory {
 
     @Autowired

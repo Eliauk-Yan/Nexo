@@ -6,6 +6,7 @@ import com.nexo.common.api.order.request.OrderPayRequest;
 import com.nexo.common.api.order.response.OrderResponse;
 import com.nexo.common.api.pay.constant.PaymentType;
 import com.nexo.common.api.user.constant.UserType;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,17 +17,13 @@ import java.time.LocalDateTime;
 
 /**
  * 支付应用服务
- * <p>
- * 负责支付成功后的业务编排：
- * 1. 更新支付单状态
- * 2. 推进订单状态
  */
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class PayApplicationService {
 
-    @Autowired
-    private PayOrderService payOrderService;
+    private final PayOrderService payOrderService;
 
     @DubboReference(version = "1.0.0")
     private OrderFacade orderFacade;
@@ -45,20 +42,17 @@ public class PayApplicationService {
             log.error("支付单不存在, payOrderId={}", payOrderId);
             return false;
         }
-
         // 2. 幂等检查
         if (payOrder.isPaid()) {
             log.info("支付单已支付, payOrderId={}", payOrderId);
             return true;
         }
-
         // 3. 更新支付单状态为已支付
         boolean payOrderResult = payOrderService.paySuccess(payOrderId, channelStreamId, paidAmount);
         if (!payOrderResult) {
             log.error("支付单状态更新失败, payOrderId={}", payOrderId);
             return false;
         }
-
         // 4. 推进订单状态到已支付
         try {
             OrderPayRequest orderPayRequest = new OrderPayRequest();
@@ -70,7 +64,6 @@ public class PayApplicationService {
             orderPayRequest.setOperator(payOrder.getPayerId());
             orderPayRequest.setOperatorType(UserType.CUSTOMER);
             orderPayRequest.setIdentifier(payOrder.getPayOrderId());
-
             OrderResponse<?> orderResponse = orderFacade.paySuccess(orderPayRequest);
             if (!orderResponse.getSuccess()) {
                 log.error("订单支付推进失败, orderId={}, msg={}", payOrder.getBizNo(), orderResponse.getMessage());

@@ -34,7 +34,6 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
                 return existPayOrder;
             }
         }
-
         PayOrder payOrder = PayOrder.create(request);
         boolean saveResult = save(payOrder);
         if (!saveResult) {
@@ -46,10 +45,10 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
     /**
      * 推进到支付中
      */
-    public boolean paying(String payOrderId, String payUrl) {
+    public void paying(String payOrderId, String payUrl) {
         PayOrder payOrder = queryByOrderId(payOrderId);
         payOrder.paying(payUrl);
-        return saveOrUpdate(payOrder);
+        saveOrUpdate(payOrder);
     }
 
     /**

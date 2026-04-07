@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Alert, Image as RNImage, StyleSheet, View } from 'react-native'
+import { Image as RNImage, StyleSheet, View } from 'react-native'
 import { Stack, useFocusEffect, useRouter } from 'expo-router'
 
 import {
@@ -83,20 +83,6 @@ export default function ProfileScreen() {
     if (user.account.length <= 18) return user.account
     return `${user.account.slice(0, 8)}...${user.account.slice(-6)}`
   }, [user?.account])
-
-  const showChainInfo = () => {
-    if (!isLogin) {
-      router.push('/(auth)/sign-in')
-      return
-    }
-
-    Alert.alert(
-      '链上身份信息',
-      `昵称：${user?.nickName || '未设置'}\n链地址：${user?.account || '暂未绑定'}\n实名状态：${
-        user?.certification ? '已实名认证' : '未实名认证'
-      }`,
-    )
-  }
 
   return (
     <>
@@ -195,16 +181,6 @@ export default function ProfileScreen() {
             >
               <Image systemName="gearshape.fill" size={18} color="#0A84FF" />
               <Text modifiers={[font({ size: 16, weight: 'medium' })]}>设置</Text>
-              <Spacer />
-              <Image systemName="chevron.right" size={13} color="#8E8E93" />
-            </HStack>
-
-            <HStack
-              spacing={12}
-              modifiers={[padding({ vertical: 10 }), onTapGesture(showChainInfo)]}
-            >
-              <Image systemName="link" size={18} color="#0A84FF" />
-              <Text modifiers={[font({ size: 16, weight: 'medium' })]}>区块链</Text>
               <Spacer />
               <Image systemName="chevron.right" size={13} color="#8E8E93" />
             </HStack>

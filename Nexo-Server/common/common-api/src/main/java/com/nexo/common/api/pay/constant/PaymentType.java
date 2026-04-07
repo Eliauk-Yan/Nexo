@@ -9,9 +9,7 @@ public enum PaymentType {
 
     MOCK("MOCK", "模拟"),
 
-    APPLE_PAY("APPLE_PAY", "苹果支付"),
 
-    ALIPAY("ALIPAY", "支付宝"),
 
     WECHAT("WECHAT", "微信");
 

@@ -18,7 +18,7 @@ import React, { useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Footer } from '@/components';
 import { login, sendVerifyCode } from '@/services/api/auth';
-import Settings from '../../../../config/defaultSettings';
+import Settings from '../../../config/defaultSettings';
 
 const useStyles = createStyles(({ token }) => {
   return {
@@ -160,8 +160,7 @@ const Login: React.FC = () => {
             minWidth: 280,
             maxWidth: '75vw',
           }}
-          logo={<img alt="logo" src="/logo.svg" />}
-          title="NEXO 后台管理系统"
+          title="数字藏品交易系统 后台"
           subTitle={intl.formatMessage({
             id: 'pages.layouts.userLayout.title',
           })}

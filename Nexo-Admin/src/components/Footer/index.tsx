@@ -8,23 +8,23 @@ const Footer: React.FC = () => {
       style={{
         background: 'none',
       }}
-      copyright="Powered by Ant Desgin"
+      copyright="Powered by YANSHIJIE"
       links={[
         {
-          key: 'Ant Design Pro',
-          title: 'Ant Design Pro',
+          key: 'YANSHIJIE NEXO',
+          title: 'YANSHIJIE NEXO',
           href: 'https://pro.ant.design',
           blankTarget: true,
         },
         {
           key: 'github',
           title: <GithubOutlined />,
-          href: 'https://github.com/ant-design/ant-design-pro',
+          href: 'https://github.com/Eliauk-Yan/Nexo.git',
           blankTarget: true,
         },
         {
-          key: 'Ant Design',
-          title: 'Ant Design',
+          key: 'YANSHIJIE',
+          title: 'YANSHIJIE',
           href: 'https://ant.design',
           blankTarget: true,
         },

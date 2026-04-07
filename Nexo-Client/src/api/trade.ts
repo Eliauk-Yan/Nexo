@@ -1,9 +1,9 @@
 import { post } from '@/utils/request'
 
 /**
- * 支付方式枚举（与后端 PaymentType 对应）
+ * 支付方式枚举（与后端 PaymentType 对应�?
  */
-export type PaymentType = 'WECHAT' | 'ALIPAY' | 'APPLE_PAY' | 'MOCK'
+export type PaymentType = 'WECHAT' | 'MOCK'
 
 /**
  * 购买请求参数
@@ -11,7 +11,7 @@ export type PaymentType = 'WECHAT' | 'ALIPAY' | 'APPLE_PAY' | 'MOCK'
 export interface BuyRequest {
   /** 商品ID */
   productId: string
-  /** 商品类型：与后端 NFTType 枚举保持一致 */
+  /** 商品类型：与后端 NFTType 枚举保持一�?*/
   nftType: 'NFT'
   /** 商品数量 */
   itemCount: number
@@ -21,7 +21,7 @@ export interface BuyRequest {
  * 支付请求参数
  */
 export interface PayRequest {
-  /** 订单号 */
+  /** 订单�?*/
   orderId: string
   /** 支付方式 */
   paymentType: PaymentType
@@ -35,7 +35,7 @@ export interface PayVO {
   payOrderId: string
   /** 支付链接 */
   payUrl: string
-  /** 支付状态 */
+  /** 支付状�?*/
   payState: string
 }
 
@@ -59,4 +59,5 @@ export const tradeApi = {
     return post<PayVO>('/trade/pay', data)
   },
 }
+
 

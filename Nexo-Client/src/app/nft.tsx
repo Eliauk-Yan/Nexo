@@ -1,6 +1,5 @@
 import { artworkApi, authApi, orderApi, tradeApi } from '@/api'
 import { ArtworkDetail } from '@/api/artwork'
-import { PaymentType } from '@/api/trade'
 import { useSession } from '@/utils/ctx'
 import {
   BottomSheet,
@@ -9,9 +8,7 @@ import {
   Host,
   HStack,
   Image as SwiftImage,
-  Label,
   List,
-  Picker,
   ProgressView,
   RNHostView,
   Section,
@@ -28,15 +25,13 @@ import {
   listStyle,
   multilineTextAlignment,
   padding,
-  pickerStyle,
   presentationDetents,
   presentationDragIndicator,
-  tag,
 } from '@expo/ui/swift-ui/modifiers'
 import { Image } from 'expo-image'
 import { GlassView } from 'expo-glass-effect'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Alert,
   Platform,
@@ -48,46 +43,13 @@ import {
 } from 'react-native'
 import Spinner from 'react-native-loading-spinner-overlay'
 
-const PAYMENT_METHOD_MAP: Record<string, PaymentType> = {
-  wechat: 'WECHAT',
-  alipay: 'ALIPAY',
-  applepay: 'APPLE_PAY',
-}
-
-const formatDateTime = (dateStr: string | null | undefined): string => {
-  if (!dateStr) return '-'
-  const date = new Date(dateStr)
-  if (Number.isNaN(date.getTime())) return dateStr
-
-  const y = date.getFullYear()
-  const M = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  const h = String(date.getHours()).padStart(2, '0')
-  const m = String(date.getMinutes()).padStart(2, '0')
-  return `${y}-${M}-${d} ${h}:${m}`
-}
-
-const formatPrice = (price: number | undefined): string => {
-  if (price === undefined || price === null) return '0.00'
-  return price.toFixed(2)
-}
-
-const getStatusMap = (state?: string) => {
-  switch (state) {
-    case 'NOT_FOR_SALE':
-      return { text: '不可售', color: '#8E8E93' }
-    case 'SELLING':
-      return { text: '发售中', color: '#007AFF' }
-    case 'SOLD_OUT':
-      return { text: '已售罄', color: '#FF3B30' }
-    case 'COMING_SOON':
-      return { text: '即将开售', color: '#FF9500' }
-    case 'WAIT_FOR_SALE':
-      return { text: '待开售', color: '#5AC8FA' }
-    default:
-      return { text: '加载中', color: '#C7C7CC' }
-  }
-}
+const STATUS_MAP = {
+  NOT_FOR_SALE: { text: '不可售', color: '#8E8E93' },
+  SELLING: { text: '发售中', color: '#007AFF' },
+  SOLD_OUT: { text: '已售罄', color: '#FF3B30' },
+  COMING_SOON: { text: '即将开售', color: '#FF9500' },
+  WAIT_FOR_SALE: { text: '待开售', color: '#5AC8FA' },
+} as const
 
 const InfoRow = ({
   icon,
@@ -130,11 +92,10 @@ export default function NftDetail() {
   const [loading, setLoading] = useState(false)
   const [token, setToken] = useState('')
   const [payModalVisible, setPayModalVisible] = useState(false)
-  const [selectedPayMethod, setSelectedPayMethod] = useState<string>('wechat')
   const [currentOrderId, setCurrentOrderId] = useState('')
   const [paying, setPaying] = useState(false)
   const [paySuccess, setPaySuccess] = useState(false)
-  const [payStatusText, setPayStatusText] = useState('支付请求处理中...')
+  const [payStatusText, setPayStatusText] = useState('支付请求处理�?..')
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [artwork, setArtwork] = useState<ArtworkDetail>({
     id: 0,
@@ -148,7 +109,10 @@ export default function NftDetail() {
     description: '',
   })
 
-  const status = useMemo(() => getStatusMap(artwork.productState), [artwork.productState])
+  const status = STATUS_MAP[artwork.productState as keyof typeof STATUS_MAP] ?? {
+    text: '加载中',
+    color: '#C7C7CC',
+  }
 
   const fetchData = useCallback(async () => {
     if (!id) return
@@ -173,7 +137,6 @@ export default function NftDetail() {
     setPaying(false)
     setPaySuccess(false)
     setPayStatusText('支付请求处理中...')
-    setSelectedPayMethod('wechat')
   }, [])
 
   const pollOrderStatus = useCallback(
@@ -226,19 +189,12 @@ export default function NftDetail() {
 
   const handleConfirmPay = useCallback(async () => {
     if (!currentOrderId || paying) return
-
-    const backendPayType = PAYMENT_METHOD_MAP[selectedPayMethod]
-    if (!backendPayType) {
-      Alert.alert('提示', '不支持的支付方式')
-      return
-    }
-
     setPaying(true)
     setPayStatusText('正在发起支付...')
     try {
       await tradeApi.pay({
         orderId: currentOrderId,
-        paymentType: backendPayType,
+        paymentType: 'WECHAT',
       })
       setPayStatusText('支付请求已提交，等待支付确认...')
       pollOrderStatus(currentOrderId)
@@ -246,7 +202,7 @@ export default function NftDetail() {
       console.error('发起支付失败:', error)
       setPaying(false)
     }
-  }, [currentOrderId, paying, pollOrderStatus, selectedPayMethod])
+  }, [currentOrderId, paying, pollOrderStatus])
 
   const doBuy = useCallback(async () => {
     setLoading(true)
@@ -264,7 +220,6 @@ export default function NftDetail() {
       setPaying(false)
       setPaySuccess(false)
       setPayStatusText('支付请求处理中...')
-      setSelectedPayMethod('wechat')
       setPayModalVisible(true)
     } catch {
       // request 已统一处理
@@ -272,10 +227,6 @@ export default function NftDetail() {
       setLoading(false)
     }
   }, [artwork.id, token, fetchData])
-
-  const handleBuy = useCallback(() => {
-    void doBuy()
-  }, [doBuy])
 
   useEffect(() => {
     if (isSessionLoading) return
@@ -296,7 +247,7 @@ export default function NftDetail() {
     }
   }, [])
 
-  if (Platform.OS !== 'ios') {
+  if (Platform.OS !== 'ios' || isSessionLoading || !session) {
     return (
       <View style={styles.center}>
         <Spinner visible />
@@ -304,18 +255,7 @@ export default function NftDetail() {
     )
   }
 
-  if (isSessionLoading || !session) {
-    return (
-      <View style={styles.center}>
-        <Spinner visible />
-      </View>
-    )
-  }
-
-  const artworkDescription = artwork.description?.trim() || '暂无详情描述'
   const isBuyDisabled = artwork.productState !== 'SELLING' || loading
-  const isDark = colorScheme === 'dark'
-  const buttonFontColor = isDark ? '#000000' : '#F2F2F7'
 
   return (
     <View style={styles.page}>
@@ -352,7 +292,7 @@ export default function NftDetail() {
               icon="text.alignleft"
               iconColor="#0EA5E9"
               label="简介"
-              value={artworkDescription}
+              value={artwork.description?.trim() || '暂无详情描述'}
             />
           </Section>
 
@@ -361,47 +301,59 @@ export default function NftDetail() {
               icon="yensign.circle.fill"
               iconColor="#22C55E"
               label="当前价格"
-              value={`￥ ${formatPrice(artwork.price)}`}
+              value={`￥ ${(artwork.price ?? 0).toFixed(2)}`}
             />
             <InfoRow
               icon="square.stack.3d.up.fill"
               iconColor="#3B82F6"
               label="发行数量"
-              value={String(artwork.quantity ?? 0)}
+              value={`${artwork.quantity ?? 0}`}
             />
             <InfoRow
               icon="shippingbox.fill"
               iconColor="#F59E0B"
               label="剩余库存"
-              value={String(artwork.inventory ?? 0)}
+              value={`${artwork.inventory ?? 0}`}
             />
             <InfoRow
               icon="calendar.badge.clock"
               iconColor="#EC4899"
               label="发售时间"
-              value={formatDateTime(artwork.saleTime)}
+              value={
+                artwork.saleTime
+                  ? new Date(artwork.saleTime).toLocaleString('zh-CN', {
+                      hour12: false,
+                    })
+                  : '-'
+              }
             />
           </Section>
 
           <Section title="购买说明">
             <Text modifiers={[foregroundStyle('#8E8E93')]}>藏品购买后不可退款，请谨慎付款。</Text>
-            <Text modifiers={[foregroundStyle('#8E8E93')]}>下单后会直接弹出支付窗口，关闭后也可稍后去订单页继续支付。</Text>
+            <Text modifiers={[foregroundStyle('#8E8E93')]}>
+              下单后会直接弹出支付窗口，关闭后也可稍后去订单页继续支付。
+            </Text>
             <Text modifiers={[foregroundStyle('#8E8E93')]}>支付成功后系统会自动进入铸造流程。</Text>
           </Section>
         </List>
       </Host>
 
       <View style={styles.floatingButtonBar}>
-        <TouchableOpacity activeOpacity={0.85} onPress={handleBuy} disabled={isBuyDisabled}>
+        <TouchableOpacity activeOpacity={0.85} onPress={doBuy} disabled={isBuyDisabled}>
           <GlassView
             style={[styles.glassButton, isBuyDisabled && styles.glassButtonDisabled]}
             glassEffectStyle="regular"
             tintColor={artwork.productState === 'SELLING' ? '#007AFF' : 'rgba(142,142,147,0.18)'}
-            isInteractive={true}
           >
-            <RNText style={[styles.glassButtonText, { color: buttonFontColor }]}>
+            <RNText
+              style={[
+                styles.glassButtonText,
+                { color: colorScheme === 'dark' ? '#000000' : '#F2F2F7' },
+              ]}
+            >
               {artwork.productState === 'SELLING'
-                ? `立即下单 ￥ ${formatPrice(artwork.price)}`
+                ? `立即下单 ￥ ${(artwork.price ?? 0).toFixed(2)}`
                 : status.text}
             </RNText>
           </GlassView>
@@ -424,45 +376,18 @@ export default function NftDetail() {
           >
             <VStack spacing={0}>
               <VStack spacing={8} modifiers={[padding({ top: 32, bottom: 16 })]}>
-                <Text modifiers={[foregroundStyle('secondary'), font({ size: 14 })]}>
-                  支付金额
+                <Text modifiers={[foregroundStyle('secondary'), font({ size: 14 })]}>支付金额</Text>
+                <Text modifiers={[font({ size: 36, weight: 'bold' }), foregroundStyle('primary')]}>
+                  ￥ {(artwork.price ?? 0).toFixed(2)}
                 </Text>
-                <HStack spacing={4}>
-                  <Text modifiers={[font({ size: 24, weight: 'bold' }), foregroundStyle('primary')]}>
-                    ￥
-                  </Text>
-                  <Text modifiers={[font({ size: 36, weight: 'bold' }), foregroundStyle('primary')]}>
-                    {formatPrice(artwork.price)}
-                  </Text>
-                </HStack>
                 <Text modifiers={[foregroundStyle('secondary'), font({ size: 12 })]}>
-                  订单号: {currentOrderId}
+                  订单： {currentOrderId}
                 </Text>
               </VStack>
 
               <List modifiers={[listStyle('insetGrouped')]}>
-                <Section title="选择支付方式">
-                  <Picker
-                    selection={selectedPayMethod}
-                    onSelectionChange={(val) => setSelectedPayMethod(val as string)}
-                    modifiers={[pickerStyle('inline')]}
-                  >
-                    <Label
-                      title="微信支付（推荐）"
-                      systemImage="message.fill"
-                      modifiers={[tag('wechat')]}
-                    />
-                    <Label
-                      title="支付宝"
-                      systemImage="yensign.circle.fill"
-                      modifiers={[tag('alipay')]}
-                    />
-                    <Label
-                      title="Apple Pay"
-                      systemImage="applelogo"
-                      modifiers={[tag('applepay')]}
-                    />
-                  </Picker>
+                <Section title="支付方式">
+                  <Text>微信支付（推荐）</Text>
                 </Section>
               </List>
 
@@ -489,7 +414,9 @@ export default function NftDetail() {
                       ) : (
                         <>
                           <ProgressView />
-                          <Text modifiers={[multilineTextAlignment('center')]}>{payStatusText}</Text>
+                          <Text modifiers={[multilineTextAlignment('center')]}>
+                            {payStatusText}
+                          </Text>
                         </>
                       )}
                     </HStack>
@@ -542,8 +469,6 @@ const styles = StyleSheet.create({
     height: 280,
     borderRadius: 24,
     overflow: 'hidden',
-    position: 'relative',
-    backgroundColor: 'transparent',
   },
   heroImage: {
     width: '100%',

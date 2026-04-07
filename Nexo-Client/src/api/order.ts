@@ -1,5 +1,4 @@
-import { get } from '@/utils/request'
-import request from '@/utils/request'
+import { get, post } from '@/utils/request'
 
 /**
  * 订单状态枚举
@@ -45,7 +44,7 @@ export interface OrderVO {
   /** 支付成功时间 */
   paymentTime: string | null
   /** 确认时间 */
-  confirmTime: string | null
+  confirmTime: string
   /** 完成时间 */
   completionTime: string | null
   /** 关单时间 */
@@ -89,7 +88,6 @@ export const orderApi = {
    * 取消订单
    */
   cancel: (orderId: string) => {
-    return request('/order/cancel', { method: 'POST', params: { orderId } })
+    return post('/order/cancel', { params: { orderId } })
   },
 }
-
