@@ -1,10 +1,12 @@
 package com.nexo.business.trade.interfaces.controller;
 
 import com.nexo.business.trade.interfaces.dto.BuyDTO;
+import com.nexo.business.trade.interfaces.dto.CancelParam;
 import com.nexo.business.trade.interfaces.dto.PayDTO;
 import com.nexo.business.trade.interfaces.vo.PayVO;
 import com.nexo.business.trade.service.TradeService;
 import com.nexo.common.web.result.Result;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,6 +40,14 @@ public class TradeController {
     @PostMapping("/pay")
     public Result<PayVO> pay(@Validated @RequestBody PayDTO payParams) {
         return Result.success(tradeService.pay(payParams));
+    }
+
+    /**
+     * 主动关单
+     */
+    @PostMapping("/cancel")
+    public Result<Boolean> cancel(@Valid @RequestBody CancelParam param) {
+       return Result.success(tradeService.cancel(param));
     }
 
 

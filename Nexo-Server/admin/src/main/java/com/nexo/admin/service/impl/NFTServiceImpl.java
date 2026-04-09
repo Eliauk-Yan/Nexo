@@ -92,7 +92,6 @@ public class NFTServiceImpl implements NFTService {
         request.setDescription(dto.getDescription());
         request.setIdentifier(UUID.randomUUID().toString());
         request.setSaleTime(dto.getSaleTime());
-        request.setCreatorId(StpUtil.getLoginIdAsLong());
         // 2. 调用藏品服务创建藏品
         NFTResponse<Boolean> response = nftFacade.addNFT(request);
         if (!response.getSuccess() || response.getData() == null) {

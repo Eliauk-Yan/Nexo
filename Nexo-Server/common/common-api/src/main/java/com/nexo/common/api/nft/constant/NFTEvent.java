@@ -14,11 +14,12 @@ public enum NFTEvent {
 
     REMOVE("REMOVE", "下架"),
 
-    SALE("SALE", "出售"),
 
     MODIFY_INVENTORY("MODIFY_INVENTORY", "修改藏品库存"),
 
     MODIFY_PRICE("MODIFY_PRICE", "修改藏品价格"),
+
+    SALE("SALE", "出售"),
 
     TRY_SALE("TRY_SALE", "尝试出售"),
 

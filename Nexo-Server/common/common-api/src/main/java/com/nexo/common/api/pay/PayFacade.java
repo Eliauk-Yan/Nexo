@@ -1,8 +1,11 @@
 package com.nexo.common.api.pay;
 
 import com.nexo.common.api.pay.request.PayCreateRequest;
+import com.nexo.common.api.pay.request.PayQueryRequest;
 import com.nexo.common.api.pay.response.PayOrderDTO;
 import com.nexo.common.api.pay.response.PayResponse;
+import com.nexo.common.api.pay.response.data.PayOrderVO;
+import com.nexo.common.base.response.MultiResponse;
 
 /**
  * 支付模块Dubbo接口
@@ -17,5 +20,5 @@ public interface PayFacade {
     /**
      * 查询支付单
      */
-    PayResponse<PayOrderDTO> queryPayOrder(String payOrderId);
+    MultiResponse<PayOrderVO> queryPayOrders(PayQueryRequest request);
 }

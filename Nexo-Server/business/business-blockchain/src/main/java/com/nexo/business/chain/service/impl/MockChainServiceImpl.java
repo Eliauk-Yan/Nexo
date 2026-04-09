@@ -63,11 +63,6 @@ public class MockChainServiceImpl extends AbstractChainService {
     }
 
     @Override
-    public ChainResponse<ChainOperationData> destroy(ChainRequest request) {
-        return null;
-    }
-
-    @Override
     public ChainResponse<ChainResultData> queryChainResult(ChainQueryRequest request) {
         ChainResponse<ChainResultData> response = new ChainResponse<>();
         response.setSuccess(true);

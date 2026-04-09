@@ -15,7 +15,6 @@ import com.nexo.business.collection.mapper.mybatis.NFTStreamMapper;
 import com.nexo.business.collection.mapper.mybatis.NFTSnapshotMapper;
 import com.nexo.business.collection.mapper.mybatis.NFTMapper;
 import com.nexo.business.collection.service.NFTService;
-import com.nexo.common.api.nft.constant.NFTState;
 import com.nexo.common.api.nft.request.NFTCreateRequest;
 import com.nexo.common.api.nft.request.NFTRemoveRequest;
 import com.nexo.common.api.nft.request.NFTUpdateInventoryRequest;
@@ -29,14 +28,13 @@ import com.nexo.common.base.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.dubbo.config.annotation.DubboReference;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-import static com.nexo.business.collection.domain.exception.ArtWorkErrorCode.*;
+import static com.nexo.business.collection.domain.exception.NFTErrorCode.*;
 import static com.nexo.common.api.nft.constant.NFTInventoryUpdateType.*;
 import static com.nexo.common.api.nft.constant.ProductState.*;
 import static com.nexo.common.base.response.ResponseCode.DUPLICATED;
@@ -139,10 +137,8 @@ public class NFTServiceImpl extends ServiceImpl<NFTMapper, NFT> implements NFTSe
     public NFT create(NFTCreateRequest request) {
         // 1. 创建藏品
         NFT nft = new NFT();
-        BeanUtils.copyProperties(request, nft);
-        nft.setSaleableInventory(request.getQuantity());
-        nft.setFrozenInventory(0L);
-        nft.setState(NFTState.PENDING);
+        // 2. 状态流转
+        nft.init(request.getName(), request.getCover(), request.getPrice(), request.getQuantity(), request.getSaleTime(), request.getDescription());
         // 2. 保存藏品
         boolean insertArtworkRes = nftMapper.insert(nft) == 1;
         if (!insertArtworkRes) {
@@ -182,8 +178,8 @@ public class NFTServiceImpl extends ServiceImpl<NFTMapper, NFT> implements NFTSe
         if (nft == null) {
             throw new NFTException(NFT_NOT_FOUND);
         }
-        // 3. 修改状态为已下架
-        nft.setState(NFTState.ARCHIVED);
+        // 3. 状态流转
+        nft.archived();
         boolean updateRow = nftCacheService.updateById(nft);
         if (!updateRow) {
             throw new NFTException(NFT_UPDATE_FAILED);

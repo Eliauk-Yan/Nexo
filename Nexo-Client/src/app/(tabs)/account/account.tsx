@@ -1,35 +1,37 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Image as RNImage, StyleSheet, View } from 'react-native'
+import Feather from '@expo/vector-icons/Feather'
 import { Stack, useFocusEffect, useRouter } from 'expo-router'
+import { Image as RNImage, StyleSheet, Text as RNText, View } from 'react-native'
 
 import {
-  Host,
-  List,
-  Section,
-  HStack,
-  Popover,
-  VStack,
-  Text,
   Button,
+  HStack,
+  Host,
   Image,
-  Spacer,
-  ScrollView,
+  List,
+  Popover,
   RNHostView,
+  ScrollView,
+  Section,
+  Spacer,
+  Text,
+  VStack,
 } from '@expo/ui/swift-ui'
 
 import {
-  listStyle,
-  padding,
-  foregroundStyle,
-  font,
   buttonStyle,
   controlSize,
+  font,
+  foregroundStyle,
+  listStyle,
   onTapGesture,
+  padding,
   tint,
 } from '@expo/ui/swift-ui/modifiers'
 
-import { AssetCard } from '@/components/ui/AssetCard'
 import { artworkApi, Asset } from '@/api/artwork'
+import { AssetCard } from '@/components/ui/AssetCard'
+import { typography } from '@/config/theme'
 import { useSession } from '@/utils/ctx'
 
 function chunk<T>(arr: T[], size: number) {
@@ -38,6 +40,15 @@ function chunk<T>(arr: T[], size: number) {
     result.push(arr.slice(i, i + size))
   }
   return result
+}
+
+function EmptyAssets() {
+  return (
+    <View style={styles.emptyContainer}>
+      <Feather name="inbox" size={48} color="#8E8E93" />
+      <RNText style={styles.emptyText}>暂无相关藏品</RNText>
+    </View>
+  )
 }
 
 export default function ProfileScreen() {
@@ -69,12 +80,12 @@ export default function ProfileScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      fetchMyAssets().catch()
+      fetchMyAssets().catch(() => {})
     }, [fetchMyAssets]),
   )
 
   useEffect(() => {
-    fetchMyAssets().catch()
+    fetchMyAssets().catch(() => {})
   }, [fetchMyAssets])
 
   const assetRows = useMemo(() => chunk(assets, 2), [assets])
@@ -92,9 +103,11 @@ export default function ProfileScreen() {
           headerTransparent: true,
         }}
       />
+
       <Stack.Toolbar placement="right">
         <Stack.Toolbar.Button icon="bell" onPress={() => router.push('/notification')} />
       </Stack.Toolbar>
+
       <Host style={styles.host}>
         <List modifiers={[listStyle('insetGrouped')]}>
           <Section>
@@ -113,12 +126,12 @@ export default function ProfileScreen() {
                     )}
                   </View>
                 </RNHostView>
+
                 <VStack spacing={6}>
-                  <Text
-                    modifiers={[font({ size: 24, weight: 'bold' }), foregroundStyle('primary')]}
-                  >
+                  <Text modifiers={[font({ size: 24, weight: 'bold' }), foregroundStyle('primary')]}>
                     {user?.nickName || '未登录'}
                   </Text>
+
                   {!isLogin ? (
                     <Text modifiers={[font({ size: 14 }), foregroundStyle('secondary')]}>
                       登录后可以查看更多功能
@@ -152,7 +165,9 @@ export default function ProfileScreen() {
                     </Popover>
                   )}
                 </VStack>
+
                 <Spacer />
+
                 <Button
                   label={isLogin ? '编辑资料' : '去登录'}
                   onPress={() =>
@@ -188,14 +203,9 @@ export default function ProfileScreen() {
 
           {!isLogin ? (
             <Section title="数字资产">
-              <VStack alignment="center" spacing={40} modifiers={[padding({ vertical: 32 })]}>
-                <Host matchContents>
-                  <Image systemName="shippingbox.fill" size={40} color="#8E8E93" />
-                </Host>
-                <Text modifiers={[font({ size: 16, weight: 'medium' })]}>
-                  请登录以查看你的数字藏品
-                </Text>
-              </VStack>
+              <RNHostView matchContents>
+                <EmptyAssets />
+              </RNHostView>
             </Section>
           ) : (
             <Section title="我的数字资产">
@@ -211,19 +221,15 @@ export default function ProfileScreen() {
                             </View>
                           </RNHostView>
                         ))}
-
                         {row.length === 1 ? <View style={styles.assetCardWrap} /> : null}
                       </HStack>
                     ))}
                   </VStack>
                 </ScrollView>
               ) : !loading ? (
-                <VStack spacing={10} modifiers={[padding({ vertical: 12 })]}>
-                  <Host matchContents>
-                    <Image systemName="tray.fill" size={38} color="#8E8E93" />
-                  </Host>
-                  <Text modifiers={[foregroundStyle('secondary')]}>暂无数字资产</Text>
-                </VStack>
+                <RNHostView matchContents>
+                  <EmptyAssets />
+                </RNHostView>
               ) : null}
             </Section>
           )}
@@ -258,5 +264,15 @@ const styles = StyleSheet.create({
   },
   assetCardWrap: {
     width: 160,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
+  },
+  emptyText: {
+    fontSize: typography.fontSize.md,
+    marginTop: 12,
+    color: '#8E8E93',
   },
 })

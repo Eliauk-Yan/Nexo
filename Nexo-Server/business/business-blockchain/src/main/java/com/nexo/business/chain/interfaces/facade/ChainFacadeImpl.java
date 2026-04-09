@@ -45,11 +45,6 @@ public class ChainFacadeImpl implements ChainFacade {
         return getChainService().mint(request);
     }
 
-    @Override
-    public ChainResponse<ChainOperationData> burn(ChainRequest request) {
-        return null;
-    }
-
     private ChainService getChainService() {
         if (ProfileConstant.DEV.equals(profile)) {
             return chainServiceFactory.get(ChainType.MOCK);

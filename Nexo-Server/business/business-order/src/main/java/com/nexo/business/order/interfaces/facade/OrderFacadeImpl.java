@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.nexo.business.order.domain.entity.TradeOrder;
 import com.nexo.business.order.mapper.convert.OrderConvertor;
 import com.nexo.business.order.service.OrderService;
+import com.nexo.common.api.order.request.OrderCancelRequest;
 import com.nexo.common.base.response.ResponseCode;
 import com.nexo.common.api.order.OrderFacade;
 import com.nexo.common.api.order.constant.TradeOrderState;
@@ -58,12 +59,22 @@ public class OrderFacadeImpl implements OrderFacade {
     }
 
     @Override
+    public OrderResponse<Boolean> cancel(OrderCancelRequest request) {
+        // 1. 发送关单事务消息 Rocket事务消息 因为RocketMQ 的事务消息中，如果本地事务发生了异常，这里返回也会是个 true，所以就需要做一下反查进行二次判断，才能知道关单操作是否成功
+        streamProducer.send("orderClose-out-0", null, JSON.toJSONString(request), "CLOSE_TYPE", request.getOrderEvent().getCode());
+        TradeOrder tradeOrder = orderService.getOrder(request.getOrderId(), null);
+        OrderResponse<Boolean> orderResponse = new OrderResponse<>();
+        orderResponse.setSuccess(tradeOrder != null && tradeOrder.getOrderState() == TradeOrderState.CLOSED);
+        return orderResponse;
+    }
+
+
+    @Override
     public OrderResponse<?> timeout(OrderTimeoutRequest request) {
-        streamProducer.send("orderClose-out-0", null, JSON.toJSONString(request), "CLOSE_TYPE",
-                request.getOrderEvent().getCode());
-        TradeOrder order = orderService.getById(request.getOrderId());
+        streamProducer.send("orderClose-out-0", null, JSON.toJSONString(request), "CLOSE_TYPE", request.getOrderEvent().getCode());
+        TradeOrder order = orderService.getOrder(request.getOrderId(), null);
         OrderResponse<?> orderResponse = new OrderResponse<>();
-        orderResponse.setSuccess(order.getOrderState() == TradeOrderState.CLOSED);
+        orderResponse.setSuccess(order != null && order.getOrderState() == TradeOrderState.CLOSED);
         return orderResponse;
     }
 

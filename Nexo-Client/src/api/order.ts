@@ -1,4 +1,4 @@
-import { get, post } from '@/utils/request'
+import { get } from '@/utils/request'
 
 /**
  * 订单状态枚举
@@ -82,12 +82,5 @@ export const orderApi = {
    */
   getOrder: (orderId: string) => {
     return get<OrderVO>('/order/get', { orderId })
-  },
-
-  /**
-   * 取消订单
-   */
-  cancel: (orderId: string) => {
-    return post(`/order/cancel?orderId=${encodeURIComponent(orderId)}`, undefined)
   },
 }

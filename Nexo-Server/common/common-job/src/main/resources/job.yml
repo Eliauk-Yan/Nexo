@@ -1,0 +1,6 @@
+spring:
+  xxl:
+    job:
+      enabled: true
+      adminAddresses: http://47.99.39.81:8088/xxl-job-admin
+      appName: nexo-job-executor

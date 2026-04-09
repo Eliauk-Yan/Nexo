@@ -1,4 +1,4 @@
-package com.nexo.business.pay.channel;
+package com.nexo.business.pay.channel.data;
 
 import lombok.Getter;
 import lombok.Setter;

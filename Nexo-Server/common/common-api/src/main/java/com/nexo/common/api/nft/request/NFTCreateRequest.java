@@ -28,8 +28,6 @@ public class NFTCreateRequest extends NFTBaseRequest {
 
     private String description;
 
-    private Long creatorId;
-
     @Override
     public NFTEvent getEventType() {
         return NFTEvent.CHAIN;

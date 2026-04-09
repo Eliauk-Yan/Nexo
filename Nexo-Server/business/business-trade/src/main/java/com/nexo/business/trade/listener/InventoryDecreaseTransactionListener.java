@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * @classname InventoryDecreaseListener
- * @description 库存扣减MQ本地事务 只有库存扣减成功才可以创建订单否则库存回滚 保证数据一直性
+ * @description 库存扣减MQ本地事务 只有库存扣减成功才可以创建订单否则库存回滚
  * @date 2026/02/13 23:11
  */
 @Component("inventoryDecreaseTransactionListener")
@@ -30,7 +30,7 @@ public class InventoryDecreaseTransactionListener implements TransactionListener
 
     /**
      * 生产者发送消息成功后调用
-     * 
+     *
      * @param message 消息
      * @param o       参数
      * @return 消息结果状态枚举
@@ -56,11 +56,9 @@ public class InventoryDecreaseTransactionListener implements TransactionListener
             InventoryResponse<Boolean> response = inventoryFacade.decreaseInventory(inventoryRequest);
             if (response.getSuccess() && response.getData()) {
                 log.info("本地事务执行成功，提交 MQ 消息");
-                // 返回 COMMIT_MESSAGE：MQ 消息对下游消费者变为可见
                 return LocalTransactionState.COMMIT_MESSAGE;
             } else {
                 log.warn("业务逻辑判断失败，回滚 MQ 消息");
-                // 返回 ROLLBACK_MESSAGE：MQ Server 删除该消息，下游收不到
                 return LocalTransactionState.ROLLBACK_MESSAGE;
             }
         } catch (Exception e) {
@@ -71,7 +69,7 @@ public class InventoryDecreaseTransactionListener implements TransactionListener
 
     /**
      * broker 发现消息超过6秒没有提交事务状态
-     * 
+     *
      * @param message 消息
      * @return 消息结果状态枚举
      */

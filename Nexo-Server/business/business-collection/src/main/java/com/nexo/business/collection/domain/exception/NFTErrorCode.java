@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @AllArgsConstructor
 @Getter
-public enum ArtWorkErrorCode implements ErrorCode {
+public enum NFTErrorCode implements ErrorCode {
 
     NFT_INVENTORY_UPDATE_FAILED("NFT_INVENTORY_UPDATE_FAILED", "藏品库存更新失败"),
 
@@ -22,7 +22,7 @@ public enum ArtWorkErrorCode implements ErrorCode {
 
     NFT_INVENTORY_INIT_FAILED("NFT_INVENTORY_INIT_FAILED", "藏品库存初始化失败"),
 
-    ARTWORK_INVENTORY_STREAM_SAVE_FAILED("ARTWORK_INVENTORY_STREAM_SAVE_FAILED", "藏品库存流保存失败"),
+    NFT_INVENTORY_STREAM_SAVE_FAILED("NFT_INVENTORY_STREAM_SAVE_FAILED", "藏品库存流保存失败"),
 
     NFT_NOT_FOUND("NFT_NOT_FOUND", "藏品不存在"),;
 

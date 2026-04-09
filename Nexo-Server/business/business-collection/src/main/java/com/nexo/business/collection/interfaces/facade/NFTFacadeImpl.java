@@ -39,13 +39,13 @@ import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.transaction.annotation.Transactional;
 
-import static com.nexo.business.collection.domain.exception.ArtWorkErrorCode.*;
+import static com.nexo.business.collection.domain.exception.NFTErrorCode.*;
 import static com.nexo.common.api.nft.constant.NFTInventoryUpdateType.INCREASE;
 import static com.nexo.common.api.nft.constant.NFTInventoryUpdateType.UNMODIFIED;
 
 /**
  * @classname ArtWorkFacadeImpl
- * @description è—å“æ¨¡å—å¯¹å¤–æ¥å£å®ç°ç±?
+ * @description è—å“æ¨¡å—å¯¹å¤–æ¥å£å®ç°ï¿½?
  * @date 2026/01/09 10:14
  */
 @Slf4j
@@ -54,7 +54,7 @@ import static com.nexo.common.api.nft.constant.NFTInventoryUpdateType.UNMODIFIED
 public class NFTFacadeImpl implements NFTFacade {
 
     /**
-     * é“¾æœåŠ¡æ¥å?
+     * é“¾æœåŠ¡æ¥å£
      */
     @DubboReference(version = "1.0.0")
     private ChainFacade chainFacade;
@@ -65,6 +65,9 @@ public class NFTFacadeImpl implements NFTFacade {
     @DubboReference(version = "1.0.0")
     private InventoryFacade inventoryFacade;
 
+    /**
+     * ç”¨æˆ·æœåŠ¡æ¥å£
+     */
     @DubboReference(version = "1.0.0")
     private UserFacade userFacade;
 
@@ -94,47 +97,36 @@ public class NFTFacadeImpl implements NFTFacade {
     private final NFTConvertor NFTConvertor;
 
     /**
-     * è—å“åº“å­˜æµæ°´è½¬æ¢å™?
+     * è—å“åº“å­˜æµæ°´è½¬æ¢
      */
     private final ArtworkInventoryStreamConvert artworkInventoryStreamConvert;
 
 
     @Override
     public Boolean allocateAsset(AssetAllocateRequest request) {
-        // 1. ÃİµÈĞ£Ñé
+        // 1. å¹‚ç­‰åˆ¤æ–­
         long count = assetService.count(new LambdaQueryWrapper<Asset>()
                 .eq(Asset::getBusinessNo, request.getBusinessNo())
                 .eq(Asset::getBusinessType, request.getBusinessType()));
         if (count > 0) {
-            log.info("×Ê²úÒÑ·Ö·¢¹ı£¬Ö´ĞĞÃİµÈ·µ»Ø, orderId={}", request.getBusinessNo());
             return true;
         }
-
-        // 2. ²éÑ¯²ØÆ·Ô­ĞÅÏ¢
+        // 2. è·å–è—å“ä¿¡æ¯
         NFT nft = nftService.getById(request.getArtworkId());
         if (nft == null) {
-            log.error("·Ö·¢×Ê²úÊ§°Ü£¬²ØÆ·²»´æÔÚ, artworkId={}", request.getArtworkId());
             return false;
         }
-
-        // 3. ²éÑ¯Âò¼ÒÁ´µØÖ·
+        // 3. è·å–ä¹°å®¶ç”¨æˆ·ä¿¡æ¯
         UserQueryRequest userQueryRequest = new UserQueryRequest();
         userQueryRequest.setId(request.getBuyerId());
         UserQueryResponse<UserInfo> userQueryResponse = userFacade.userQuery(userQueryRequest);
         UserInfo buyer = userQueryResponse != null ? userQueryResponse.getData() : null;
-        if (userQueryResponse == null
-                || !userQueryResponse.getSuccess()
-                || buyer == null
-                || buyer.getAddress() == null
-                || buyer.getAddress().isBlank()) {
-            log.error("·Ö·¢×Ê²úÊ§°Ü£¬Î´²éÑ¯µ½Âò¼ÒÁ´µØÖ·, buyerId={}, orderId={}",
-                    request.getBuyerId(), request.getBusinessNo());
+        if (userQueryResponse == null || !userQueryResponse.getSuccess() || buyer == null || buyer.getAddress() == null || buyer.getAddress().isBlank()) {
             return false;
         }
-
-        // 4. ¹¹½¨²¢±£´æ×Ê²ú
+        // 4. æ„é€ èµ„äº§
         Asset asset = new Asset();
-        asset.setArtWorkId(request.getArtworkId());
+        asset.setNftId(request.getArtworkId());
         asset.setPurchasePrice(request.getPurchasePrice());
         asset.setSerialNumber(java.util.UUID.randomUUID().toString().replace("-", ""));
         asset.setNftIdentifier(request.getIdentifier());
@@ -144,14 +136,10 @@ public class NFTFacadeImpl implements NFTFacade {
         asset.setRarity(null);
         asset.setBusinessNo(request.getBusinessNo());
         asset.setBusinessType(request.getBusinessType());
-
         boolean saveResult = assetService.save(asset);
         if (!saveResult) {
-            log.error("×Ê²ú³Ö¾Ã»¯Ê§°Ü, orderId={}", request.getBusinessNo());
             return false;
         }
-
-        // 5. ·¢ÆğÖıÔìÇëÇó£¨Òì²½£©£¬Á´»Øµ÷³É¹¦ºó¼¤»î×Ê²ú²¢Íê³É¶©µ¥
         Thread.ofVirtual().start(() -> {
             try {
                 ChainRequest chainRequest = new ChainRequest();
@@ -163,24 +151,23 @@ public class NFTFacadeImpl implements NFTFacade {
                 chainRequest.setBizType(ChainOperationBizType.ASSET.getCode());
                 chainRequest.setBizId(asset.getId().toString());
                 ChainResponse<ChainOperationData> chainResponse = chainFacade.mint(chainRequest);
-
                 if (chainResponse.getSuccess() && chainResponse.getData() != null) {
-                    log.info("Êı×Ö×Ê²úÖıÔìÇëÇó·¢ËÍ³É¹¦, assetId={}", asset.getId());
+                    log.info("èµ„äº§é“¸é€ æˆåŠŸ, assetId={}", asset.getId());
                 } else {
-                    log.error("Êı×Ö×Ê²úÖıÔìÊ§°Ü, assetId={}, message={}", asset.getId(), chainResponse.getMessage());
+                    log.error("èµ„äº§é“¸é€ å¤±è´¥, assetId={}, message={}", asset.getId(), chainResponse.getMessage());
                 }
             } catch (Exception e) {
-                log.error("Êı×Ö×Ê²úÖıÔìÒì³£, assetId={}", asset.getId(), e);
+                log.error("èµ„äº§é“¸é€ å¼‚å¸¸, assetId={}", asset.getId(), e);
             }
         });
-
         return true;
     }
+
     @Override
     public PageResponse<NFTDTO> queryPage(NFTPageQueryRequest request) {
         // 1. æŸ¥è¯¢è—å“
         PageResponse<NFT> queryResult = nftService.pageQueryByState(request.getState(), request.getKeyword(), request.getCurrent(), request.getSize());
-        // 2. æ„é€?
+        // 2. æ„ï¿½?
         PageResponse<NFTDTO> response = new PageResponse<>();
         if (!queryResult.getSuccess()) {
             response.setSuccess(false);
@@ -264,7 +251,7 @@ public class NFTFacadeImpl implements NFTFacade {
             response.setSuccess(true);
             return response;
         }
-        // 3. æ„é€ åº“å­˜è¯·æ±?
+        // 3. æ„é€ åº“å­˜è¯·ï¿½?
         InventoryRequest inventoryRequest = new InventoryRequest();
         inventoryRequest.setNftId(request.getNFTId().toString());
         inventoryRequest.setNFTType(NFTType.NFT);
@@ -288,7 +275,7 @@ public class NFTFacadeImpl implements NFTFacade {
     public NFTResponse<NFTInfo> getNFTInfoById(Long id) {
         // 1. æŸ¥è¯¢è—å“
         NFTInfo nftInfo = nftService.getNFTInfo(id);
-        // 2. å°è£…å¹¶è¿”å›æ•°æ?
+        // 2. å°è£…å¹¶è¿”å›æ•°ï¿½?
         return NFTResponse.success(nftInfo);
     }
 
@@ -296,7 +283,7 @@ public class NFTFacadeImpl implements NFTFacade {
     public NFTResponse<NFTInventoryStreamDTO> getNFTInventoryStream(Long productId, String identifier) {
         // 1. æŸ¥è¯¢å•†å“åº“å­˜æµæ°´
         NFTInventoryStream stream = nftInventoryStreamMapper.selectOne(new LambdaQueryWrapper<NFTInventoryStream>().eq(NFTInventoryStream::getNftId, productId).eq(NFTInventoryStream::getIdentifier, identifier));
-        // 2. è½¬æ¢å¹¶è¿”å›?
+        // 2. è½¬æ¢å¹¶è¿”ï¿½?
         return NFTResponse.success(artworkInventoryStreamConvert.toDTO(stream));
     }
 
@@ -308,7 +295,7 @@ public class NFTFacadeImpl implements NFTFacade {
         if (InventoryStream != null) {
             return NFTResponse.success(true);
         }
-        // 2. æŸ¥è¯¢å‡ºæœ€æ–°çš„å€?
+        // 2. æŸ¥è¯¢å‡ºæœ€æ–°çš„ï¿½?
         NFT nft = nftMapper.selectById(request.getNFTId());
         // 3. æ–°å¢åº“å­˜æµæ°´
         NFTInventoryStream inventoryStream = new NFTInventoryStream();
@@ -325,9 +312,9 @@ public class NFTFacadeImpl implements NFTFacade {
         inventoryStream.setChangedQuantity(request.getQuantity());
         boolean insertRes = nftInventoryStreamMapper.insert(inventoryStream) == 1;
         if (!insertRes) {
-            throw new NFTException(ARTWORK_INVENTORY_STREAM_SAVE_FAILED);
+            throw new NFTException(NFT_INVENTORY_STREAM_SAVE_FAILED);
         }
-        // 4. æ›´æ–°æ•°æ®åº“åº“å­?
+        // 4. æ›´æ–°æ•°æ®åº“åº“ï¿½?
         nft.setSaleableInventory(nft.getSaleableInventory() - request.getQuantity());
         boolean updateRes = nftMapper.update(nft, new LambdaQueryWrapper<NFT>().eq(NFT::getId, nft.getId()).apply("saleable_inventory >= {0}", request.getQuantity())) == 1;
         if (!updateRes) {
@@ -338,39 +325,44 @@ public class NFTFacadeImpl implements NFTFacade {
 
     @Transactional(rollbackFor = Exception.class)
     @Override
-    public NFTResponse<Boolean> unsale(NFTSaleRequest saleRequest) {
-        // 1. å¹‚ç­‰æ€§æ ¡éªŒï¼šæŸ¥è¯¢æ˜¯å¦å·²ç»æœ‰å›é€€æµå‘çš„å•†å“åº“å­˜æµæ°?
-        String increaseIdentifier = "UNSALE_" + saleRequest.getIdentifier(); // ä½¿ç”¨å‰ç¼€åŒºåˆ†æµå‘
-        NFTInventoryStream existingStream = nftInventoryStreamMapper.selectOne(new LambdaQueryWrapper<NFTInventoryStream>().eq(NFTInventoryStream::getNftId, saleRequest.getNFTId()).eq(NFTInventoryStream::getIdentifier, increaseIdentifier));
-        if (existingStream != null) {
-            return NFTResponse.success(true);
+    public NFTResponse<Long> cancelSale(NFTCancelSaleRequest saleRequest) {
+        // 1. å¹‚ç­‰æ ¡éªŒ
+        NFTInventoryStream existStream = nftInventoryStreamMapper.selectOne(
+                new LambdaQueryWrapper<NFTInventoryStream>()
+                        .eq(NFTInventoryStream::getIdentifier, saleRequest.getIdentifier())
+                        .eq(NFTInventoryStream::getStreamType, saleRequest.getEventType().getCode())
+                        .eq(NFTInventoryStream::getNftId, saleRequest.getNFTId())
+        );
+        if (null != existStream) {
+            NFTResponse.success(existStream.getId());
         }
-        // 2. æŸ¥è¯¢å‡ºæœ€æ–°çš„å€?
-        NFT nft = nftMapper.selectById(saleRequest.getNFTId());
-        // 3. æ–°å¢åº“å­˜å›é€€æµæ°´
-        NFTInventoryStream inventoryStream = new NFTInventoryStream();
-        inventoryStream.setNftId(nft.getId());
-        inventoryStream.setPrice(nft.getPrice());
-        inventoryStream.setQuantity(nft.getQuantity());
-        inventoryStream.setSaleableInventory(nft.getSaleableInventory());
-        inventoryStream.setFrozenInventory(nft.getFrozenInventory());
-        inventoryStream.setState(nft.getState());
-        inventoryStream.setVersion(nft.getVersion());
-        inventoryStream.setDeleted(nft.getDeleted());
-        inventoryStream.setStreamType(saleRequest.getEventType());
-        inventoryStream.setIdentifier(increaseIdentifier); // è¿™æ˜¯å…³é”®ï¼Œç”¨å‰ç¼€åŒºåˆ«äºå”®å?
-        inventoryStream.setChangedQuantity(-saleRequest.getQuantity()); // å›é€€è®°å½•å¯ä»¥è®°ä¸ºè´Ÿæ•°ï¼Œæˆ–è€…é€šè¿‡å…¶ä»–å­—æ®µæ ‡è¯†
-        int insertRow = nftInventoryStreamMapper.insert(inventoryStream);
-        if (insertRow <= 0) {
-            throw new NFTException(ARTWORK_INVENTORY_STREAM_SAVE_FAILED);
+        // 2.æŸ¥è¯¢å‡ºæœ€æ–°çš„å€¼
+        NFT nft = nftService.getById(saleRequest.getNFTId());
+        // 3. æ–°å¢åº“å­˜æµæ°´
+        NFTInventoryStream nftInventoryStream = new NFTInventoryStream();
+        nftInventoryStream.setNftId(nft.getId());
+        nftInventoryStream.setPrice(nft.getPrice());
+        nftInventoryStream.setQuantity(nft.getQuantity());
+        nftInventoryStream.setSaleableInventory(nft.getSaleableInventory());
+        nftInventoryStream.setFrozenInventory(nft.getFrozenInventory());
+        nftInventoryStream.setState(nft.getState());
+        nftInventoryStream.setStreamType(saleRequest.getEventType());
+        nftInventoryStream.setIdentifier(saleRequest.getIdentifier());
+        nftInventoryStream.setChangedQuantity(saleRequest.getQuantity().longValue());
+        boolean insertRes = nftInventoryStreamMapper.insert(nftInventoryStream) == 1;
+        if (!insertRes) {
+            throw new NFTException(NFT_INVENTORY_STREAM_SAVE_FAILED);
         }
-        // 4. æ›´æ–°æ•°æ®åº“åº“å­?(åŠ å›åº“å­˜)
-        nft.setSaleableInventory(nft.getSaleableInventory() + saleRequest.getQuantity());
-        int updateRow = nftMapper.update(nft, new LambdaQueryWrapper<NFT>()
-                .eq(NFT::getId, nft.getId())); // æ²¡æœ‰é˜²è¶…å–çš„é™åˆ¶ï¼Œå› ä¸ºæ˜¯åŠ æ³•
-        if (updateRow <= 0) {
+        boolean updateRes = nftService.lambdaUpdate()
+                .setSql("saleable_inventory = saleable_inventory + " + saleRequest.getQuantity())
+                .eq(NFT::getId, saleRequest.getNFTId())
+                .apply("saleable_inventory + frozen_inventory + {0} <= quantity", saleRequest.getQuantity())
+                .update();
+        if (!updateRes) {
             throw new NFTException(NFT_UPDATE_FAILED);
         }
-        return NFTResponse.success(true);
+        return NFTResponse.success(nftInventoryStream.getId());
     }
+
+
 }

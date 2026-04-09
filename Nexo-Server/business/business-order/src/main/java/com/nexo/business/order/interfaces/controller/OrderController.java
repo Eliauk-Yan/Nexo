@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class OrderController {
 
     private final OrderService orderService;
+
     private final OrderConvertor orderConvertor;
 
     /**
@@ -43,19 +44,6 @@ public class OrderController {
             return Result.error("ORDER_NOT_FOUND", "订单不存在");
         }
         return Result.success(orderConvertor.toVO(order));
-    }
-
-    /**
-     * 取消订单
-     */
-    @PostMapping("/cancel")
-    public Result<Boolean> cancelOrder(@RequestParam String orderId) {
-        Long userId = StpUtil.getLoginIdAsLong();
-        boolean result = orderService.cancelOrder(orderId, userId);
-        if (result) {
-            return Result.success(true);
-        }
-        return Result.error("ORDER_CANCEL_FAILED", "订单取消失败");
     }
 
 }

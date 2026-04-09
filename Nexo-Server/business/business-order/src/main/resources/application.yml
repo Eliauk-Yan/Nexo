@@ -4,7 +4,7 @@ spring:
   cloud:
     cloud:
       function:
-        definition: orderClose; # 框架会自动在代码中寻找以 orderClose 为名字的通道映射关系，配合后面的 out-0 或 in-0 来区分是发消息还是收消息。
+        definition: buy;orderClose # 框架会自动在代码中寻找以 buy / orderClose 为名字的通道映射关系，配合后面的 out-0 或 in-0 来区分是发消息还是收消息。
     stream:
       rocketmq:
         bindings:
@@ -30,6 +30,7 @@ spring:
       - classpath:/config.yml
       - classpath:/cache.yml
       - classpath:/base.yml
+      - classpath:/job.yml
       - classpath:/stream.yml
   application:
     name: business-order

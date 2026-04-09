@@ -30,6 +30,6 @@ public class NFTSaleRequest extends NFTBaseRequest {
 
     @Override
     public NFTEvent getEventType() {
-        return NFTEvent.CONFIRM_SALE;
+        return NFTEvent.SALE;
     }
 }

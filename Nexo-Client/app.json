@@ -38,6 +38,7 @@
       "expo-font",
       "expo-web-browser",
       "expo-secure-store",
+      "expo-iap",
       [
         "expo-image-picker",
         {

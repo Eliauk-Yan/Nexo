@@ -1,7 +1,9 @@
 package com.nexo.business.order.domain.entity;
 
+import com.alibaba.fastjson2.annotation.JSONField;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.nexo.common.api.order.constant.TradeOrderEvent;
 import com.nexo.common.api.order.constant.TradeOrderState;
 import com.nexo.common.api.nft.constant.NFTType;
 import com.nexo.common.api.user.constant.UserType;
@@ -11,6 +13,7 @@ import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * @classname TradeOrder
@@ -22,72 +25,94 @@ import java.time.LocalDateTime;
 @Data
 public class TradeOrder extends BaseEntity {
 
-    @TableField(value = "order_id")
+    /**
+     * 默认超时时间
+     */
+    public static final int DEFAULT_TIME_OUT_MINUTES = 30;
+
+
     private String orderId;
 
-    @TableField(value = "buyer_id")
     private String buyerId;
 
-    @TableField(value = "buyer_type")
     private UserType buyerType;
 
-    @TableField(value = "seller_id")
     private String sellerId;
 
-    @TableField(value = "seller_type")
     private UserType sellerType;
 
-    @TableField(value = "identifier")
     private String identifier;
 
-    @TableField(value = "product_id")
     private String productId;
 
-    @TableField(value = "product_type")
+    @TableField("product_type")
     private NFTType NFTType;
 
-    @TableField(value = "product_cover_url")
     private String productCoverUrl;
 
-    @TableField(value = "product_name")
     private String productName;
 
-    @TableField(value = "unit_price")
     private BigDecimal unitPrice;
 
-    @TableField(value = "quantity")
     private Integer quantity;
 
-    @TableField(value = "total_price")
     private BigDecimal totalPrice;
 
-    @TableField(value = "order_state")
     private TradeOrderState orderState;
 
-    @TableField(value = "payment_amount")
     private BigDecimal paymentAmount;
 
-    @TableField(value = "payment_time")
     private LocalDateTime paymentTime;
 
-    @TableField(value = "confirmed_time")
     private LocalDateTime confirmedTime;
 
-    @TableField(value = "completion_time")
     private LocalDateTime completionTime;
 
-    @TableField(value = "closing_time")
     private LocalDateTime closingTime;
 
-    @TableField(value = "payment_method")
     private String paymentMethod;
 
-    @TableField(value = "payment_stream_id")
     private String paymentStreamId;
 
-    @TableField(value = "close_type")
     private String closeType;
 
-    @TableField(value = "snapshot_version")
     private Integer snapshotVersion;
+
+    @JSONField(serialize = false)
+    public Boolean isTimeout() {
+        // 已关闭且为超时关闭
+        if (orderState == TradeOrderState.CLOSED && Objects.equals(closeType, TradeOrderEvent.TIME_OUT.getCode())) {
+            return true;
+        }
+        // 未支付订单超时判断
+        if (orderState == TradeOrderState.CONFIRM) {
+            LocalDateTime timeoutTime = this.getCreatedAt().plusMinutes(TradeOrder.DEFAULT_TIME_OUT_MINUTES);
+            return LocalDateTime.now().isAfter(timeoutTime);
+        }
+        return false;
+    }
+
+    // 创建
+    public void create() {}
+
+    // 确认
+    public void confirm() {
+
+    }
+
+    // 已付款
+    public void paid() {}
+
+    // 完成
+    public void finish() {
+        this.orderState = TradeOrderState.FINISH;
+        this.completionTime = LocalDateTime.now();
+    }
+
+    // 关闭
+    public void close(LocalDateTime closeTime, String closeType) {
+        this.setClosingTime(closeTime);
+        this.setOrderState(TradeOrderState.CLOSED);
+        this.setCloseType(closeType);
+    }
 }

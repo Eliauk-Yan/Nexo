@@ -6,10 +6,12 @@ import com.nexo.business.pay.domain.entity.PayOrder;
 import com.nexo.business.pay.mapper.mybatis.PayOrderMapper;
 import com.nexo.common.api.pay.constant.PayState;
 import com.nexo.common.api.pay.request.PayCreateRequest;
+import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * 支付单服务
@@ -19,21 +21,22 @@ import java.math.BigDecimal;
 public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
 
     /**
-     * 创建支付单（含幂等）
+     * 创建支付单
      */
     public PayOrder create(PayCreateRequest request) {
-        // 幂等检查：查询是否已有相同业务单号的未过期支付单
+        // 1. 幂等判断
         PayOrder existPayOrder = this.getOne(new LambdaQueryWrapper<PayOrder>()
                 .eq(PayOrder::getPayerId, request.getPayerId())
                 .eq(PayOrder::getBizNo, request.getBizNo())
                 .eq(PayOrder::getBizType, request.getBizType())
                 .eq(PayOrder::getPayChannel, request.getPayChannel().getCode()));
-
+        // 2. 如果以创建直接返回
         if (existPayOrder != null) {
             if (existPayOrder.getOrderState() != PayState.EXPIRED) {
                 return existPayOrder;
             }
         }
+        // 3. 创建支付单
         PayOrder payOrder = PayOrder.create(request);
         boolean saveResult = save(payOrder);
         if (!saveResult) {
@@ -85,4 +88,5 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
         return this.getOne(new LambdaQueryWrapper<PayOrder>()
                 .eq(PayOrder::getPayOrderId, payOrderId));
     }
+
 }

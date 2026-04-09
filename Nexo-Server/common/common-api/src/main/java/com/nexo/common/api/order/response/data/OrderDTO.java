@@ -25,6 +25,11 @@ public class OrderDTO implements Serializable {
     private String orderId;
 
     /**
+     * 业务幂等号
+     */
+    private String identifier;
+
+    /**
      * 买家id
      */
     private String buyerId;

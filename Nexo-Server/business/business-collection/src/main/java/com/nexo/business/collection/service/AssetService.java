@@ -10,9 +10,9 @@ import com.nexo.business.collection.interfaces.vo.AssetVO;
  */
 public interface AssetService extends IService<Asset> {
 
+    // 获取资产列表
     Page<AssetVO> getMyAssets(Long current, Long size);
 
-    Asset getByBusinessNo(String businessNo, String businessType);
-
+    // 激活资产
     boolean activateAsset(Long assetId, String transactionHash);
 }

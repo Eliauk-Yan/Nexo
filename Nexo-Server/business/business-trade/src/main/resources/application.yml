@@ -14,7 +14,7 @@ spring:
   # 生产者配置
   cloud:
     function:
-      definition: buy; # 框架会自动在代码中寻找以 buy 为名字的通道映射关系，配合后面的 out-0 或 in-0 来区分是发消息还是收消息。
+      definition: buy;orderClose # 框架会自动在代码中寻找以 buy / orderClose 为名字的通道映射关系，配合后面的 out-0 或 in-0 来区分是发消息还是收消息。
     stream:
       rocketmq:
         bindings:
@@ -26,4 +26,9 @@ spring:
         buy-out-0: # 这里的 buy-out-0 是通用流配置
           destination: buy-topic
           group: trade-group
+          binder: rocketmq
+        orderClose-in-0:
+          content-type: application/json
+          destination: order-close-topic
+          group: order-group
           binder: rocketmq

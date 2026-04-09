@@ -1,15 +1,15 @@
 package com.nexo.business.pay.channel;
 
+import com.nexo.business.pay.channel.data.PayChannelRequest;
+import com.nexo.business.pay.channel.data.PayChannelResponse;
+
 /**
  * 支付渠道服务接口
  */
 public interface PayChannelService {
 
     /**
-     * 发起支付
-     *
-     * @param payChannelRequest 支付渠道请求
-     * @return 支付渠道响应
+     * 渠道发起支付
      */
     PayChannelResponse pay(PayChannelRequest payChannelRequest);
 }

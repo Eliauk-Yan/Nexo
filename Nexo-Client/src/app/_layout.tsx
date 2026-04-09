@@ -1,9 +1,8 @@
-// splash 必须最先导入，以便全局错误拦截器尽早注册
 import { SplashScreenController } from '@/utils/splash'
+import { SessionProvider, useSession } from '@/utils/ctx'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
 import React, { useEffect } from 'react'
-import { SessionProvider, useSession } from '@/utils/ctx'
 
 const RootLayout = () => {
   return (

@@ -54,7 +54,7 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
 
         // 3. 提取所有的 artworkId 并批量查询 ArtWork 信息
         List<Long> artworkIds = assetPage.getRecords().stream()
-                .map(Asset::getArtWorkId)
+                .map(Asset::getNftId)
                 .distinct()
                 .collect(Collectors.toList());
 
@@ -67,7 +67,7 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
             BeanUtils.copyProperties(asset, vo);
             vo.setState(asset.getState() != null ? asset.getState().name() : null);
 
-            NFT NFT = artworkMap.get(asset.getArtWorkId());
+            NFT NFT = artworkMap.get(asset.getNftId());
             if (NFT != null) {
                 vo.setArtworkName(NFT.getName());
                 vo.setArtworkCover(NFT.getCover());
@@ -78,14 +78,6 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
 
         voPage.setRecords(vos);
         return voPage;
-    }
-
-    @Override
-    public Asset getByBusinessNo(String businessNo, String businessType) {
-        return this.getOne(new LambdaQueryWrapper<Asset>()
-                .eq(Asset::getBusinessNo, businessNo)
-                .eq(Asset::getBusinessType, businessType)
-                .last("limit 1"));
     }
 
     @Override

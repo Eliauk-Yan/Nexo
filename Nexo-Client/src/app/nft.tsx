@@ -1,37 +1,22 @@
 import { artworkApi, authApi, orderApi, tradeApi } from '@/api'
 import { ArtworkDetail } from '@/api/artwork'
+import { ENABLE_MOCK_IAP, getNftIapProductId } from '@/config/iap'
 import { useSession } from '@/utils/ctx'
 import {
-  BottomSheet,
-  Button,
-  Group,
   Host,
   HStack,
   Image as SwiftImage,
   List,
-  ProgressView,
   RNHostView,
   Section,
   Text,
-  VStack,
 } from '@expo/ui/swift-ui'
-import {
-  buttonStyle,
-  controlSize,
-  disabled,
-  font,
-  foregroundStyle,
-  frame,
-  listStyle,
-  multilineTextAlignment,
-  padding,
-  presentationDetents,
-  presentationDragIndicator,
-} from '@expo/ui/swift-ui/modifiers'
+import { foregroundStyle, listStyle } from '@expo/ui/swift-ui/modifiers'
 import { Image } from 'expo-image'
 import { GlassView } from 'expo-glass-effect'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useIAP } from 'expo-iap'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   Platform,
@@ -45,11 +30,19 @@ import Spinner from 'react-native-loading-spinner-overlay'
 
 const STATUS_MAP = {
   NOT_FOR_SALE: { text: '不可售', color: '#8E8E93' },
-  SELLING: { text: '发售中', color: '#007AFF' },
+  SELLING: { text: '在售', color: '#007AFF' },
   SOLD_OUT: { text: '已售罄', color: '#FF3B30' },
   COMING_SOON: { text: '即将开售', color: '#FF9500' },
   WAIT_FOR_SALE: { text: '待开售', color: '#5AC8FA' },
 } as const
+
+const getStoreProductId = (product: any) => product?.id || product?.productId || ''
+
+const isUserCancelledError = (error: any) => {
+  const code = String(error?.code || '').toLowerCase()
+  const message = String(error?.message || '').toLowerCase()
+  return code.includes('cancel') || message.includes('cancel')
+}
 
 const InfoRow = ({
   icon,
@@ -88,15 +81,13 @@ export default function NftDetail() {
   const router = useRouter()
   const colorScheme = useColorScheme()
   const { session, isLoading: isSessionLoading } = useSession()
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const pendingOrderIdRef = useRef('')
+  const expectedProductIdRef = useRef('')
 
   const [loading, setLoading] = useState(false)
   const [token, setToken] = useState('')
-  const [payModalVisible, setPayModalVisible] = useState(false)
-  const [currentOrderId, setCurrentOrderId] = useState('')
-  const [paying, setPaying] = useState(false)
-  const [paySuccess, setPaySuccess] = useState(false)
-  const [payStatusText, setPayStatusText] = useState('支付请求处理�?..')
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [purchasing, setPurchasing] = useState(false)
   const [artwork, setArtwork] = useState<ArtworkDetail>({
     id: 0,
     name: '',
@@ -108,6 +99,11 @@ export default function NftDetail() {
     productState: 'WAIT_FOR_SALE',
     description: '',
   })
+
+  const iapProductId = useMemo(
+    () => (artwork.id ? getNftIapProductId(artwork.id) : ''),
+    [artwork.id],
+  )
 
   const status = STATUS_MAP[artwork.productState as keyof typeof STATUS_MAP] ?? {
     text: '加载中',
@@ -128,16 +124,25 @@ export default function NftDetail() {
     }
   }, [id])
 
-  const closePayModal = useCallback(() => {
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current)
-      pollingRef.current = null
-    }
-    setPayModalVisible(false)
-    setPaying(false)
-    setPaySuccess(false)
-    setPayStatusText('支付请求处理中...')
+  const getErrorMessage = useCallback((error: unknown) => {
+    if (error instanceof Error) return error.message
+    if (typeof error === 'string') return error
+    return ''
   }, [])
+
+  const isOrderSyncingError = useCallback(
+    (error: unknown) => {
+      const message = getErrorMessage(error)
+      return (
+        message.includes('订单不存在') ||
+        message.includes('not found') ||
+        message.includes('订单创建后尚未完成同步')
+      )
+    },
+    [getErrorMessage],
+  )
+
+  const sleep = useCallback((ms: number) => new Promise((resolve) => setTimeout(resolve, ms)), [])
 
   const pollOrderStatus = useCallback(
     (orderId: string) => {
@@ -145,32 +150,31 @@ export default function NftDetail() {
       const maxAttempts = 20
 
       pollingRef.current = setInterval(async () => {
-        attempts++
+        attempts += 1
         try {
           const order = await orderApi.getOrder(orderId)
-          if (!order) {
-            return
-          }
+          if (!order) return
 
-          if (order.orderState === 'PAID') {
-            setPayStatusText('支付成功，正在铸造资产...')
-            return
-          }
-
-          if (order.orderState === 'FINISH') {
+          if (order.orderState === 'PAID' || order.orderState === 'FINISH') {
             if (pollingRef.current) {
               clearInterval(pollingRef.current)
               pollingRef.current = null
             }
-            setPaySuccess(true)
-            setPaying(false)
+
             await fetchData()
-            setTimeout(() => {
-              closePayModal()
-              router.push('/order')
-            }, 1200)
+            setPurchasing(false)
+            Alert.alert('提示', '购买完成，订单已更新。', [
+              {
+                text: '查看订单',
+                onPress: () => router.push('/order'),
+              },
+            ])
+            return
           }
         } catch (error) {
+          if (isOrderSyncingError(error)) {
+            return
+          }
           console.error('轮询订单状态失败:', error)
         }
 
@@ -179,54 +183,107 @@ export default function NftDetail() {
             clearInterval(pollingRef.current)
             pollingRef.current = null
           }
-          setPaying(false)
-          Alert.alert('提示', '支付已受理，资产可能仍在铸造中，你可以稍后去订单页继续查看结果')
+
+          setPurchasing(false)
         }
       }, 2000)
     },
-    [closePayModal, fetchData, router],
+    [fetchData, isOrderSyncingError, router],
   )
 
-  const handleConfirmPay = useCallback(async () => {
-    if (!currentOrderId || paying) return
-    setPaying(true)
-    setPayStatusText('正在发起支付...')
-    try {
-      await tradeApi.pay({
-        orderId: currentOrderId,
-        paymentType: 'WECHAT',
-      })
-      setPayStatusText('支付请求已提交，等待支付确认...')
-      pollOrderStatus(currentOrderId)
-    } catch (error) {
-      console.error('发起支付失败:', error)
-      setPaying(false)
-    }
-  }, [currentOrderId, paying, pollOrderStatus])
+  const waitForOrderReady = useCallback(async (orderId: string) => {
+    const maxAttempts = 10
 
-  const doBuy = useCallback(async () => {
-    setLoading(true)
-    try {
-      const orderId = await tradeApi.buy(
-        {
-          productId: String(artwork.id),
-          nftType: 'NFT',
-          itemCount: 1,
-        },
-        token,
-      )
-      await fetchData()
-      setCurrentOrderId(orderId)
-      setPaying(false)
-      setPaySuccess(false)
-      setPayStatusText('支付请求处理中...')
-      setPayModalVisible(true)
-    } catch {
-      // request 已统一处理
-    } finally {
-      setLoading(false)
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+      try {
+        const order = await orderApi.getOrder(orderId)
+        if (order?.orderId) {
+          return order
+        }
+      } catch (error) {
+        if (isOrderSyncingError(error)) {
+          await sleep(500)
+          continue
+        }
+        console.log('等待订单落库中:', orderId, attempt + 1, error)
+      }
+
+      await sleep(500)
     }
-  }, [artwork.id, token, fetchData])
+
+    throw new Error('订单创建后尚未完成同步，请稍后再试')
+  }, [isOrderSyncingError, sleep])
+
+  const payWithRetry = useCallback(
+    async (orderId: string) => {
+      const maxAttempts = 5
+
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        try {
+          await tradeApi.pay({
+            orderId,
+            paymentType: 'MOCK',
+          })
+          return
+        } catch (error) {
+          if (isOrderSyncingError(error) && attempt < maxAttempts - 1) {
+            await sleep(800)
+            continue
+          }
+          throw error
+        }
+      }
+    },
+    [isOrderSyncingError, sleep],
+  )
+
+  const { connected, products, fetchProducts, requestPurchase, finishTransaction } = useIAP({
+    onPurchaseSuccess: async (purchase) => {
+      const pendingOrderId = pendingOrderIdRef.current
+      const expectedProductId = expectedProductIdRef.current
+      const purchasedProductId = getStoreProductId(purchase)
+
+      if (!pendingOrderId || !expectedProductId) return
+      if (purchasedProductId && purchasedProductId !== expectedProductId) return
+
+      try {
+        await waitForOrderReady(pendingOrderId)
+        await payWithRetry(pendingOrderId)
+
+        await finishTransaction({
+          purchase,
+          isConsumable: true,
+        })
+
+        pendingOrderIdRef.current = ''
+        expectedProductIdRef.current = ''
+        pollOrderStatus(pendingOrderId)
+      } catch (error) {
+        console.error('处理内购成功回调失败:', error)
+        setPurchasing(false)
+        if (!isOrderSyncingError(error)) {
+          Alert.alert('提示', '购买已完成，但订单同步失败，请稍后到订单页查看。')
+        }
+      }
+    },
+    onPurchaseError: (error) => {
+      const pendingOrderId = pendingOrderIdRef.current
+
+      pendingOrderIdRef.current = ''
+      expectedProductIdRef.current = ''
+      setPurchasing(false)
+
+      if (isUserCancelledError(error)) {
+        if (pendingOrderId) {
+          Alert.alert('提示', '已取消购买，这笔订单仍会保留在订单页中。')
+        }
+        return
+      }
+
+      console.error('内购失败:', error)
+      Alert.alert('提示', error?.message || '拉起内购失败，请稍后重试。')
+    },
+  })
 
   useEffect(() => {
     if (isSessionLoading) return
@@ -240,12 +297,146 @@ export default function NftDetail() {
   }, [fetchData, isSessionLoading, router, session])
 
   useEffect(() => {
+    if (!connected || !iapProductId) return
+
+    void fetchProducts({
+      skus: [iapProductId],
+      type: 'in-app',
+    })
+  }, [connected, fetchProducts, iapProductId])
+
+  useEffect(() => {
+    const fetchedProductIds = (products as any[]).map((product) => getStoreProductId(product))
+    console.log('IAP products on nft page:', fetchedProductIds)
+  }, [products])
+
+  useEffect(() => {
     return () => {
       if (pollingRef.current) {
         clearInterval(pollingRef.current)
       }
     }
   }, [])
+
+  const availableProductIds = useMemo(
+    () => new Set((products as any[]).map((product) => getStoreProductId(product))),
+    [products],
+  )
+
+  const doBuy = useCallback(async () => {
+    const simulatePurchase = async () => {
+      setLoading(true)
+      try {
+        const orderId = await tradeApi.buy(
+          {
+            productId: String(artwork.id),
+            nftType: 'NFT',
+            itemCount: 1,
+          },
+          token,
+        )
+        pendingOrderIdRef.current = orderId
+        expectedProductIdRef.current = iapProductId
+        setPurchasing(true)
+        await waitForOrderReady(orderId)
+        await payWithRetry(orderId)
+        pollOrderStatus(orderId)
+      } catch (error) {
+        pendingOrderIdRef.current = ''
+        expectedProductIdRef.current = ''
+        setPurchasing(false)
+        console.error('模拟购买失败:', error)
+        if (!isOrderSyncingError(error)) {
+          Alert.alert('提示', error instanceof Error ? error.message : '模拟购买失败，请稍后重试。')
+        }
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (!connected) {
+      if (ENABLE_MOCK_IAP) {
+        Alert.alert('模拟购买', '当前将跳过系统内购弹窗，直接模拟购买成功。', [
+          { text: '取消', style: 'cancel' },
+          {
+            text: '继续模拟',
+            onPress: () => {
+              void simulatePurchase()
+            },
+          },
+        ])
+        return
+      }
+      Alert.alert('提示', '当前购买服务未连接，请确认你安装的是最新的 iOS IAP 测试包。')
+      return
+    }
+
+    if (!iapProductId || !availableProductIds.has(iapProductId)) {
+      const fetchedProductIds = (products as any[]).map((product) => getStoreProductId(product))
+      console.log('Missing IAP product on nft page:', {
+        expected: iapProductId,
+        fetched: fetchedProductIds,
+      })
+      if (ENABLE_MOCK_IAP) {
+        Alert.alert(
+          '未找到内购商品',
+          `目标商品：${iapProductId}\n已拉取到：${fetchedProductIds.join(', ') || '无'}`,
+          [
+            { text: '取消', style: 'cancel' },
+            {
+              text: '模拟购买',
+              onPress: () => {
+                void simulatePurchase()
+              },
+            },
+          ],
+        )
+      } else {
+        Alert.alert(
+          '提示',
+          `没有找到对应的内购商品：${iapProductId}\n已拉取到：${fetchedProductIds.join(', ') || '无'}`,
+        )
+      }
+      return
+    }
+
+    setLoading(true)
+    try {
+      const orderId = await tradeApi.buy(
+        {
+          productId: String(artwork.id),
+          nftType: 'NFT',
+          itemCount: 1,
+        },
+        token,
+      )
+
+      pendingOrderIdRef.current = orderId
+      expectedProductIdRef.current = iapProductId
+      setPurchasing(true)
+
+      await requestPurchase({
+        request: {
+          apple: {
+            sku: iapProductId,
+            quantity: 1,
+          },
+          google: {
+            skus: [iapProductId],
+          },
+        },
+        type: 'in-app',
+      })
+    } catch (error) {
+      pendingOrderIdRef.current = ''
+      expectedProductIdRef.current = ''
+      setPurchasing(false)
+      console.error('下单失败:', error)
+      Alert.alert('提示', error instanceof Error ? error.message : '下单失败，请稍后重试。')
+    } finally {
+      setLoading(false)
+    }
+  }, [artwork.id, availableProductIds, connected, iapProductId, isOrderSyncingError, payWithRetry, pollOrderStatus, products, requestPurchase, token, waitForOrderReady])
 
   if (Platform.OS !== 'ios' || isSessionLoading || !session) {
     return (
@@ -255,7 +446,7 @@ export default function NftDetail() {
     )
   }
 
-  const isBuyDisabled = artwork.productState !== 'SELLING' || loading
+  const isBuyDisabled = artwork.productState !== 'SELLING' || loading || purchasing
 
   return (
     <View style={styles.page}>
@@ -270,7 +461,7 @@ export default function NftDetail() {
         <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.back()} />
       </Stack.Toolbar>
 
-      <Spinner visible={loading} />
+      <Spinner visible={loading || purchasing} />
 
       <Host style={styles.host}>
         <List modifiers={[listStyle('insetGrouped')]}>
@@ -281,12 +472,7 @@ export default function NftDetail() {
           </Section>
 
           <Section title="商品简介">
-            <InfoRow
-              icon="tag.fill"
-              iconColor="#5E5CE6"
-              label="名称"
-              value={artwork.name || '未命名藏品'}
-            />
+            <InfoRow icon="tag.fill" iconColor="#5E5CE6" label="名称" value={artwork.name || '未命名藏品'} />
             <InfoRow icon="circle.fill" iconColor={status.color} label="状态" value={status.text} />
             <InfoRow
               icon="text.alignleft"
@@ -301,7 +487,7 @@ export default function NftDetail() {
               icon="yensign.circle.fill"
               iconColor="#22C55E"
               label="当前价格"
-              value={`￥ ${(artwork.price ?? 0).toFixed(2)}`}
+              value={`￥${(artwork.price ?? 0).toFixed(2)}`}
             />
             <InfoRow
               icon="square.stack.3d.up.fill"
@@ -321,26 +507,28 @@ export default function NftDetail() {
               label="发售时间"
               value={
                 artwork.saleTime
-                  ? new Date(artwork.saleTime).toLocaleString('zh-CN', {
-                      hour12: false,
-                    })
+                  ? new Date(artwork.saleTime).toLocaleString('zh-CN', { hour12: false })
                   : '-'
               }
             />
           </Section>
 
-          <Section title="购买说明">
-            <Text modifiers={[foregroundStyle('#8E8E93')]}>藏品购买后不可退款，请谨慎付款。</Text>
+          <Section title="购买须知">
             <Text modifiers={[foregroundStyle('#8E8E93')]}>
-              下单后会直接弹出支付窗口，关闭后也可稍后去订单页继续支付。
+              虚拟藏品属于数字商品，购买成功后将发放至当前账号，请在下单前确认商品信息。
             </Text>
-            <Text modifiers={[foregroundStyle('#8E8E93')]}>支付成功后系统会自动进入铸造流程。</Text>
+            <Text modifiers={[foregroundStyle('#8E8E93')]}>
+              数字商品一经购买通常不支持退款、退换或转让，请根据自身需求谨慎购买。
+            </Text>
+            <Text modifiers={[foregroundStyle('#8E8E93')]}>
+              如因网络波动导致到账延迟，请稍后前往订单页查看处理结果。
+            </Text>
           </Section>
         </List>
       </Host>
 
       <View style={styles.floatingButtonBar}>
-        <TouchableOpacity activeOpacity={0.85} onPress={doBuy} disabled={isBuyDisabled}>
+        <TouchableOpacity activeOpacity={0.85} onPress={() => void doBuy()} disabled={isBuyDisabled}>
           <GlassView
             style={[styles.glassButton, isBuyDisabled && styles.glassButtonDisabled]}
             glassEffectStyle="regular"
@@ -353,94 +541,14 @@ export default function NftDetail() {
               ]}
             >
               {artwork.productState === 'SELLING'
-                ? `立即下单 ￥ ${(artwork.price ?? 0).toFixed(2)}`
+                ? purchasing
+                  ? '购买处理中...'
+                  : `立即购买 ￥${(artwork.price ?? 0).toFixed(2)}`
                 : status.text}
             </RNText>
           </GlassView>
         </TouchableOpacity>
       </View>
-
-      <Host matchContents>
-        <BottomSheet
-          isPresented={payModalVisible}
-          onIsPresentedChange={(isVisible) => {
-            if (!isVisible) closePayModal()
-            else setPayModalVisible(isVisible)
-          }}
-        >
-          <Group
-            modifiers={[
-              presentationDragIndicator('visible'),
-              presentationDetents(['medium', 'large']),
-            ]}
-          >
-            <VStack spacing={0}>
-              <VStack spacing={8} modifiers={[padding({ top: 32, bottom: 16 })]}>
-                <Text modifiers={[foregroundStyle('secondary'), font({ size: 14 })]}>支付金额</Text>
-                <Text modifiers={[font({ size: 36, weight: 'bold' }), foregroundStyle('primary')]}>
-                  ￥ {(artwork.price ?? 0).toFixed(2)}
-                </Text>
-                <Text modifiers={[foregroundStyle('secondary'), font({ size: 12 })]}>
-                  订单： {currentOrderId}
-                </Text>
-              </VStack>
-
-              <List modifiers={[listStyle('insetGrouped')]}>
-                <Section title="支付方式">
-                  <Text>微信支付（推荐）</Text>
-                </Section>
-              </List>
-
-              <VStack spacing={12} modifiers={[padding({ horizontal: 20, bottom: 32, top: 8 })]}>
-                {paying ? (
-                  <Button
-                    modifiers={[
-                      buttonStyle('glassProminent'),
-                      controlSize('large'),
-                      disabled(true),
-                    ]}
-                  >
-                    <HStack spacing={8} modifiers={[frame({ maxWidth: 'infinity' as any })]}>
-                      {paySuccess ? (
-                        <Text
-                          modifiers={[
-                            foregroundStyle('green'),
-                            font({ weight: 'bold' }),
-                            multilineTextAlignment('center'),
-                          ]}
-                        >
-                          支付成功
-                        </Text>
-                      ) : (
-                        <>
-                          <ProgressView />
-                          <Text modifiers={[multilineTextAlignment('center')]}>
-                            {payStatusText}
-                          </Text>
-                        </>
-                      )}
-                    </HStack>
-                  </Button>
-                ) : (
-                  <Button
-                    onPress={handleConfirmPay}
-                    modifiers={[buttonStyle('glassProminent'), controlSize('large')]}
-                  >
-                    <Text
-                      modifiers={[
-                        frame({ maxWidth: 'infinity' as any }),
-                        multilineTextAlignment('center'),
-                      ]}
-                    >
-                      确认支付
-                    </Text>
-                  </Button>
-                )}
-              </VStack>
-            </VStack>
-          </Group>
-        </BottomSheet>
-      </Host>
     </View>
   )
 }

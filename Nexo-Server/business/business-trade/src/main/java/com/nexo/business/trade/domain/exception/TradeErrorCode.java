@@ -21,7 +21,11 @@ public enum TradeErrorCode implements ErrorCode {
 
     GOODS_NOT_FOR_SALE("GOODS_NOT_FOR_SALE", "商品不可售卖"),
 
-    ORDER_CREATE_FAILED("ORDER_CREATE_FAILED", "订单创建失败");
+    ORDER_CREATE_FAILED("ORDER_CREATE_FAILED", "订单创建失败"),
+
+    ORDER_CANCEL_FAILED("ORDER_CANCEL_FAILED", "订单取消失败"),
+
+    INVENTORY_ROLLBACK_FAILED("INVENTORY_ROLLBACK_FAILED", "库存回滚失败");
 
     private final String code;
 

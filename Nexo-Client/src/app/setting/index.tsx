@@ -1,18 +1,18 @@
 import { authApi } from '@/api'
 import { userApi } from '@/api/user'
 import { useSession } from '@/utils/ctx'
-import { Stack, useRouter } from 'expo-router'
 import {
-  Host,
-  List,
-  Section,
   Button,
+  Host,
   Label,
-  Link,
   LabeledContent,
+  Link,
+  List,
   ProgressView,
+  Section,
 } from '@expo/ui/swift-ui'
 import { listStyle, onTapGesture } from '@expo/ui/swift-ui/modifiers'
+import { Stack, useRouter } from 'expo-router'
 import React, { useState } from 'react'
 import { Alert } from 'react-native'
 
@@ -24,21 +24,22 @@ const Setting = () => {
 
   const handleAccountPress = async () => {
     if (accountLoading) return
+
     setAccountLoading(true)
+
     try {
-      // 预加载用户数据，加载完再跳转
       await userApi.getUserProfile()
       router.push('/setting/account')
-    } catch (err) {
-      console.error('获取用户信息失败', err)
-      Alert.alert('提示', '获取用户信息失败，请重试')
+    } catch (error) {
+      console.error('获取用户信息失败:', error)
+      Alert.alert('提示', '获取用户信息失败，请稍后重试。')
     } finally {
       setAccountLoading(false)
     }
   }
 
-  const handleLogout = async () => {
-    Alert.alert('退出登录', '确定要退出登录吗？', [
+  const handleLogout = () => {
+    Alert.alert('退出登录', '确定要退出当前账号吗？', [
       { text: '取消', style: 'cancel' },
       {
         text: '退出',
@@ -47,7 +48,7 @@ const Setting = () => {
           try {
             await authApi.logout()
           } catch (error) {
-            console.error('退出登录失败：', error)
+            console.error('退出登录失败:', error)
           } finally {
             signOut()
             router.replace('/home/home')
@@ -59,13 +60,13 @@ const Setting = () => {
 
   const handleShareApp = () => {
     Alert.alert(
-      '分享 APP',
-      '如果这是正式上线的产品，这里会唤起系统分享面板。\n\n当前为毕业设计演示版，可以向老师口头"安利"一下就行啦～',
+      '分享应用',
+      '这里可以接入系统分享能力。当前演示版本保留为说明弹窗，方便答辩时讲解应用传播场景。',
       [{ text: '知道了', style: 'default' }],
     )
   }
 
-  const nepuUrl = 'https://www.imut.edu.cn/'
+  const privacyUrl = 'https://www.imut.edu.cn/'
 
   return (
     <>
@@ -75,19 +76,24 @@ const Setting = () => {
           headerLargeTitle: true,
         }}
       />
+
       <Stack.Toolbar placement="left">
-        <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.back()} />
+        <Stack.Toolbar.Button
+          icon="chevron.left"
+          onPress={() => router.back()}
+        />
       </Stack.Toolbar>
+
       <Host style={{ flex: 1 }}>
         <List modifiers={[listStyle('insetGrouped')]}>
-          {/* 账号管理 */}
-          <Section title="账号管理">
+          <Section title="账号与偏好">
             <LabeledContent
               label={<Label title="个人信息" systemImage="person.crop.circle" />}
               modifiers={[onTapGesture(handleAccountPress)]}
             >
               {accountLoading ? <ProgressView /> : null}
             </LabeledContent>
+
             <Label
               title="通用设置"
               systemImage="gearshape"
@@ -95,28 +101,43 @@ const Setting = () => {
             />
           </Section>
 
-          {/* 关于 */}
           <Section title="关于">
             <Label
               title="关于我们"
               systemImage="info.circle"
               modifiers={[onTapGesture(() => router.push('/setting/about'))]}
             />
-            <Button label="分享APP" systemImage="square.and.arrow.up" onPress={handleShareApp} />
+
+            <Button
+              label="分享 App"
+              systemImage="square.and.arrow.up"
+              onPress={handleShareApp}
+            />
           </Section>
 
-          {/* 退出登录 */}
           {isLogin && (
             <Section>
-              <Button role="destructive" label="退出登录" onPress={handleLogout} />
+              <Button
+                role="destructive"
+                label="退出登录"
+                onPress={handleLogout}
+              />
             </Section>
           )}
 
-          {/* 隐私与法律 */}
           <Section title="隐私与法律">
-            <Link label="个人信息共享清单" destination={nepuUrl} />
-            <Link label="个人信息已收集清单" destination={nepuUrl} />
-            <Link label="隐私与政策" destination={nepuUrl} />
+            <Link
+              label="个人信息共享清单"
+              destination={privacyUrl}
+            />
+            <Link
+              label="个人信息已收集清单"
+              destination={privacyUrl}
+            />
+            <Link
+              label="隐私政策"
+              destination={privacyUrl}
+            />
           </Section>
         </List>
       </Host>

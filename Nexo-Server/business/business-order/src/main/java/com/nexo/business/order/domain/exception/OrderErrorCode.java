@@ -18,7 +18,17 @@ public enum OrderErrorCode implements ErrorCode {
 
     BUYER_STATUS_ABNORMAL("BUYER_STATUS_ABNORMAL", "买家状态异常"),
 
-    BUYER_IS_PLATFORM_USER("BUYER_IS_PLATFORM_USER", "买家不能是平台用户");
+    BUYER_IS_PLATFORM_USER("BUYER_IS_PLATFORM_USER", "买家不能是平台用户"),
+
+    ORDER_NOT_EXIST("ORDER_NOT_EXIST", "订单不存在"),
+
+    PERMISSION_DENIED("PERMISSION_DENIED", "没有权限操作"),
+
+    ORDER_STATE_ILLEGAL("ORDER_STATE_ILLEGAL", "订单状态非法"),
+
+    UPDATE_ORDER_FAILED("UPDATE_ORDER_FAILED", "更新订单失败"),
+
+    ORDER_STREAM_INSERT_FAILED("ORDER_STREAM_INSERT_FAILED", "订单流水插入失败");
 
     private final String code;
 

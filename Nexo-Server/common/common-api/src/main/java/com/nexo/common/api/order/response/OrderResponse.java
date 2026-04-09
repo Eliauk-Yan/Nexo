@@ -20,4 +20,8 @@ public class OrderResponse<T> extends BaseResponse {
 
     private T data;
 
+    private String orderId;
+
+    private Long streamId;
+
 }

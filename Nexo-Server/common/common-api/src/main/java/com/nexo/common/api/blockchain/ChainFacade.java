@@ -10,23 +10,13 @@ public interface ChainFacade {
 
     /**
      * 创建区块链账户
-     * @param request 请求参数
-     * @return 响应参数
      */
     ChainResponse<ChainCreateData> createChainAccount(ChainRequest request);
 
     /**
      * 铸造藏品
-     * @param request 请求参数
-     * @return 响应参数
      */
     ChainResponse<ChainOperationData> mint(ChainRequest request);
-    /**
-     * 销毁藏品
-     * @param request 请求参数
-     * @return 响应参数
-     */
-    ChainResponse<ChainOperationData> burn(ChainRequest request);
 
     /**
      * 藏品链操作

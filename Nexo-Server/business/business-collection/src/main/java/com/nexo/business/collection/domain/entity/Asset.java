@@ -1,6 +1,5 @@
 package com.nexo.business.collection.domain.entity;
 
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.nexo.business.collection.domain.enums.AssetState;
 import com.nexo.common.datasource.entity.BaseEntity;
@@ -21,46 +20,43 @@ import java.time.LocalDateTime;
 @TableName("assets")
 public class Asset extends BaseEntity {
 
-    @TableField(value = "artwork_id")
-    private Long artWorkId;
+    private Long nftId;
 
-    @TableField(value = "purchase_price")
     private BigDecimal purchasePrice;
 
-    @TableField(value = "serial_number")
     private String serialNumber;
 
-    @TableField(value = "nft_identifier")
     private String nftIdentifier;
 
-    @TableField(value = "previous_holder_id")
     private Long previousHolderId;
 
-    @TableField(value = "current_holder_id")
     private Long currentHolderId;
 
-    @TableField(value = "state")
     private AssetState state;
 
-    @TableField(value = "transaction_hash")
     private String transactionHash;
 
-    @TableField(value = "reference_price")
     private BigDecimal referencePrice;
 
-    @TableField(value = "rarity")
     private String rarity;
 
-    @TableField(value = "sync_chain_time")
     private LocalDateTime syncChainTime;
 
-    @TableField(value = "destruction_time")
     private LocalDateTime destructionTime;
 
-    @TableField(value = "business_no")
     private String businessNo;
 
-    @TableField(value = "business_type")
     private String businessType;
 
+    // 资产初始化
+    public void init() {
+
+    }
+
+    // 资产激活
+    public void active(String transactionHash) {
+        this.transactionHash = transactionHash;
+        this.syncChainTime = LocalDateTime.now();
+        this.state = AssetState.ACTIVE;
+    }
 }
