@@ -99,7 +99,7 @@ public class NFTServiceImpl extends ServiceImpl<NFTMapper, NFT> implements NFTSe
         // 2. 构造库存模块请求
         InventoryRequest request = new InventoryRequest();
         request.setNftId(nft.getId().toString());
-        request.setNFTType(NFTType.NFT);
+        request.setNftType(NFTType.NFT);
         // 3. 调用库存服务，获取Redis中的库存
         InventoryResponse<Long> response = inventoryFacade.getInventory(request);
         // 4. 数据库中的库存兜底

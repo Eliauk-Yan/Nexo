@@ -24,7 +24,7 @@ public class StockValidator extends BaseOrderCreateValidator {
         // 1. 查询商品库存信息
         InventoryRequest inventoryRequest = new InventoryRequest();
         inventoryRequest.setNftId(request.getProductId());
-        inventoryRequest.setNFTType(request.getNFTType());
+        inventoryRequest.setNftType(request.getNftType());
         InventoryResponse<Long> response = inventoryFacade.getInventory(inventoryRequest);
         Long inventory = response.getData();
         // 2. 判断库存是否充足

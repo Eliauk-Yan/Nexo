@@ -41,6 +41,11 @@ public class NFTInfo implements Serializable {
     private BigDecimal price;
 
     /**
+     * NFT 描述
+     */
+    private String description;
+
+    /**
      * NFT 数量
      */
     private Long quantity;

@@ -115,7 +115,7 @@ public class ChainOperateResultListener extends StreamConsumer {
     private void initInventory(String productId, NFTType nftType, Long inventory, String identifier) {
         InventoryRequest inventoryRequest = new InventoryRequest();
         inventoryRequest.setNftId(productId);
-        inventoryRequest.setNFTType(nftType);
+        inventoryRequest.setNftType(nftType);
         inventoryRequest.setInventory(inventory);
         inventoryRequest.setIdentifier(identifier);
         InventoryResponse<Boolean> inventoryResponse = inventoryFacade.init(inventoryRequest);

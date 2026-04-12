@@ -39,7 +39,7 @@ public class AssetAllocateRequest extends BaseRequest {
     /**
      * 藏品类型
      */
-    private NFTType NFTType;
+    private NFTType nftType;
 
     /**
      * 购入价格

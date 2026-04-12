@@ -57,7 +57,7 @@ public class OrderCreateRequest extends OrderBaseRequest {
     /**
      * 商品类型
      */
-    private NFTType NFTType;
+    private NFTType nftType;
 
     /**
      * 商品图片

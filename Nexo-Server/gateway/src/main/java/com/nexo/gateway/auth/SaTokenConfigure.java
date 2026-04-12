@@ -61,7 +61,7 @@ public class SaTokenConfigure {
             case NotPermissionException e -> {
                 if (UserPermission.AUTHENTICATE.getCode().equals(e.getPermission())) {
                     log.error("请先进行实名认证");
-                    yield SaResult.error("请先进行实名认证");
+                    yield SaResult.error("您无权限进行此操作");
                 }
                 log.error("无权限");
                 yield SaResult.error("无权限");

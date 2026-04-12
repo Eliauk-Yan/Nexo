@@ -6,6 +6,8 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.nexo.common.api.order.constant.TradeOrderEvent;
 import com.nexo.common.api.order.constant.TradeOrderState;
 import com.nexo.common.api.nft.constant.NFTType;
+import com.nexo.common.api.order.request.OrderConfirmRequest;
+import com.nexo.common.api.order.request.OrderCreateRequest;
 import com.nexo.common.api.user.constant.UserType;
 import com.nexo.common.datasource.entity.BaseEntity;
 import lombok.Data;
@@ -46,7 +48,7 @@ public class TradeOrder extends BaseEntity {
     private String productId;
 
     @TableField("product_type")
-    private NFTType NFTType;
+    private NFTType nftType;
 
     private String productCoverUrl;
 
@@ -93,15 +95,36 @@ public class TradeOrder extends BaseEntity {
     }
 
     // 创建
-    public void create() {}
+    public void create(OrderCreateRequest request) {
+        this.setOrderId(request.getOrderId());
+        this.setBuyerId(request.getBuyerId());
+        this.setBuyerType(request.getBuyerType());
+        this.setSellerId(request.getSellerId());
+        this.setSellerType(request.getSellerType());
+        this.setIdentifier(request.getIdentifier());
+        this.setProductId(request.getProductId());
+        this.setNftType(request.getNftType());
+        this.setProductCoverUrl(request.getProductPicUrl());
+        this.setProductName(request.getProductName());
+        this.setUnitPrice(request.getItemPrice());
+        this.setQuantity(request.getItemCount().intValue());
+        this.setTotalPrice(request.getOrderAmount());
+        this.setPaymentAmount(request.getOrderAmount());
+        this.setSnapshotVersion(request.getSnapshotVersion());
+        this.setOrderState(TradeOrderState.CONFIRM);
+    }
 
     // 确认
-    public void confirm() {
-
+    public void confirm(OrderConfirmRequest request) {
+        this.orderState = TradeOrderState.CONFIRM;
+        this.confirmedTime = request.getOperateTime();
     }
 
     // 已付款
-    public void paid() {}
+    public void paid() {
+        this.orderState = TradeOrderState.PAID;
+        this.paymentTime = LocalDateTime.now();
+    }
 
     // 完成
     public void finish() {

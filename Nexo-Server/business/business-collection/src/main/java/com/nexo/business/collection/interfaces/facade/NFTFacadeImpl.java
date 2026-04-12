@@ -213,7 +213,7 @@ public class NFTFacadeImpl implements NFTFacade {
         if (result) {
             InventoryRequest inventoryRequest = new InventoryRequest();
             inventoryRequest.setNftId(request.getNFTId().toString());
-            inventoryRequest.setNFTType(NFTType.NFT);
+            inventoryRequest.setNftType(NFTType.NFT);
             InventoryResponse<Boolean> invalid = inventoryFacade.invalid(inventoryRequest);
             log.info("Redis库存删除结果 : {}", invalid.getSuccess());
         }
@@ -254,7 +254,7 @@ public class NFTFacadeImpl implements NFTFacade {
         // 3. 构造库存请�?
         InventoryRequest inventoryRequest = new InventoryRequest();
         inventoryRequest.setNftId(request.getNFTId().toString());
-        inventoryRequest.setNFTType(NFTType.NFT);
+        inventoryRequest.setNftType(NFTType.NFT);
         inventoryRequest.setIdentifier(request.getIdentifier());
         inventoryRequest.setInventory(modifyResponse.getQuantityModified());
         InventoryResponse<Boolean> inventoryResponse;
@@ -334,7 +334,7 @@ public class NFTFacadeImpl implements NFTFacade {
                         .eq(NFTInventoryStream::getNftId, saleRequest.getNFTId())
         );
         if (null != existStream) {
-            NFTResponse.success(existStream.getId());
+            return NFTResponse.success(existStream.getId());
         }
         // 2.查询出最新的值
         NFT nft = nftService.getById(saleRequest.getNFTId());

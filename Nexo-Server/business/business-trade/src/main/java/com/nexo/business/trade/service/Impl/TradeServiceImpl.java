@@ -33,7 +33,6 @@ import com.nexo.common.api.pay.response.PayResponse;
 import com.nexo.common.api.user.constant.UserType;
 import com.nexo.common.mq.producer.StreamProducer;
 import com.nexo.common.web.filter.TokenFilter;
-import com.nexo.common.web.result.Result;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -85,16 +84,18 @@ public class TradeServiceImpl implements TradeService {
 
     @Override
     public String buy(BuyDTO params) {
-        // 1. 雪花算法生成订单号
+        // 1. 构造订单创建请求
+        // 1.1 生成订单号
         String orderId = IdUtil.getSnowflakeNextIdStr();
-        // 2. 构造创建订单请求
+        // 1.2 填充信息
         OrderCreateRequest orderCreateRequest = new OrderCreateRequest();
         orderCreateRequest.setOrderId(orderId);
         orderCreateRequest.setIdentifier(TokenFilter.tokenThreadLocal.get());
         orderCreateRequest.setBuyerId(StpUtil.getLoginIdAsString());
         orderCreateRequest.setProductId(params.getProductId());
-        orderCreateRequest.setNFTType(NFTType.NFT);
+        orderCreateRequest.setNftType(NFTType.NFT);
         orderCreateRequest.setItemCount(params.getItemCount());
+        // 1.3 获取藏品信息填充信息
         NFTResponse<NFTInfo> response = nftFacade.getNFTInfoById(Long.parseLong(params.getProductId()));
         NFTInfo nft = response.getData();
         if (nft == null || nft.getProductState() != SELLING) {
@@ -106,28 +107,33 @@ public class TradeServiceImpl implements TradeService {
         orderCreateRequest.setProductPicUrl(nft.getCover());
         orderCreateRequest.setSnapshotVersion(nft.getVersion());
         orderCreateRequest.setOrderAmount(orderCreateRequest.getItemPrice().multiply(new BigDecimal(orderCreateRequest.getItemCount())));
-        // 3. 发送MQ消息进行订单创建
+        // 2. 发送MQ消息进行订单创建
         boolean result = streamProducer.send("buy-out-0", params.getNftType(), JSON.toJSONString(orderCreateRequest));
+        // result 只代表本地事务结束
         if (!result) {
             throw new TradeException(ORDER_CREATE_FAILED);
         }
-        // 构造库存请求
+        //因为不管本地事务是否成功，只要一阶段消息发成功都会返回 true，所以这里需要确认是否成功
+        //因为上面是用了MQ的事务消息，Redis的库存扣减是在事务消息的本地事务中同步执行的（InventoryDecreaseTransactionListener#executeLocalTransaction），所以只要成功了，这里一定能查到
+        // 3. 构造库存请求
         InventoryRequest inventoryRequest = new InventoryRequest();
         inventoryRequest.setNftId(orderCreateRequest.getProductId());
-        inventoryRequest.setNFTType(orderCreateRequest.getNFTType());
+        inventoryRequest.setNftType(orderCreateRequest.getNftType());
         inventoryRequest.setIdentifier(orderCreateRequest.getIdentifier());
+        // 4. 查找库存扣减日志
         InventoryResponse<String> decreaseLogResponse = inventoryFacade.getInventoryDecreaseLog(inventoryRequest);
         if (decreaseLogResponse.getSuccess() && decreaseLogResponse.getData() != null) {
+            // 4.1 扣减过库存，再看一下有没有回退过库存，也就是库存增加的日志
             InventoryResponse<String> increaseLogResponse = inventoryFacade.getInventoryIncreaseLog(inventoryRequest);
-            log.info("库存回退日志查询结果, orderId={}, increaseLogData={}",
-                    orderCreateRequest.getOrderId(), increaseLogResponse.getData());
-
-            // 没有发生库存回退时，做一次旁路校验并清理扣减日志
-            if (!(increaseLogResponse.getSuccess() && increaseLogResponse.getData() != null)) {
+            log.info("库存回退日志查询结果, orderId={}, increaseLogData={}", orderCreateRequest.getOrderId(), increaseLogResponse.getData());
+            // 没有发生库存回退时，做一次旁路校验 延迟三秒检查一下数据库中是否有库存扣减记录 我没有看到失败补偿，但是不知道库存扣减与订单创建是否落地
+            if (increaseLogResponse.getSuccess() && increaseLogResponse.getData() == null) {
                 scheduler.schedule(() -> {
                     try {
+                        // 看数据库库存流水中有没有扣减流水 并且判断扣减数量是否一致 确保有流水并且要对的上
                         NFTResponse<NFTInventoryStreamDTO> streamResponse = nftFacade.getNFTInventoryStream(Long.parseLong(orderCreateRequest.getProductId()), orderCreateRequest.getIdentifier());
                         if (streamResponse.getSuccess() && streamResponse.getData() != null && Objects.equals(streamResponse.getData().getChangedQuantity(), orderCreateRequest.getItemCount())) {
+                            // 删除Redis库存扣减流水记录
                             InventoryResponse<Long> removeLogResponse = inventoryFacade.removeInventoryDecreaseLog(inventoryRequest);
                             log.info("Redis库存扣减流水记录删除结果, orderId={}, result={}", orderCreateRequest.getOrderId(), removeLogResponse.getData());
                         }
@@ -138,11 +144,7 @@ public class TradeServiceImpl implements TradeService {
             }
             return orderCreateRequest.getOrderId();
         }
-
-        log.error("库存扣减日志未查到, orderId={}, identifier={}, response={}",
-                orderCreateRequest.getOrderId(),
-                orderCreateRequest.getIdentifier(),
-                decreaseLogResponse.getData());
+        log.error("库存扣减日志未查到, orderId={}, identifier={}, response={}", orderCreateRequest.getOrderId(), orderCreateRequest.getIdentifier(), decreaseLogResponse.getData());
         throw new TradeException(ORDER_CREATE_FAILED);
     }
 

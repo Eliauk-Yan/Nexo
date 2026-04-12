@@ -96,7 +96,7 @@ public class TradeOrderListener {
             inventoryRequest.setInventory(Long.valueOf(orderDTO.getQuantity()));
             inventoryRequest.setNftId(orderDTO.getProductId());
             inventoryRequest.setIdentifier(orderDTO.getIdentifier());
-            inventoryRequest.setNFTType(orderDTO.getNFTType());
+            inventoryRequest.setNftType(orderDTO.getNftType());
             InventoryResponse<Boolean> inventoryResponse = inventoryFacade.increaseInventory(inventoryRequest);
             if (inventoryResponse.getSuccess()) {
                 log.info("Redis库存回滚成功, 回滚库存请求:{}", inventoryRequest);

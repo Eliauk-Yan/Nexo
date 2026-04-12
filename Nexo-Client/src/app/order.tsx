@@ -1,24 +1,50 @@
 import { orderApi, OrderState, OrderVO } from '@/api/order'
-import { tradeApi } from '@/api/trade'
-import { ENABLE_MOCK_IAP, getNftIapProductId, getNftIapProductIds } from '@/config/iap'
+import { PaymentType, tradeApi } from '@/api/trade'
 import { colors, spacing, typography } from '@/config/theme'
 import { useSession } from '@/utils/ctx'
 import Feather from '@expo/vector-icons/Feather'
-import { Button, Host, HStack, Picker, Spacer, Text as SwiftUIText } from '@expo/ui/swift-ui'
-import { buttonStyle, controlSize, pickerStyle, tag, tint } from '@expo/ui/swift-ui/modifiers'
+import {
+  BottomSheet,
+  Button,
+  Group,
+  Host,
+  HStack,
+  Image as SwiftImage,
+  List,
+  Picker,
+  Section,
+  Spacer,
+  Text as SwiftUIText,
+  VStack,
+} from '@expo/ui/swift-ui'
+import {
+  buttonStyle,
+  controlSize,
+  font,
+  frame,
+  foregroundStyle,
+  interactiveDismissDisabled,
+  listStyle,
+  multilineTextAlignment,
+  padding,
+  pickerStyle,
+  presentationDetents,
+  presentationDragIndicator,
+  tag,
+  tint,
+} from '@expo/ui/swift-ui/modifiers'
 import { Stack, useRouter } from 'expo-router'
-import { useIAP } from 'expo-iap'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Alert,
   DynamicColorIOS,
   FlatList,
   Image,
-  RefreshControl,
   StyleSheet,
   Text,
   View,
 } from 'react-native'
+import Spinner from 'react-native-loading-spinner-overlay'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const TABS: { id: string; label: string; state?: OrderState }[] = [
@@ -74,27 +100,26 @@ const ui = {
 
 const formatPrice = (price?: number | null) => (price ?? 0).toFixed(2)
 
-const getStoreProductId = (product: any) => product?.id || product?.productId || ''
-
-const isUserCancelledError = (error: any) => {
-  const code = String(error?.code || '').toLowerCase()
-  const message = String(error?.message || '').toLowerCase()
-  return code.includes('cancel') || message.includes('cancel')
-}
-
 const OrderPage = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { session, isLoading: isSessionLoading } = useSession()
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const pendingOrderRef = useRef<OrderVO | null>(null)
-  const expectedProductIdRef = useRef('')
 
   const [activeTab, setActiveTab] = useState('all')
   const [orders, setOrders] = useState<OrderVO[]>([])
   const [loading, setLoading] = useState(false)
-  const [refreshing, setRefreshing] = useState(false)
   const [purchasingOrderId, setPurchasingOrderId] = useState('')
+  const [paymentSheetVisible, setPaymentSheetVisible] = useState(false)
+  const [selectedPaymentType, setSelectedPaymentType] = useState<PaymentType>('MOCK')
+  const [selectedOrder, setSelectedOrder] = useState<OrderVO | null>(null)
+
+  const paymentMethods = [
+    {
+      type: 'MOCK' as PaymentType,
+      title: '模拟支付',
+    },
+  ]
 
   const fetchOrders = useCallback(
     async (tabId = activeTab, silent = false) => {
@@ -158,7 +183,9 @@ const OrderPage = () => {
             }
 
             await fetchOrders(activeTab, true)
-            Alert.alert('提示', '内购完成，订单状态已更新。')
+            setPurchasingOrderId('')
+            setSelectedOrder(null)
+            Alert.alert('提示', '支付完成，订单状态已更新。')
             return
           }
         } catch (error) {
@@ -173,6 +200,8 @@ const OrderPage = () => {
             clearInterval(pollingRef.current)
             pollingRef.current = null
           }
+
+          setPurchasingOrderId('')
         }
       }, 2000)
     },
@@ -180,14 +209,14 @@ const OrderPage = () => {
   )
 
   const payWithRetry = useCallback(
-    async (orderId: string) => {
+    async (orderId: string, paymentType: PaymentType) => {
       const maxAttempts = 5
 
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         try {
           await tradeApi.pay({
             orderId,
-            paymentType: 'MOCK',
+            paymentType,
           })
           return
         } catch (error) {
@@ -202,54 +231,6 @@ const OrderPage = () => {
     [isOrderSyncingError, sleep],
   )
 
-  const { connected, products, fetchProducts, requestPurchase, finishTransaction } = useIAP({
-    onPurchaseSuccess: async (purchase) => {
-      const pendingOrder = pendingOrderRef.current
-      const expectedProductId = expectedProductIdRef.current
-      const purchasedProductId = getStoreProductId(purchase)
-
-      if (!pendingOrder || !expectedProductId) return
-      if (purchasedProductId && purchasedProductId !== expectedProductId) return
-
-      try {
-        await payWithRetry(pendingOrder.orderId)
-
-        await finishTransaction({
-          purchase,
-          isConsumable: true,
-        })
-
-        setPurchasingOrderId('')
-        pendingOrderRef.current = null
-        expectedProductIdRef.current = ''
-        pollOrderStatus(pendingOrder.orderId)
-      } catch (error) {
-        console.error('处理内购成功回调失败:', error)
-        setPurchasingOrderId('')
-        if (!isOrderSyncingError(error)) {
-          Alert.alert('提示', '内购已完成，但订单同步失败，请稍后到订单页查看。')
-        }
-      }
-    },
-    onPurchaseError: (error) => {
-      const pendingOrder = pendingOrderRef.current
-
-      pendingOrderRef.current = null
-      expectedProductIdRef.current = ''
-      setPurchasingOrderId('')
-
-      if (isUserCancelledError(error)) {
-        if (pendingOrder) {
-          Alert.alert('提示', '已取消购买，这笔订单仍会保留在待付款列表中。')
-        }
-        return
-      }
-
-      console.error('内购失败:', error)
-      Alert.alert('提示', error?.message || '拉起内购失败，请稍后重试。')
-    },
-  })
-
   useEffect(() => {
     if (isSessionLoading) return
 
@@ -262,28 +243,6 @@ const OrderPage = () => {
   }, [activeTab, fetchOrders, isSessionLoading, router, session])
 
   useEffect(() => {
-    if (!connected) return
-
-    const skuList = getNftIapProductIds(
-      orders
-        .filter((order) => order.orderState === 'CREATE' || order.orderState === 'CONFIRM')
-        .map((order) => order.productId),
-    )
-
-    if (skuList.length === 0) return
-
-    void fetchProducts({
-      skus: skuList,
-      type: 'in-app',
-    })
-  }, [connected, fetchProducts, orders])
-
-  useEffect(() => {
-    const fetchedProductIds = (products as any[]).map((product) => getStoreProductId(product))
-    console.log('IAP products on order page:', fetchedProductIds)
-  }, [products])
-
-  useEffect(() => {
     return () => {
       if (pollingRef.current) {
         clearInterval(pollingRef.current)
@@ -292,19 +251,7 @@ const OrderPage = () => {
     }
   }, [])
 
-  const availableProductIds = useMemo(
-    () => new Set((products as any[]).map((product) => getStoreProductId(product))),
-    [products],
-  )
 
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true)
-    try {
-      await fetchOrders(activeTab, true)
-    } finally {
-      setRefreshing(false)
-    }
-  }, [activeTab, fetchOrders])
 
   const handleCancelOrder = (order: OrderVO) => {
     Alert.alert('取消订单', '确定要取消这笔订单吗？', [
@@ -326,90 +273,25 @@ const OrderPage = () => {
     ])
   }
 
-  const handlePayOrder = async (order: OrderVO) => {
-    const productId = getNftIapProductId(order.productId)
+  const handlePayOrder = (order: OrderVO) => {
+    setSelectedOrder(order)
+    setPaymentSheetVisible(true)
+  }
 
-    const simulatePurchase = () => {
-      Alert.alert('模拟购买', '当前将跳过系统内购弹窗，直接模拟购买成功。', [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '继续模拟',
-          onPress: async () => {
-            try {
-              setPurchasingOrderId(order.orderId)
-              await payWithRetry(order.orderId)
-              pollOrderStatus(order.orderId)
-            } catch (error) {
-              console.error('模拟购买失败:', error)
-              setPurchasingOrderId('')
-              if (!isOrderSyncingError(error)) {
-                Alert.alert('提示', '模拟购买失败，请稍后重试。')
-              }
-            }
-          },
-        },
-      ])
-    }
-
-    if (!connected) {
-      if (ENABLE_MOCK_IAP) {
-        simulatePurchase()
-        return
-      }
-      Alert.alert('提示', '当前内购服务未连接，请确认你安装的是最新的 iOS IAP 测试包。')
-      return
-    }
-
-    if (!availableProductIds.has(productId)) {
-      const fetchedProductIds = (products as any[]).map((product) => getStoreProductId(product))
-      console.log('Missing IAP product on order page:', {
-        expected: productId,
-        fetched: fetchedProductIds,
-      })
-      if (ENABLE_MOCK_IAP) {
-        Alert.alert(
-          '未找到内购商品',
-          `目标商品：${productId}\n已拉取到：${fetchedProductIds.join(', ') || '无'}`,
-          [
-            { text: '取消', style: 'cancel' },
-            {
-              text: '模拟购买',
-              onPress: simulatePurchase,
-            },
-          ],
-        )
-      } else {
-        Alert.alert(
-          '提示',
-          `没有找到对应的内购商品：${productId}\n已拉取到：${fetchedProductIds.join(', ') || '无'}`,
-        )
-      }
-      return
-    }
+  const handleConfirmPayment = async () => {
+    if (!selectedOrder) return
 
     try {
-      pendingOrderRef.current = order
-      expectedProductIdRef.current = productId
-      setPurchasingOrderId(order.orderId)
-
-      await requestPurchase({
-        request: {
-          apple: {
-            sku: productId,
-            quantity: 1,
-          },
-          google: {
-            skus: [productId],
-          },
-        },
-        type: 'in-app',
-      })
+      setPaymentSheetVisible(false)
+      setPurchasingOrderId(selectedOrder.orderId)
+      await payWithRetry(selectedOrder.orderId, selectedPaymentType)
+      pollOrderStatus(selectedOrder.orderId)
     } catch (error) {
-      pendingOrderRef.current = null
-      expectedProductIdRef.current = ''
       setPurchasingOrderId('')
-      console.error('发起内购失败:', error)
-      Alert.alert('提示', error instanceof Error ? error.message : '发起内购失败，请稍后重试。')
+      console.error('支付失败:', error)
+      if (!isOrderSyncingError(error)) {
+        Alert.alert('提示', error instanceof Error ? error.message : '支付失败，请稍后重试。')
+      }
     }
   }
 
@@ -479,7 +361,7 @@ const OrderPage = () => {
 
             {canPay && (
               <Text style={[styles.iapText, { color: ui.textTertiary }]}>
-                IAP 商品：{getNftIapProductId(item.productId)}
+                支付方式：模拟支付
               </Text>
             )}
           </View>
@@ -534,7 +416,11 @@ const OrderPage = () => {
   }
 
   return (
-    <>
+    <View style={[styles.screen, { backgroundColor: ui.background }]}>
+      <Spinner
+        visible={loading}
+        animation="fade"
+      />
       <Stack.Screen
         options={{
           title: '我的订单',
@@ -550,7 +436,7 @@ const OrderPage = () => {
         data={orders}
         renderItem={renderOrderCard}
         keyExtractor={(item) => item.orderId}
-        style={[styles.rootContainer, { backgroundColor: ui.background }]}
+        style={styles.rootContainer}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={{
           paddingHorizontal: spacing.md,
@@ -577,20 +463,105 @@ const OrderPage = () => {
           </View>
         }
         ListEmptyComponent={renderEmpty}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing || loading}
-            onRefresh={() => {
-              void handleRefresh()
-            }}
-          />
-        }
+
       />
-    </>
+
+      {paymentSheetVisible ? (
+        <Host style={styles.sheetHost}>
+          <BottomSheet
+            isPresented={paymentSheetVisible}
+            onIsPresentedChange={(isPresented) => {
+              if (!purchasingOrderId) {
+                setPaymentSheetVisible(isPresented)
+              }
+            }}
+          >
+            <Group
+              modifiers={[
+                presentationDetents([{ height: 320 }]),
+                presentationDragIndicator('visible'),
+                interactiveDismissDisabled(Boolean(purchasingOrderId)),
+              ]}
+            >
+              <VStack
+                spacing={12}
+                alignment="center"
+                modifiers={[padding({ top: 24, horizontal: 20, bottom: 8 }), frame({ maxWidth: 9999 })]}
+              >
+                <SwiftUIText
+                  modifiers={[
+                    font({ size: 40, weight: 'bold' }),
+                    foregroundStyle('#111111'),
+                    multilineTextAlignment('center'),
+                  ]}
+                >
+                  ￥{selectedOrder ? formatPrice(selectedOrder.totalPrice) : '0.00'}
+                </SwiftUIText>
+                <SwiftUIText
+                  modifiers={[
+                    font({ size: 12, weight: 'regular' }),
+                    foregroundStyle('#8E8E93'),
+                    multilineTextAlignment('center'),
+                  ]}
+                >
+                  订单号：{selectedOrder?.orderId || '-'}
+                </SwiftUIText>
+              </VStack>
+
+              <List modifiers={[listStyle('insetGrouped')]}>
+                <Section title="支付方式">
+                  {paymentMethods.map((method) => (
+                    <Button
+                      key={method.type}
+                      modifiers={[buttonStyle('plain')]}
+                      onPress={() => setSelectedPaymentType(method.type)}
+                    >
+                      <HStack spacing={12}>
+                        <HStack spacing={10}>
+                          <SwiftImage
+                            systemName="creditcard.fill"
+                            size={18}
+                            color={selectedPaymentType === method.type ? '#007AFF' : '#6B7280'}
+                          />
+                          <SwiftUIText modifiers={[foregroundStyle('#111111')]}>{method.title}</SwiftUIText>
+                        </HStack>
+                        <Spacer />
+                        <SwiftImage
+                          systemName={
+                            selectedPaymentType === method.type
+                              ? 'checkmark.circle.fill'
+                              : 'circle'
+                          }
+                          size={18}
+                          color={selectedPaymentType === method.type ? '#007AFF' : '#C7C7CC'}
+                        />
+                      </HStack>
+                    </Button>
+                  ))}
+                </Section>
+              </List>
+
+              <VStack modifiers={[padding({ horizontal: 20, top: 8, bottom: 20 })]}>
+                <Button
+                  label={purchasingOrderId ? '支付处理中...' : '确认支付'}
+                  modifiers={[buttonStyle('borderedProminent'), controlSize('extraLarge')]}
+                  onPress={() => {
+                    void handleConfirmPayment()
+                  }}
+                />
+              </VStack>
+            </Group>
+          </BottomSheet>
+        </Host>
+      ) : null}
+    </View>
   )
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
   rootContainer: {
     flex: 1,
   },
@@ -704,6 +675,9 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: typography.fontSize.md,
     marginTop: 12,
+  },
+  sheetHost: {
+    ...StyleSheet.absoluteFillObject,
   },
 })
 

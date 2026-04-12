@@ -1,22 +1,38 @@
 import { artworkApi, authApi, orderApi, tradeApi } from '@/api'
 import { ArtworkDetail } from '@/api/artwork'
-import { ENABLE_MOCK_IAP, getNftIapProductId } from '@/config/iap'
+import { PaymentType } from '@/api/trade'
 import { useSession } from '@/utils/ctx'
 import {
+  BottomSheet,
+  Button,
+  Group,
   Host,
   HStack,
   Image as SwiftImage,
   List,
   RNHostView,
   Section,
+  Spacer,
   Text,
+  VStack,
 } from '@expo/ui/swift-ui'
-import { foregroundStyle, listStyle } from '@expo/ui/swift-ui/modifiers'
+import {
+  buttonStyle,
+  controlSize,
+  font,
+  frame,
+  foregroundStyle,
+  interactiveDismissDisabled,
+  listStyle,
+  multilineTextAlignment,
+  padding,
+  presentationDetents,
+  presentationDragIndicator,
+} from '@expo/ui/swift-ui/modifiers'
 import { Image } from 'expo-image'
 import { GlassView } from 'expo-glass-effect'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
-import { useIAP } from 'expo-iap'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Alert,
   Platform,
@@ -35,14 +51,6 @@ const STATUS_MAP = {
   COMING_SOON: { text: '即将开售', color: '#FF9500' },
   WAIT_FOR_SALE: { text: '待开售', color: '#5AC8FA' },
 } as const
-
-const getStoreProductId = (product: any) => product?.id || product?.productId || ''
-
-const isUserCancelledError = (error: any) => {
-  const code = String(error?.code || '').toLowerCase()
-  const message = String(error?.message || '').toLowerCase()
-  return code.includes('cancel') || message.includes('cancel')
-}
 
 const InfoRow = ({
   icon,
@@ -82,12 +90,13 @@ export default function NftDetail() {
   const colorScheme = useColorScheme()
   const { session, isLoading: isSessionLoading } = useSession()
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const pendingOrderIdRef = useRef('')
-  const expectedProductIdRef = useRef('')
 
   const [loading, setLoading] = useState(false)
   const [token, setToken] = useState('')
   const [purchasing, setPurchasing] = useState(false)
+  const [paymentSheetVisible, setPaymentSheetVisible] = useState(false)
+  const [selectedPaymentType, setSelectedPaymentType] = useState<PaymentType>('MOCK')
+  const [pendingOrderId, setPendingOrderId] = useState('')
   const [artwork, setArtwork] = useState<ArtworkDetail>({
     id: 0,
     name: '',
@@ -100,15 +109,17 @@ export default function NftDetail() {
     description: '',
   })
 
-  const iapProductId = useMemo(
-    () => (artwork.id ? getNftIapProductId(artwork.id) : ''),
-    [artwork.id],
-  )
-
   const status = STATUS_MAP[artwork.productState as keyof typeof STATUS_MAP] ?? {
     text: '加载中',
     color: '#C7C7CC',
   }
+
+  const paymentMethods = [
+    {
+      type: 'MOCK' as PaymentType,
+      title: '模拟支付',
+    },
+  ]
 
   const fetchData = useCallback(async () => {
     if (!id) return
@@ -163,6 +174,7 @@ export default function NftDetail() {
 
             await fetchData()
             setPurchasing(false)
+            setPendingOrderId('')
             Alert.alert('提示', '购买完成，订单已更新。', [
               {
                 text: '查看订单',
@@ -191,38 +203,41 @@ export default function NftDetail() {
     [fetchData, isOrderSyncingError, router],
   )
 
-  const waitForOrderReady = useCallback(async (orderId: string) => {
-    const maxAttempts = 10
+  const waitForOrderReady = useCallback(
+    async (orderId: string) => {
+      const maxAttempts = 10
 
-    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-      try {
-        const order = await orderApi.getOrder(orderId)
-        if (order?.orderId) {
-          return order
+      for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        try {
+          const order = await orderApi.getOrder(orderId)
+          if (order?.orderId) {
+            return order
+          }
+        } catch (error) {
+          if (isOrderSyncingError(error)) {
+            await sleep(500)
+            continue
+          }
+          console.log('等待订单落库中:', orderId, attempt + 1, error)
         }
-      } catch (error) {
-        if (isOrderSyncingError(error)) {
-          await sleep(500)
-          continue
-        }
-        console.log('等待订单落库中:', orderId, attempt + 1, error)
+
+        await sleep(500)
       }
 
-      await sleep(500)
-    }
-
-    throw new Error('订单创建后尚未完成同步，请稍后再试')
-  }, [isOrderSyncingError, sleep])
+      throw new Error('订单创建后尚未完成同步，请稍后再试')
+    },
+    [isOrderSyncingError, sleep],
+  )
 
   const payWithRetry = useCallback(
-    async (orderId: string) => {
+    async (orderId: string, paymentType: PaymentType) => {
       const maxAttempts = 5
 
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         try {
           await tradeApi.pay({
             orderId,
-            paymentType: 'MOCK',
+            paymentType,
           })
           return
         } catch (error) {
@@ -237,54 +252,6 @@ export default function NftDetail() {
     [isOrderSyncingError, sleep],
   )
 
-  const { connected, products, fetchProducts, requestPurchase, finishTransaction } = useIAP({
-    onPurchaseSuccess: async (purchase) => {
-      const pendingOrderId = pendingOrderIdRef.current
-      const expectedProductId = expectedProductIdRef.current
-      const purchasedProductId = getStoreProductId(purchase)
-
-      if (!pendingOrderId || !expectedProductId) return
-      if (purchasedProductId && purchasedProductId !== expectedProductId) return
-
-      try {
-        await waitForOrderReady(pendingOrderId)
-        await payWithRetry(pendingOrderId)
-
-        await finishTransaction({
-          purchase,
-          isConsumable: true,
-        })
-
-        pendingOrderIdRef.current = ''
-        expectedProductIdRef.current = ''
-        pollOrderStatus(pendingOrderId)
-      } catch (error) {
-        console.error('处理内购成功回调失败:', error)
-        setPurchasing(false)
-        if (!isOrderSyncingError(error)) {
-          Alert.alert('提示', '购买已完成，但订单同步失败，请稍后到订单页查看。')
-        }
-      }
-    },
-    onPurchaseError: (error) => {
-      const pendingOrderId = pendingOrderIdRef.current
-
-      pendingOrderIdRef.current = ''
-      expectedProductIdRef.current = ''
-      setPurchasing(false)
-
-      if (isUserCancelledError(error)) {
-        if (pendingOrderId) {
-          Alert.alert('提示', '已取消购买，这笔订单仍会保留在订单页中。')
-        }
-        return
-      }
-
-      console.error('内购失败:', error)
-      Alert.alert('提示', error?.message || '拉起内购失败，请稍后重试。')
-    },
-  })
-
   useEffect(() => {
     if (isSessionLoading) return
 
@@ -297,20 +264,6 @@ export default function NftDetail() {
   }, [fetchData, isSessionLoading, router, session])
 
   useEffect(() => {
-    if (!connected || !iapProductId) return
-
-    void fetchProducts({
-      skus: [iapProductId],
-      type: 'in-app',
-    })
-  }, [connected, fetchProducts, iapProductId])
-
-  useEffect(() => {
-    const fetchedProductIds = (products as any[]).map((product) => getStoreProductId(product))
-    console.log('IAP products on nft page:', fetchedProductIds)
-  }, [products])
-
-  useEffect(() => {
     return () => {
       if (pollingRef.current) {
         clearInterval(pollingRef.current)
@@ -318,85 +271,33 @@ export default function NftDetail() {
     }
   }, [])
 
-  const availableProductIds = useMemo(
-    () => new Set((products as any[]).map((product) => getStoreProductId(product))),
-    [products],
-  )
-
-  const doBuy = useCallback(async () => {
-    const simulatePurchase = async () => {
-      setLoading(true)
-      try {
-        const orderId = await tradeApi.buy(
-          {
-            productId: String(artwork.id),
-            nftType: 'NFT',
-            itemCount: 1,
-          },
-          token,
-        )
-        pendingOrderIdRef.current = orderId
-        expectedProductIdRef.current = iapProductId
-        setPurchasing(true)
-        await waitForOrderReady(orderId)
-        await payWithRetry(orderId)
-        pollOrderStatus(orderId)
-      } catch (error) {
-        pendingOrderIdRef.current = ''
-        expectedProductIdRef.current = ''
-        setPurchasing(false)
-        console.error('模拟购买失败:', error)
-        if (!isOrderSyncingError(error)) {
-          Alert.alert('提示', error instanceof Error ? error.message : '模拟购买失败，请稍后重试。')
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (!connected) {
-      if (ENABLE_MOCK_IAP) {
-        Alert.alert('模拟购买', '当前将跳过系统内购弹窗，直接模拟购买成功。', [
-          { text: '取消', style: 'cancel' },
-          {
-            text: '继续模拟',
-            onPress: () => {
-              void simulatePurchase()
-            },
-          },
-        ])
-        return
-      }
-      Alert.alert('提示', '当前购买服务未连接，请确认你安装的是最新的 iOS IAP 测试包。')
+  const handleConfirmPayment = useCallback(async () => {
+    if (!pendingOrderId) {
+      Alert.alert('提示', '订单尚未生成，请重新点击立即购买。')
       return
     }
 
-    if (!iapProductId || !availableProductIds.has(iapProductId)) {
-      const fetchedProductIds = (products as any[]).map((product) => getStoreProductId(product))
-      console.log('Missing IAP product on nft page:', {
-        expected: iapProductId,
-        fetched: fetchedProductIds,
-      })
-      if (ENABLE_MOCK_IAP) {
-        Alert.alert(
-          '未找到内购商品',
-          `目标商品：${iapProductId}\n已拉取到：${fetchedProductIds.join(', ') || '无'}`,
-          [
-            { text: '取消', style: 'cancel' },
-            {
-              text: '模拟购买',
-              onPress: () => {
-                void simulatePurchase()
-              },
-            },
-          ],
-        )
-      } else {
-        Alert.alert(
-          '提示',
-          `没有找到对应的内购商品：${iapProductId}\n已拉取到：${fetchedProductIds.join(', ') || '无'}`,
-        )
+    setPaymentSheetVisible(false)
+    setLoading(true)
+    try {
+      setPurchasing(true)
+      await waitForOrderReady(pendingOrderId)
+      await payWithRetry(pendingOrderId, selectedPaymentType)
+      pollOrderStatus(pendingOrderId)
+    } catch (error) {
+      setPurchasing(false)
+      console.error('发起购买失败:', error)
+      if (!isOrderSyncingError(error)) {
+        Alert.alert('提示', error instanceof Error ? error.message : '发起购买失败，请稍后重试。')
       }
+    } finally {
+      setLoading(false)
+    }
+  }, [isOrderSyncingError, payWithRetry, pendingOrderId, pollOrderStatus, selectedPaymentType, waitForOrderReady])
+
+  const handlePrepareOrder = useCallback(async () => {
+    if (pendingOrderId) {
+      setPaymentSheetVisible(true)
       return
     }
 
@@ -411,32 +312,15 @@ export default function NftDetail() {
         token,
       )
 
-      pendingOrderIdRef.current = orderId
-      expectedProductIdRef.current = iapProductId
-      setPurchasing(true)
-
-      await requestPurchase({
-        request: {
-          apple: {
-            sku: iapProductId,
-            quantity: 1,
-          },
-          google: {
-            skus: [iapProductId],
-          },
-        },
-        type: 'in-app',
-      })
+      setPendingOrderId(orderId)
+      setPaymentSheetVisible(true)
     } catch (error) {
-      pendingOrderIdRef.current = ''
-      expectedProductIdRef.current = ''
-      setPurchasing(false)
-      console.error('下单失败:', error)
-      Alert.alert('提示', error instanceof Error ? error.message : '下单失败，请稍后重试。')
+      console.error('创建订单失败:', error)
+      Alert.alert('提示', error instanceof Error ? error.message : '创建订单失败，请稍后重试。')
     } finally {
       setLoading(false)
     }
-  }, [artwork.id, availableProductIds, connected, iapProductId, isOrderSyncingError, payWithRetry, pollOrderStatus, products, requestPurchase, token, waitForOrderReady])
+  }, [artwork.id, pendingOrderId, token])
 
   if (Platform.OS !== 'ios' || isSessionLoading || !session) {
     return (
@@ -472,7 +356,12 @@ export default function NftDetail() {
           </Section>
 
           <Section title="商品简介">
-            <InfoRow icon="tag.fill" iconColor="#5E5CE6" label="名称" value={artwork.name || '未命名藏品'} />
+            <InfoRow
+              icon="tag.fill"
+              iconColor="#5E5CE6"
+              label="名称"
+              value={artwork.name || '未命名藏品'}
+            />
             <InfoRow icon="circle.fill" iconColor={status.color} label="状态" value={status.text} />
             <InfoRow
               icon="text.alignleft"
@@ -525,10 +414,96 @@ export default function NftDetail() {
             </Text>
           </Section>
         </List>
+        <BottomSheet
+          isPresented={paymentSheetVisible}
+          onIsPresentedChange={setPaymentSheetVisible}
+        >
+          <Group
+            modifiers={[
+              presentationDetents([{ height: 320 }]),
+              presentationDragIndicator('visible'),
+              interactiveDismissDisabled(loading || purchasing),
+            ]}
+          >
+            <VStack
+              spacing={12}
+              alignment="center"
+              modifiers={[padding({ top: 24, horizontal: 20, bottom: 8 }), frame({ maxWidth: 9999 })]}
+            >
+              <Text
+                modifiers={[
+                  font({ size: 40, weight: 'bold' }),
+                  foregroundStyle('#111111'),
+                  multilineTextAlignment('center'),
+                ]}
+              >
+                ￥{(artwork.price ?? 0).toFixed(2)}
+              </Text>
+              <Text
+                modifiers={[
+                  font({ size: 12, weight: 'regular' }),
+                  foregroundStyle('#8E8E93'),
+                  multilineTextAlignment('center'),
+                ]}
+              >
+                订单号：{pendingOrderId || '待生成'}
+              </Text>
+            </VStack>
+
+            <List modifiers={[listStyle('insetGrouped')]}>
+              <Section title="支付方式">
+                {paymentMethods.map((method) => (
+                  <Button
+                    key={method.type}
+                    modifiers={[buttonStyle('plain')]}
+                    onPress={() => setSelectedPaymentType(method.type)}
+                  >
+                      <HStack spacing={12}>
+                        <HStack spacing={10}>
+                          <SwiftImage
+                            systemName="creditcard.fill"
+                            size={18}
+                            color={selectedPaymentType === method.type ? '#007AFF' : '#6B7280'}
+                          />
+                          <Text modifiers={[foregroundStyle('#111111')]}>{method.title}</Text>
+                        </HStack>
+                        <Spacer />
+                        <SwiftImage
+                          systemName={
+                            selectedPaymentType === method.type
+                              ? 'checkmark.circle.fill'
+                              : 'circle'
+                          }
+                          size={18}
+                          color={selectedPaymentType === method.type ? '#007AFF' : '#C7C7CC'}
+                        />
+                      </HStack>
+                  </Button>
+                ))}
+              </Section>
+            </List>
+
+            <VStack modifiers={[padding({ horizontal: 20, top: 8, bottom: 20 })]}>
+              <Button
+                label={loading || purchasing ? '支付处理中...' : '确认支付'}
+                modifiers={[buttonStyle('borderedProminent'), controlSize('extraLarge')]}
+                onPress={() => {
+                  void handleConfirmPayment()
+                }}
+              />
+            </VStack>
+          </Group>
+        </BottomSheet>
       </Host>
 
       <View style={styles.floatingButtonBar}>
-        <TouchableOpacity activeOpacity={0.85} onPress={() => void doBuy()} disabled={isBuyDisabled}>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => {
+            void handlePrepareOrder()
+          }}
+          disabled={isBuyDisabled}
+        >
           <GlassView
             style={[styles.glassButton, isBuyDisabled && styles.glassButtonDisabled]}
             glassEffectStyle="regular"

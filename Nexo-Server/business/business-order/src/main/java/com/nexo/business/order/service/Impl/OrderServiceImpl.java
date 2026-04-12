@@ -27,7 +27,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -91,6 +94,42 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
                 .eq(userId != null, TradeOrder::getBuyerId, userId));
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public OrderResponse<Boolean> createAndConfirm(OrderCreateAndConfirmRequest request) {
+        OrderResponse<Boolean> response = new OrderResponse<>();
+        // 1. 查询订单，幂等验证
+        TradeOrder existOrder = orderMapper.selectOne(new LambdaQueryWrapper<TradeOrder>().eq(TradeOrder::getIdentifier, request.getIdentifier()).eq(TradeOrder::getBuyerId, request.getBuyerId()));
+        if (existOrder != null) {
+            response.setSuccess(true);
+            response.setOrderId(existOrder.getOrderId());
+            return response;
+        }
+        // 2. 创建订单
+        TradeOrder tradeOrder = new TradeOrder();
+        tradeOrder.create(request);
+        OrderConfirmRequest confirmRequest = new OrderConfirmRequest();
+        BeanUtils.copyProperties(request, confirmRequest);
+        confirmRequest.setOrderId(tradeOrder.getOrderId());
+        tradeOrder.confirm(confirmRequest);
+        boolean result = orderMapper.insert(tradeOrder) == 1;
+        if (!result) {
+            throw new OrderException(INSERT_ORDER_FAILED);
+        }
+        TradeOrderStream tradeOrderStream = new TradeOrderStream();
+        BeanUtils.copyProperties(tradeOrder, tradeOrderStream);
+        tradeOrderStream.setStreamType(request.getOrderEvent());
+        tradeOrderStream.setStreamIdentifier(request.getIdentifier());
+        result = orderStreamMapper.insert(tradeOrderStream) == 1;
+        if (!result) {
+            throw new OrderException(ORDER_STREAM_INSERT_FAILED);
+        }
+        response.setSuccess(true);
+        response.setOrderId(tradeOrder.getOrderId());
+        return response;
+    }
+
+
     @Override
     public boolean paySuccess(OrderPayRequest request) {
         TradeOrder order = orderMapper.selectOne(new LambdaQueryWrapper<TradeOrder>().eq(TradeOrder::getOrderId, request.getOrderId()));
@@ -116,10 +155,10 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
             try {
                 AssetAllocateRequest allocateRequest = new AssetAllocateRequest();
                 allocateRequest.setBusinessNo(order.getOrderId());
-                allocateRequest.setBusinessType(order.getNFTType().name());
+                allocateRequest.setBusinessType(order.getNftType().name());
                 allocateRequest.setBuyerId(Long.parseLong(order.getBuyerId()));
                 allocateRequest.setArtworkId(Long.parseLong(order.getProductId()));
-                allocateRequest.setNFTType(order.getNFTType());
+                allocateRequest.setNftType(order.getNftType());
                 allocateRequest.setPurchasePrice(request.getPaymentAmount());
                 allocateRequest.setIdentifier(order.getIdentifier());
                 Boolean allocateResult = nftFacade.allocateAsset(allocateRequest);
@@ -244,7 +283,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
         orderStream.setPaymentTime(tradeOrder.getPaymentTime());
         orderStream.setProductId(tradeOrder.getProductId());
         orderStream.setProductName(tradeOrder.getProductName());
-        orderStream.setProductType(tradeOrder.getNFTType());
+        orderStream.setNftType(tradeOrder.getNftType());
         orderStream.setProductCoverUrl(tradeOrder.getProductCoverUrl());
         orderStream.setPaymentMethod(tradeOrder.getPaymentMethod());
         orderStream.setPaymentStreamId(tradeOrder.getPaymentStreamId());
@@ -253,7 +292,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
         orderStream.setSnapshotVersion(tradeOrder.getSnapshotVersion());
         orderStream.setUnitPrice(tradeOrder.getUnitPrice());
         orderStream.setQuantity(tradeOrder.getQuantity());
-        orderStream.setStreamType(updateRequest.getOrderEvent().getCode());
+        orderStream.setStreamType(updateRequest.getOrderEvent());
         orderStream.setStreamIdentifier(updateRequest.getIdentifier());
         result = orderStreamMapper.insert(orderStream) == 1;
         if (!result) {

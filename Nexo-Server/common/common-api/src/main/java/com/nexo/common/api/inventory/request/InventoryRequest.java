@@ -29,7 +29,7 @@ public class InventoryRequest extends BaseRequest {
      * 商品类型
      */
     @NotNull(message = "商品类型为空")
-    private NFTType NFTType;
+    private NFTType nftType;
 
     /**
      * 幂等号：唯一标识

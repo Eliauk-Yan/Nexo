@@ -4,10 +4,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.nexo.business.order.domain.entity.TradeOrder;
 import com.nexo.business.order.interfaces.vo.OrderVO;
 import com.nexo.common.api.order.constant.TradeOrderState;
-import com.nexo.common.api.order.request.OrderCancelRequest;
-import com.nexo.common.api.order.request.OrderFinishRequest;
-import com.nexo.common.api.order.request.OrderPayRequest;
-import com.nexo.common.api.order.request.OrderTimeoutRequest;
+import com.nexo.common.api.order.request.*;
 import com.nexo.common.api.order.response.OrderResponse;
 import com.nexo.common.web.result.MultiResult;
 import jakarta.validation.constraints.NotNull;
@@ -30,6 +27,11 @@ public interface OrderService extends IService<TradeOrder> {
     TradeOrder getOrder(String orderId, Long userId);
 
     /**
+     * 创建订单并确认
+     */
+    OrderResponse<Boolean> createAndConfirm(OrderCreateAndConfirmRequest request);
+
+    /**
      * 取消订单
      */
     OrderResponse<Boolean> cancel(OrderCancelRequest cancelRequest);
@@ -40,6 +42,10 @@ public interface OrderService extends IService<TradeOrder> {
     OrderResponse<Boolean> timeout(OrderTimeoutRequest timeoutRequest);
 
     /**
+     * 批量查询超时订单
+     */
+    List<TradeOrder> pageQueryTimeoutOrders(int pageSize, String buyerIdTailNumber, Long minId);
+    /**
      * 支付成功
      */
     boolean paySuccess(OrderPayRequest request);
@@ -49,8 +55,4 @@ public interface OrderService extends IService<TradeOrder> {
      */
     boolean finish(OrderFinishRequest request);
 
-    /**
-     * 批量查询超时订单
-     */
-    List<TradeOrder> pageQueryTimeoutOrders(int pageSize, String buyerIdTailNumber, Long minId);
 }

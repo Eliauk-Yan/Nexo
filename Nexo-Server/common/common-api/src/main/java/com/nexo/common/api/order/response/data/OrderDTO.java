@@ -107,7 +107,7 @@ public class OrderDTO implements Serializable {
     /**
      * 商品类型
      */
-    private NFTType NFTType;
+    private NFTType nftType;
 
     /**
      * 图片地址

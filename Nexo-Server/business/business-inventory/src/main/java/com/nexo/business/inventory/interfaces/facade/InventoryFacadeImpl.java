@@ -91,9 +91,9 @@ public class InventoryFacadeImpl implements InventoryFacade {
         response.setCode(ResponseCode.SUCCESS.name());
         response.setMessage(ResponseCode.SUCCESS.getMessage());
         // 2. 获取商品类型
-        NFTType NFTType = request.getNFTType();
+        NFTType nftType = request.getNftType();
         // 3. 检查本地缓存商品是否售罄
-        if (soldOutProductLocalCache.getIfPresent(NFTType + SEPARATOR + request.getNftId()) != null) {
+        if (soldOutProductLocalCache.getIfPresent(nftType + SEPARATOR + request.getNftId()) != null) {
             // 3.1 已售罄直接返回
             response = new InventoryResponse<>();
             response.setData(0L);
@@ -117,7 +117,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
             redissonClient.getBucket("nft:inventory:stream:" + inventoryRequest.getNftId(), StringCodec.INSTANCE).expire(Instant.now().plus(24, ChronoUnit.HOURS));
         }
         // 3. 清楚售罄本地缓存
-        soldOutProductLocalCache.invalidate(inventoryRequest.getNFTType() + SEPARATOR + inventoryRequest.getNftId());
+        soldOutProductLocalCache.invalidate(inventoryRequest.getNftType() + SEPARATOR + inventoryRequest.getNftId());
         return InventoryResponse.success(true);
     }
 
@@ -125,7 +125,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
     public InventoryResponse<Boolean> decreaseInventory(InventoryRequest request) {
         InventoryResponse<Boolean> response = new InventoryResponse<>();
         // 1. 获取商品类型（如：数字藏品、盲盒）
-        NFTType nftType = request.getNFTType();
+        NFTType nftType = request.getNftType();
         // 2. 检查本地缓存:如果本地缓存命中，说明该商品已卖完，直接拦截请求，不再查 Redis，实现快速失败
         if (soldOutProductLocalCache.getIfPresent(nftType + SEPARATOR + request.getNftId()) != null) {
             response.setSuccess(false);
@@ -169,12 +169,12 @@ public class InventoryFacadeImpl implements InventoryFacade {
     @Override
     public InventoryResponse<Boolean> increaseInventory(InventoryRequest request) {
         InventoryResponse<Boolean> response = new InventoryResponse<>();
-        NFTType NFTType = request.getNFTType();
+        NFTType nftType = request.getNftType();
 
         // 如果本地缓存命中说明之前售罄过，现在有库存了可以清理掉本地售罄标识
-        soldOutProductLocalCache.invalidate(NFTType + SEPARATOR + request.getNftId());
+        soldOutProductLocalCache.invalidate(nftType + SEPARATOR + request.getNftId());
 
-        if (NFTType == NFT) {
+        if (nftType == NFT) {
             try {
                 // 执行Lua脚本 增加库存
                 Long result = redissonClient.getScript(StringCodec.INSTANCE).eval(RScript.Mode.READ_WRITE,
@@ -212,7 +212,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
     @Override
     public InventoryResponse<String> getInventoryDecreaseLog(InventoryRequest request) {
         // 1. 判断商品类型为NFT
-        if (request.getNFTType() == NFT) {
+        if (request.getNftType() == NFT) {
             String hashKey = "nft:inventory:stream:" + request.getNftId();
             String field = "DECREASE_" + request.getIdentifier();
             // 2. 查询库存扣减日志
@@ -230,7 +230,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
 
     @Override
     public InventoryResponse<String> getInventoryIncreaseLog(InventoryRequest request) {
-        if (request.getNFTType() == NFT) {
+        if (request.getNftType() == NFT) {
             // 1. 编写 Lua 脚本
             String luaScript = "return redis.call('hget', KEYS[1], ARGV[1])";
             // 2. 执行 Lua 脚本
@@ -248,7 +248,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
 
     @Override
     public InventoryResponse<Long> removeInventoryDecreaseLog(InventoryRequest request) {
-        if (request.getNFTType() == NFT) {
+        if (request.getNftType() == NFT) {
             // 1. 编写 Lua 脚本
             String luaScript = "return redis.call('hdel', KEYS[1], ARGV[1])";
             // 2. 执行 Lua 脚本
@@ -266,7 +266,7 @@ public class InventoryFacadeImpl implements InventoryFacade {
 
     @Override
     public InventoryResponse<Boolean> init(InventoryRequest request) {
-        if (request.getNFTType() == NFT) {
+        if (request.getNftType() == NFT) {
             // 1. 构造库存响应对象
             InventoryResponse<Boolean> inventoryResponse = new InventoryResponse<>();
             // 2. 检查库存是否存在

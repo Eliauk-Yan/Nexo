@@ -1,17 +1,18 @@
 package com.nexo.business.order.listener;
 
+import com.alibaba.fastjson2.JSON;
 import com.nexo.business.order.domain.entity.TradeOrder;
-import com.nexo.business.order.domain.validator.OrderCreateValidator;
+import com.nexo.business.order.domain.exception.OrderErrorCode;
+import com.nexo.business.order.domain.exception.OrderException;
 import com.nexo.business.order.mapper.mybatis.OrderMapper;
+import com.nexo.business.order.service.OrderService;
 import com.nexo.common.api.inventory.InventoryFacade;
 import com.nexo.common.api.inventory.request.InventoryRequest;
+import com.nexo.common.api.inventory.response.InventoryResponse;
 import com.nexo.common.api.nft.NFTFacade;
-import com.nexo.common.api.nft.constant.NFTType;
-import com.nexo.common.api.nft.request.NFTSaleRequest;
-import com.nexo.common.api.nft.response.NFTResponse;
-import com.nexo.common.api.order.constant.TradeOrderState;
-import com.nexo.common.api.order.request.AndConfirmOrderCreateRequest;
+import com.nexo.common.api.order.request.OrderCreateAndConfirmRequest;
 import com.nexo.common.api.order.request.OrderCreateRequest;
+import com.nexo.common.api.order.response.OrderResponse;
 import com.nexo.common.api.user.constant.UserType;
 import com.nexo.common.mq.consumer.StreamConsumer;
 import com.nexo.common.mq.message.MessageBody;
@@ -25,6 +26,8 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.function.Consumer;
+
+import static com.nexo.business.order.domain.exception.OrderErrorCode.ORDER_CREATE_VALID_FAILED;
 
 /**
  * @classname BuyMsgListener
@@ -49,88 +52,45 @@ public class BuyMsgListener {
     private InventoryFacade inventoryFacade;
 
     /**
-     * 下单校验责任链
-     */
-    private final OrderCreateValidator orderCreateValidator;
-
-    /**
      * 订单服务
      */
     private final OrderMapper orderMapper;
 
     @Bean
-    Consumer<Message<MessageBody>> buy() {
+    Consumer<Message<MessageBody>> buy(OrderService orderService) {
         return msg -> {
             // 1. 解析消息
             OrderCreateRequest orderCreateRequest = StreamConsumer.getMessage(msg, OrderCreateRequest.class);
-            // 2. 订单创建并提交
-            AndConfirmOrderCreateRequest orderCreateAndConfirmRequest = new AndConfirmOrderCreateRequest();
+            // 2. 订单创建并确认
+            OrderCreateAndConfirmRequest orderCreateAndConfirmRequest = new OrderCreateAndConfirmRequest();
             BeanUtils.copyProperties(orderCreateRequest, orderCreateAndConfirmRequest);
             orderCreateAndConfirmRequest.setOperator(UserType.PLATFORM.getCode());
             orderCreateAndConfirmRequest.setOperatorType(UserType.PLATFORM);
             orderCreateAndConfirmRequest.setOperateTime(LocalDateTime.now());
-            try {
-                // 2.1 创建订单前校验
-                orderCreateValidator.validate(orderCreateAndConfirmRequest);
-            } catch (Exception e) {
-                // 前置校验失败，记录日志并退出，不再继续执行
-                log.error("订单校验失败, orderId={}, 原因={}", orderCreateAndConfirmRequest.getOrderId(), e.getMessage(), e);
-                // 回滚Redis库存
-                rollbackInventory(orderCreateRequest.getProductId(), orderCreateRequest.getNFTType(),
-                        orderCreateRequest.getIdentifier(), orderCreateRequest.getItemCount());
-                return;
+            // 3 创建订单记录
+            OrderResponse<Boolean> orderResponse = orderService.createAndConfirm(orderCreateAndConfirmRequest);
+            //4. 订单因为校验前置校验不通过而下单失败，回滚库存
+            if (!orderResponse.getSuccess() && ORDER_CREATE_VALID_FAILED.getCode().equals(orderResponse.getCode())) {
+                String orderId = orderResponse.getOrderId();
+                TradeOrder tradeOrder = orderService.getOrder(orderId, null);
+                //再重新查一次，避免出现并发情况
+                if (tradeOrder == null) {
+                    InventoryRequest inventoryRequest = new InventoryRequest();
+                    inventoryRequest.setNftId(orderCreateRequest.getProductId());
+                    inventoryRequest.setInventory(orderCreateRequest.getItemCount());
+                    inventoryRequest.setIdentifier(orderCreateRequest.getOrderId());
+                    inventoryRequest.setNftType(orderCreateRequest.getNftType());
+                    InventoryResponse<Boolean> inventoryResponse = inventoryFacade.increaseInventory(inventoryRequest);
+                    if (inventoryResponse.getSuccess()) {
+                        log.info("库存回滚成功,库存增加请求:{}", inventoryRequest);
+                        return;
+                    } else {
+                        log.error("库存回滚失败,订单创建请求:{} , 库存增加请求 : {}", JSON.toJSONString(orderCreateRequest), JSON.toJSONString(inventoryRequest));
+                        throw new OrderException(OrderErrorCode.INVENTORY_INCREASE_FAILED);
+                    }
+                }
             }
-            // 2.2 同步扣减数据库库存
-            NFTSaleRequest saleRequest = new NFTSaleRequest();
-            saleRequest.setUserId(orderCreateAndConfirmRequest.getBuyerId());
-            saleRequest.setQuantity(orderCreateAndConfirmRequest.getItemCount());
-            saleRequest.setBizNo(orderCreateAndConfirmRequest.getOrderId());
-            saleRequest.setNftType(orderCreateAndConfirmRequest.getNFTType());
-            saleRequest.setIdentifier(orderCreateAndConfirmRequest.getIdentifier());
-            saleRequest.setNFTId(Long.parseLong(orderCreateAndConfirmRequest.getProductId())); // 设置商品ID
-            NFTResponse<Boolean> response = nftFacade.sale(saleRequest);
-            if (!response.getSuccess()) {
-                log.error("数据库库存扣减失败, orderId={}", orderCreateAndConfirmRequest.getOrderId());
-                // 回滚Redis库存
-                rollbackInventory(orderCreateRequest.getProductId(), orderCreateRequest.getNFTType(),
-                        orderCreateRequest.getIdentifier(), orderCreateRequest.getItemCount());
-                return;
-            }
-            // 2.3 创建订单记录
-            TradeOrder tradeOrder = new TradeOrder();
-            tradeOrder.setOrderId(orderCreateAndConfirmRequest.getOrderId());
-            tradeOrder.setBuyerId(orderCreateAndConfirmRequest.getBuyerId());
-            tradeOrder.setBuyerType(orderCreateAndConfirmRequest.getBuyerType());
-            tradeOrder.setSellerId(orderCreateAndConfirmRequest.getSellerId());
-            tradeOrder.setSellerType(orderCreateAndConfirmRequest.getSellerType());
-            tradeOrder.setIdentifier(orderCreateAndConfirmRequest.getIdentifier());
-            tradeOrder.setProductId(orderCreateAndConfirmRequest.getProductId());
-            tradeOrder.setNFTType(orderCreateAndConfirmRequest.getNFTType());
-            tradeOrder.setProductCoverUrl(orderCreateAndConfirmRequest.getProductPicUrl());
-            tradeOrder.setProductName(orderCreateAndConfirmRequest.getProductName());
-            tradeOrder.setUnitPrice(orderCreateAndConfirmRequest.getItemPrice());
-            tradeOrder.setQuantity(orderCreateAndConfirmRequest.getItemCount().intValue());
-            tradeOrder.setTotalPrice(orderCreateAndConfirmRequest.getOrderAmount());
-            tradeOrder.setPaymentAmount(orderCreateAndConfirmRequest.getOrderAmount());
-            tradeOrder.setOrderState(TradeOrderState.CONFIRM);
-            tradeOrder.setSnapshotVersion(orderCreateAndConfirmRequest.getSnapshotVersion());
-            boolean result = orderMapper.insert(tradeOrder) == 1;
-            if (!result) {
-                log.error("订单创建失败, orderId={}", orderCreateAndConfirmRequest.getOrderId());
-                // 回滚数据库库存和Redis库存
-                rollbackInventory(orderCreateRequest.getProductId(), orderCreateRequest.getNFTType(),
-                        orderCreateRequest.getIdentifier(), orderCreateRequest.getItemCount());
-                return;
-            }
-            log.info("订单创建成功, orderId={}", orderCreateAndConfirmRequest.getOrderId());
         };
-    }
-
-    /**
-     * 回滚redis库存
-     */
-    private void rollbackInventory(String nftId, NFTType nftType, String identifier, Long inventory) {
-        inventoryFacade.increaseInventory(new InventoryRequest(nftId, nftType, identifier, inventory));
     }
 
 }

@@ -28,7 +28,13 @@ public enum OrderErrorCode implements ErrorCode {
 
     UPDATE_ORDER_FAILED("UPDATE_ORDER_FAILED", "更新订单失败"),
 
-    ORDER_STREAM_INSERT_FAILED("ORDER_STREAM_INSERT_FAILED", "订单流水插入失败");
+    INSERT_ORDER_FAILED("INSERT_ORDER_FAILED", "插入订单失败"),
+
+    ORDER_STREAM_INSERT_FAILED("ORDER_STREAM_INSERT_FAILED", "订单流水插入失败"),
+
+    ORDER_CREATE_VALID_FAILED("ORDER_CREATE_VALID_FAILED", "订单创建验证失败"),
+
+    INVENTORY_INCREASE_FAILED("INVENTORY_INCREASE_FAILED", "库存增加失败");
 
     private final String code;
 

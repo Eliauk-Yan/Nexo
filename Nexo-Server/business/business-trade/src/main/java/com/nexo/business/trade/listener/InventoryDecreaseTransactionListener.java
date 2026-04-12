@@ -17,7 +17,11 @@ import org.springframework.stereotype.Component;
 
 /**
  * @classname InventoryDecreaseListener
- * @description 库存扣减MQ本地事务 只有库存扣减成功才可以创建订单否则库存回滚
+ * @description 库存扣减MQ本地事务 只有库存扣减成功才可以创建订单否则库存回滚 (库存预扣减)
+ * 防超卖：高并发下如果不先扣，很多请求都会同时看到“还有库存”，最后就可能卖超。
+ * 限流到后续链路：只有预扣成功的请求，才继续走“创建订单、支付、发放资产”这些更贵的流程；没抢到的请求尽早失败，减轻系统压力。
+ * 把热点竞争从数据库前移：秒杀场景下数据库不适合承受所有抢购请求，先在 Redis 这种高性能层做预扣，可以扛住并发。
+ * 给后续异步处理争取时间：订单创建、消息消费、库存真实落库、支付这些步骤可能是异步的。预扣减先把库存锁住，哪怕后续慢一点，也不会被别人再抢走。
  * @date 2026/02/13 23:11
  */
 @Component("inventoryDecreaseTransactionListener")
@@ -50,7 +54,7 @@ public class InventoryDecreaseTransactionListener implements TransactionListener
             // 2. 扣减库存
             InventoryRequest inventoryRequest = new InventoryRequest();
             inventoryRequest.setInventory(request.getItemCount());
-            inventoryRequest.setNFTType(request.getNFTType());
+            inventoryRequest.setNftType(request.getNftType());
             inventoryRequest.setIdentifier(request.getIdentifier());
             inventoryRequest.setNftId(request.getProductId());
             InventoryResponse<Boolean> response = inventoryFacade.decreaseInventory(inventoryRequest);
@@ -85,7 +89,7 @@ public class InventoryDecreaseTransactionListener implements TransactionListener
             // 2. 获取库存扣减日志
             InventoryRequest inventoryRequest = new InventoryRequest();
             inventoryRequest.setInventory(request.getItemCount());
-            inventoryRequest.setNFTType(request.getNFTType());
+            inventoryRequest.setNftType(request.getNftType());
             inventoryRequest.setIdentifier(request.getIdentifier());
             inventoryRequest.setNftId(request.getProductId());
             InventoryResponse<String> response = inventoryFacade.getInventoryDecreaseLog(inventoryRequest);

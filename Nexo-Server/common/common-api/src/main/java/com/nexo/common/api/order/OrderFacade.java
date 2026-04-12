@@ -1,9 +1,6 @@
 package com.nexo.common.api.order;
 
-import com.nexo.common.api.order.request.OrderCancelRequest;
-import com.nexo.common.api.order.request.OrderPayRequest;
-import com.nexo.common.api.order.request.OrderFinishRequest;
-import com.nexo.common.api.order.request.OrderTimeoutRequest;
+import com.nexo.common.api.order.request.*;
 import com.nexo.common.api.order.response.OrderResponse;
 import com.nexo.common.api.order.response.data.OrderDTO;
 
@@ -17,6 +14,11 @@ public interface OrderFacade {
      * 根据订单ID和用户ID获取订单
      */
     OrderResponse<OrderDTO> getOrder(String orderId, Long userId);
+
+    /**
+     * 创建并确认订单
+     */
+    OrderResponse<Boolean> createAndConfirm(OrderCreateAndConfirmRequest request);
 
     /**
      * 取消订单
