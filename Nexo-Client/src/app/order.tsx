@@ -1,8 +1,10 @@
 import { orderApi, OrderState, OrderVO } from '@/api/order'
 import { PaymentType, tradeApi } from '@/api/trade'
 import { colors, spacing, typography } from '@/config/theme'
+import { ensureWeChatRegistered, getWeChatConfigError, isWeChatConfigured } from '@/utils/wechat'
 import { useSession } from '@/utils/ctx'
 import Feather from '@expo/vector-icons/Feather'
+import { useEvent } from 'expo'
 import {
   BottomSheet,
   Button,
@@ -12,6 +14,7 @@ import {
   Image as SwiftImage,
   List,
   Picker,
+  RNHostView,
   Section,
   Spacer,
   Text as SwiftUIText,
@@ -33,6 +36,7 @@ import {
   tag,
   tint,
 } from '@expo/ui/swift-ui/modifiers'
+import ExpoWeChat from 'expo-wechat'
 import { Stack, useRouter } from 'expo-router'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
@@ -100,6 +104,22 @@ const ui = {
 
 const formatPrice = (price?: number | null) => (price ?? 0).toFixed(2)
 
+const PaymentMethodIcon = ({
+  label,
+  backgroundColor,
+}: {
+  label: string
+  backgroundColor: string
+}) => {
+  return (
+    <RNHostView matchContents>
+      <View style={[styles.paymentMethodIcon, { backgroundColor }]}>
+        <Text style={styles.paymentMethodIconText}>{label}</Text>
+      </View>
+    </RNHostView>
+  )
+}
+
 const OrderPage = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
@@ -113,11 +133,21 @@ const OrderPage = () => {
   const [paymentSheetVisible, setPaymentSheetVisible] = useState(false)
   const [selectedPaymentType, setSelectedPaymentType] = useState<PaymentType>('MOCK')
   const [selectedOrder, setSelectedOrder] = useState<OrderVO | null>(null)
+  const payResult = useEvent(ExpoWeChat, 'onPayResult')
+  const wechatConfigured = isWeChatConfigured()
 
   const paymentMethods = [
     {
       type: 'MOCK' as PaymentType,
       title: '模拟支付',
+      iconLabel: '模',
+      iconColor: '#F59E0B',
+    },
+    {
+      type: 'WECHAT' as PaymentType,
+      title: '微信支付',
+      iconLabel: '微',
+      iconColor: '#07C160',
     },
   ]
 
@@ -214,11 +244,47 @@ const OrderPage = () => {
 
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         try {
-          await tradeApi.pay({
+          if (paymentType === 'MOCK') {
+            await tradeApi.pay({
+              orderId,
+              paymentType,
+            })
+            return 'MOCK'
+          }
+
+          await ensureWeChatRegistered()
+
+          const payResponse = await tradeApi.pay({
             orderId,
             paymentType,
           })
-          return
+
+          const wechatPayParams = payResponse.wechatPayParams
+          if (
+            !wechatPayParams?.partnerId ||
+            !wechatPayParams.prepayId ||
+            !wechatPayParams.nonceStr ||
+            !wechatPayParams.timeStamp ||
+            !wechatPayParams.sign ||
+            !wechatPayParams.packageValue
+          ) {
+            throw new Error('微信支付参数尚未就绪，请稍后再试。')
+          }
+
+          const isRequestSent = await ExpoWeChat.pay({
+            partnerId: wechatPayParams.partnerId,
+            prepayId: wechatPayParams.prepayId,
+            nonceStr: wechatPayParams.nonceStr,
+            timeStamp: wechatPayParams.timeStamp,
+            sign: wechatPayParams.sign,
+            package: wechatPayParams.packageValue,
+            extraData: wechatPayParams.extraData ?? payResponse.payOrderId ?? orderId,
+          })
+
+          if (!isRequestSent) {
+            throw new Error('微信支付请求发送失败，请确认微信客户端是否可用。')
+          }
+          return 'WECHAT'
         } catch (error) {
           if (isOrderSyncingError(error) && attempt < maxAttempts - 1) {
             await sleep(800)
@@ -230,6 +296,24 @@ const OrderPage = () => {
     },
     [isOrderSyncingError, sleep],
   )
+
+  useEffect(() => {
+    if (!payResult || !selectedOrder) return
+
+    if (payResult.errorCode === 0) {
+      pollOrderStatus(selectedOrder.orderId)
+      return
+    }
+
+    if (payResult.errorCode === -2) {
+      setPurchasingOrderId('')
+      Alert.alert('提示', '你已取消微信支付。')
+      return
+    }
+
+    setPurchasingOrderId('')
+    Alert.alert('提示', payResult.errorMessage || '微信支付失败，请稍后重试。')
+  }, [payResult, pollOrderStatus, selectedOrder])
 
   useEffect(() => {
     if (isSessionLoading) return
@@ -281,11 +365,18 @@ const OrderPage = () => {
   const handleConfirmPayment = async () => {
     if (!selectedOrder) return
 
+    if (selectedPaymentType === 'WECHAT' && !wechatConfigured) {
+      Alert.alert('提示', getWeChatConfigError() || '微信支付配置未完成。')
+      return
+    }
+
     try {
       setPaymentSheetVisible(false)
       setPurchasingOrderId(selectedOrder.orderId)
-      await payWithRetry(selectedOrder.orderId, selectedPaymentType)
-      pollOrderStatus(selectedOrder.orderId)
+      const payType = await payWithRetry(selectedOrder.orderId, selectedPaymentType)
+      if (payType === 'MOCK') {
+        pollOrderStatus(selectedOrder.orderId)
+      }
     } catch (error) {
       setPurchasingOrderId('')
       console.error('支付失败:', error)
@@ -361,7 +452,7 @@ const OrderPage = () => {
 
             {canPay && (
               <Text style={[styles.iapText, { color: ui.textTertiary }]}>
-                支付方式：模拟支付
+                支付方式：模拟支付 / 微信支付
               </Text>
             )}
           </View>
@@ -478,7 +569,7 @@ const OrderPage = () => {
           >
             <Group
               modifiers={[
-                presentationDetents([{ height: 320 }]),
+                presentationDetents([{ height: 360 }]),
                 presentationDragIndicator('visible'),
                 interactiveDismissDisabled(Boolean(purchasingOrderId)),
               ]}
@@ -514,15 +605,13 @@ const OrderPage = () => {
                     <Button
                       key={method.type}
                       modifiers={[buttonStyle('plain')]}
-                      onPress={() => setSelectedPaymentType(method.type)}
+                      onPress={() => {
+                        setSelectedPaymentType(method.type)
+                      }}
                     >
                       <HStack spacing={12}>
                         <HStack spacing={10}>
-                          <SwiftImage
-                            systemName="creditcard.fill"
-                            size={18}
-                            color={selectedPaymentType === method.type ? '#007AFF' : '#6B7280'}
-                          />
+                          <PaymentMethodIcon label={method.iconLabel} backgroundColor={method.iconColor} />
                           <SwiftUIText modifiers={[foregroundStyle('#111111')]}>{method.title}</SwiftUIText>
                         </HStack>
                         <Spacer />
@@ -678,6 +767,18 @@ const styles = StyleSheet.create({
   },
   sheetHost: {
     ...StyleSheet.absoluteFillObject,
+  },
+  paymentMethodIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  paymentMethodIconText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
   },
 })
 

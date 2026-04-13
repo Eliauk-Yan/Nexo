@@ -1,12 +1,14 @@
 import type { ExpoConfig } from 'expo/config'
 
+const wechatAppId = process.env.EXPO_PUBLIC_WECHAT_APP_ID?.trim() ?? ''
+
 const config: ExpoConfig = {
   name: 'Nexo',
   slug: 'Nexo',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './src/assets/images/icon.png',
-  scheme: 'nexo',
+  scheme: ['nexo', ...(wechatAppId ? [wechatAppId] : [])],
   userInterfaceStyle: 'automatic',
   ios: {
     usesAppleSignIn: true,

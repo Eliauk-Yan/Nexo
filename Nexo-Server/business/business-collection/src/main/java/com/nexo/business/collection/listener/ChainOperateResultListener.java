@@ -60,7 +60,7 @@ public class ChainOperateResultListener extends StreamConsumer {
                     break;
                 case NFT_MINT:
                     // 藏品铸造
-                        handleAssetActivated(chainOperateBody, chainResultData);
+                    handleAssetActivated(chainOperateBody, chainResultData);
                     break;
                 default:
                     log.warn("未处理的链回调操作类型, bizType={}, operateType={}", chainOperateBody.getBizType(), chainOperateBody.getOperateType());
@@ -76,7 +76,7 @@ public class ChainOperateResultListener extends StreamConsumer {
             return;
         }
         // 2. 初始化库存
-        initInventory(nft.getId().toString(), NFTType.NFT, nft.getQuantity(), nft.getIdentifier());
+        initInventory(nft.getId().toString(), nft.getQuantity(), nft.getIdentifier());
         // 3. 状态机转移状态
         nft.success();
         if (!NFTService.updateById(nft)) {
@@ -112,10 +112,10 @@ public class ChainOperateResultListener extends StreamConsumer {
         }
     }
 
-    private void initInventory(String productId, NFTType nftType, Long inventory, String identifier) {
+    private void initInventory(String productId, Long inventory, String identifier) {
         InventoryRequest inventoryRequest = new InventoryRequest();
         inventoryRequest.setNftId(productId);
-        inventoryRequest.setNftType(nftType);
+        inventoryRequest.setNftType(NFTType.NFT);
         inventoryRequest.setInventory(inventory);
         inventoryRequest.setIdentifier(identifier);
         InventoryResponse<Boolean> inventoryResponse = inventoryFacade.init(inventoryRequest);

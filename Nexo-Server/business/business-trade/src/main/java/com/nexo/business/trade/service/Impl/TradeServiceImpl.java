@@ -155,14 +155,16 @@ public class TradeServiceImpl implements TradeService {
         OrderResponse<OrderDTO> response = orderFacade.getOrder(payParams.getOrderId(), userId);
         OrderDTO order = response.getData();
         // 2. 校验订单
+        // 2.1 是否存在
         if (order == null) {
             throw new TradeException(ORDER_NOT_EXIST);
         }
+        // 2.2 订单状态是否正确
         if (order.getOrderState() != TradeOrderState.CONFIRM) {
             throw new TradeException(ORDER_IS_CANNOT_PAY);
         }
-        // 3. 如果订单超时取消订单
-        if (Boolean.TRUE.equals(order.getTimeout())) {
+        // 2.3 订单是否超时
+        if (order.getTimeout()) {
             Thread.ofVirtual().start(() -> {
                 OrderTimeoutRequest cancelRequest = new OrderTimeoutRequest();
                 cancelRequest.setOperatorType(PLATFORM);
@@ -174,7 +176,7 @@ public class TradeServiceImpl implements TradeService {
             });
             throw new TradeException(ORDER_IS_CANNOT_PAY);
         }
-        // 4. 校验买家
+        // 2.4 校验买家
         if (!order.getBuyerId().equals(userId.toString())) {
             throw new TradeException(PAY_PERMISSION_DENIED);
         }
@@ -200,10 +202,10 @@ public class TradeServiceImpl implements TradeService {
         PayVO payVO = new PayVO();
         // 支付订单号
         payVO.setPayOrderId(payOrderDTO.getPayOrderId());
-        // 支付URL
-        payVO.setPayUrl(payOrderDTO.getPayUrl());
         // 支付状态
         payVO.setPayState(payOrderDTO.getOrderState());
+        // 微信App支付参数
+        payVO.setWechatPayParams(payOrderDTO.getWechatPayParams());
         return payVO;
     }
 

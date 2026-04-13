@@ -25,11 +25,6 @@ public class PayOrderDTO implements Serializable {
     private String payOrderId;
 
     /**
-     * 支付链接
-     */
-    private String payUrl;
-
-    /**
      * 支付单状态
      */
     private PayState orderState;
@@ -53,4 +48,9 @@ public class PayOrderDTO implements Serializable {
      * 支付渠道
      */
     private String payChannel;
+
+    /**
+     * 微信App支付参数
+     */
+    private WechatPayParamsDTO wechatPayParams;
 }

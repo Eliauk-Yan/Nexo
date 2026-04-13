@@ -4,12 +4,12 @@ import com.alibaba.fastjson2.JSON;
 import com.nexo.business.order.domain.entity.TradeOrder;
 import com.nexo.business.order.domain.exception.OrderErrorCode;
 import com.nexo.business.order.domain.exception.OrderException;
-import com.nexo.business.order.mapper.mybatis.OrderMapper;
 import com.nexo.business.order.service.OrderService;
 import com.nexo.common.api.inventory.InventoryFacade;
 import com.nexo.common.api.inventory.request.InventoryRequest;
 import com.nexo.common.api.inventory.response.InventoryResponse;
 import com.nexo.common.api.nft.NFTFacade;
+import com.nexo.common.api.order.OrderFacade;
 import com.nexo.common.api.order.request.OrderCreateAndConfirmRequest;
 import com.nexo.common.api.order.request.OrderCreateRequest;
 import com.nexo.common.api.order.response.OrderResponse;
@@ -52,12 +52,18 @@ public class BuyMsgListener {
     private InventoryFacade inventoryFacade;
 
     /**
+     * 订单接口
+     */
+    @DubboReference(version = "1.0.0")
+    private OrderFacade orderFacade;
+
+    /**
      * 订单服务
      */
-    private final OrderMapper orderMapper;
+    private final OrderService orderService;
 
     @Bean
-    Consumer<Message<MessageBody>> buy(OrderService orderService) {
+    Consumer<Message<MessageBody>> buy() {
         return msg -> {
             // 1. 解析消息
             OrderCreateRequest orderCreateRequest = StreamConsumer.getMessage(msg, OrderCreateRequest.class);
@@ -68,7 +74,7 @@ public class BuyMsgListener {
             orderCreateAndConfirmRequest.setOperatorType(UserType.PLATFORM);
             orderCreateAndConfirmRequest.setOperateTime(LocalDateTime.now());
             // 3 创建订单记录
-            OrderResponse<Boolean> orderResponse = orderService.createAndConfirm(orderCreateAndConfirmRequest);
+            OrderResponse<Boolean> orderResponse = orderFacade.createAndConfirm(orderCreateAndConfirmRequest);
             //4. 订单因为校验前置校验不通过而下单失败，回滚库存
             if (!orderResponse.getSuccess() && ORDER_CREATE_VALID_FAILED.getCode().equals(orderResponse.getCode())) {
                 String orderId = orderResponse.getOrderId();

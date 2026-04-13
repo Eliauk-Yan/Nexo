@@ -2,6 +2,7 @@ package com.nexo.business.trade.interfaces.vo;
 
 
 import com.nexo.common.api.pay.constant.PayState;
+import com.nexo.common.api.pay.response.WechatPayParamsDTO;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,8 +18,8 @@ public class PayVO implements Serializable {
 
     private String payOrderId;
 
-    private String payUrl;
-
     private PayState payState;
+
+    private WechatPayParamsDTO wechatPayParams;
 
 }

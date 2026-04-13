@@ -48,9 +48,8 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
     /**
      * 推进到支付中
      */
-    public void paying(String payOrderId, String payUrl) {
+    public void paying(String payOrderId) {
         PayOrder payOrder = queryByOrderId(payOrderId);
-        payOrder.paying(payUrl);
         saveOrUpdate(payOrder);
     }
 

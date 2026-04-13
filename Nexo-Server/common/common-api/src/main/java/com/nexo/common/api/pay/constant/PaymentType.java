@@ -7,9 +7,9 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum PaymentType {
 
-    MOCK("MOCK", "Mock"),
+    MOCK("MOCK", "模拟"),
 
-    APPLE_PAY("APPLE_PAY", "Apple Pay");
+    WECHAT("WECHAT", "微信支付");
 
     private final String code;
 

@@ -1,5 +1,6 @@
 package com.nexo.business.pay.channel.data;
 
+import com.nexo.common.api.pay.constant.PaymentType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -35,4 +36,9 @@ public class PayChannelRequest implements Serializable {
      * 附加信息
      */
     private String attach;
+
+    /**
+     * 支付渠道
+     */
+    private PaymentType payChannel;
 }

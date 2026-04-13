@@ -1,6 +1,7 @@
 import { artworkApi, authApi, orderApi, tradeApi } from '@/api'
 import { ArtworkDetail } from '@/api/artwork'
 import { PaymentType } from '@/api/trade'
+import { ensureWeChatRegistered, getWeChatConfigError, isWeChatConfigured } from '@/utils/wechat'
 import { useSession } from '@/utils/ctx'
 import {
   BottomSheet,
@@ -32,6 +33,8 @@ import {
 import { Image } from 'expo-image'
 import { GlassView } from 'expo-glass-effect'
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
+import { useEvent } from 'expo'
+import ExpoWeChat from 'expo-wechat'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Alert,
@@ -84,6 +87,22 @@ const HeroImage = ({ cover }: { cover?: string }) => {
   )
 }
 
+const PaymentMethodIcon = ({
+  label,
+  backgroundColor,
+}: {
+  label: string
+  backgroundColor: string
+}) => {
+  return (
+    <RNHostView matchContents>
+      <View style={[styles.paymentMethodIcon, { backgroundColor }]}>
+        <RNText style={styles.paymentMethodIconText}>{label}</RNText>
+      </View>
+    </RNHostView>
+  )
+}
+
 export default function NftDetail() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
@@ -97,6 +116,8 @@ export default function NftDetail() {
   const [paymentSheetVisible, setPaymentSheetVisible] = useState(false)
   const [selectedPaymentType, setSelectedPaymentType] = useState<PaymentType>('MOCK')
   const [pendingOrderId, setPendingOrderId] = useState('')
+  const payResult = useEvent(ExpoWeChat, 'onPayResult')
+  const wechatConfigured = isWeChatConfigured()
   const [artwork, setArtwork] = useState<ArtworkDetail>({
     id: 0,
     name: '',
@@ -118,6 +139,14 @@ export default function NftDetail() {
     {
       type: 'MOCK' as PaymentType,
       title: '模拟支付',
+      iconLabel: '模',
+      iconColor: '#F59E0B',
+    },
+    {
+      type: 'WECHAT' as PaymentType,
+      title: '微信支付',
+      iconLabel: '微',
+      iconColor: '#07C160',
     },
   ]
 
@@ -235,11 +264,47 @@ export default function NftDetail() {
 
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         try {
-          await tradeApi.pay({
+          if (paymentType === 'MOCK') {
+            await tradeApi.pay({
+              orderId,
+              paymentType,
+            })
+            return 'MOCK'
+          }
+
+          await ensureWeChatRegistered()
+
+          const payResponse = await tradeApi.pay({
             orderId,
             paymentType,
           })
-          return
+
+          const wechatPayParams = payResponse.wechatPayParams
+          if (
+            !wechatPayParams?.partnerId ||
+            !wechatPayParams.prepayId ||
+            !wechatPayParams.nonceStr ||
+            !wechatPayParams.timeStamp ||
+            !wechatPayParams.sign ||
+            !wechatPayParams.packageValue
+          ) {
+            throw new Error('微信支付参数尚未就绪，请稍后再试。')
+          }
+
+          const isRequestSent = await ExpoWeChat.pay({
+            partnerId: wechatPayParams.partnerId,
+            prepayId: wechatPayParams.prepayId,
+            nonceStr: wechatPayParams.nonceStr,
+            timeStamp: wechatPayParams.timeStamp,
+            sign: wechatPayParams.sign,
+            package: wechatPayParams.packageValue,
+            extraData: wechatPayParams.extraData ?? payResponse.payOrderId ?? orderId,
+          })
+
+          if (!isRequestSent) {
+            throw new Error('微信支付请求发送失败，请确认微信客户端是否可用。')
+          }
+          return 'WECHAT'
         } catch (error) {
           if (isOrderSyncingError(error) && attempt < maxAttempts - 1) {
             await sleep(800)
@@ -251,6 +316,24 @@ export default function NftDetail() {
     },
     [isOrderSyncingError, sleep],
   )
+
+  useEffect(() => {
+    if (!payResult || !pendingOrderId) return
+
+    if (payResult.errorCode === 0) {
+      pollOrderStatus(pendingOrderId)
+      return
+    }
+
+    if (payResult.errorCode === -2) {
+      setPurchasing(false)
+      Alert.alert('提示', '你已取消微信支付。')
+      return
+    }
+
+    setPurchasing(false)
+    Alert.alert('提示', payResult.errorMessage || '微信支付失败，请稍后重试。')
+  }, [payResult, pendingOrderId, pollOrderStatus])
 
   useEffect(() => {
     if (isSessionLoading) return
@@ -277,13 +360,20 @@ export default function NftDetail() {
       return
     }
 
+    if (selectedPaymentType === 'WECHAT' && !wechatConfigured) {
+      Alert.alert('提示', getWeChatConfigError() || '微信支付配置未完成。')
+      return
+    }
+
     setPaymentSheetVisible(false)
     setLoading(true)
     try {
       setPurchasing(true)
       await waitForOrderReady(pendingOrderId)
-      await payWithRetry(pendingOrderId, selectedPaymentType)
-      pollOrderStatus(pendingOrderId)
+      const payType = await payWithRetry(pendingOrderId, selectedPaymentType)
+      if (payType === 'MOCK') {
+        pollOrderStatus(pendingOrderId)
+      }
     } catch (error) {
       setPurchasing(false)
       console.error('发起购买失败:', error)
@@ -293,7 +383,7 @@ export default function NftDetail() {
     } finally {
       setLoading(false)
     }
-  }, [isOrderSyncingError, payWithRetry, pendingOrderId, pollOrderStatus, selectedPaymentType, waitForOrderReady])
+  }, [getWeChatConfigError, isOrderSyncingError, payWithRetry, pendingOrderId, pollOrderStatus, selectedPaymentType, waitForOrderReady, wechatConfigured])
 
   const handlePrepareOrder = useCallback(async () => {
     if (pendingOrderId) {
@@ -311,6 +401,10 @@ export default function NftDetail() {
         },
         token,
       )
+
+      if (!orderId) {
+        return
+      }
 
       setPendingOrderId(orderId)
       setPaymentSheetVisible(true)
@@ -418,13 +512,13 @@ export default function NftDetail() {
           isPresented={paymentSheetVisible}
           onIsPresentedChange={setPaymentSheetVisible}
         >
-          <Group
-            modifiers={[
-              presentationDetents([{ height: 320 }]),
-              presentationDragIndicator('visible'),
-              interactiveDismissDisabled(loading || purchasing),
-            ]}
-          >
+            <Group
+              modifiers={[
+                presentationDetents([{ height: 360 }]),
+                presentationDragIndicator('visible'),
+                interactiveDismissDisabled(loading || purchasing),
+              ]}
+            >
             <VStack
               spacing={12}
               alignment="center"
@@ -456,15 +550,13 @@ export default function NftDetail() {
                   <Button
                     key={method.type}
                     modifiers={[buttonStyle('plain')]}
-                    onPress={() => setSelectedPaymentType(method.type)}
+                    onPress={() => {
+                      setSelectedPaymentType(method.type)
+                    }}
                   >
                       <HStack spacing={12}>
                         <HStack spacing={10}>
-                          <SwiftImage
-                            systemName="creditcard.fill"
-                            size={18}
-                            color={selectedPaymentType === method.type ? '#007AFF' : '#6B7280'}
-                          />
+                          <PaymentMethodIcon label={method.iconLabel} backgroundColor={method.iconColor} />
                           <Text modifiers={[foregroundStyle('#111111')]}>{method.title}</Text>
                         </HStack>
                         <Spacer />
@@ -576,6 +668,18 @@ const styles = StyleSheet.create({
   glassButtonText: {
     color: '#111111',
     fontSize: 17,
+    fontWeight: '700',
+  },
+  paymentMethodIcon: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  paymentMethodIconText: {
+    color: '#FFFFFF',
+    fontSize: 12,
     fontWeight: '700',
   },
 })

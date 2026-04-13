@@ -30,23 +30,23 @@ public class PayApplicationService {
     /**
      * 支付成功处理
      */
-    public void paySuccess(String payOrderId, String channelStreamId, BigDecimal paidAmount) {
+    public boolean paySuccess(String payOrderId, String channelStreamId, BigDecimal paidAmount) {
         // 1. 查询支付单
         PayOrder payOrder = payOrderService.queryByOrderId(payOrderId);
         if (payOrder == null) {
             log.error("支付单不存在, payOrderId={}", payOrderId);
-            return;
+            return false;
         }
         // 2. 幂等检查
         if (payOrder.isPaid()) {
             log.info("支付单已支付, payOrderId={}", payOrderId);
-            return;
+            return true;
         }
         // 3. 更新支付单状态为已支付
         boolean payOrderResult = payOrderService.paySuccess(payOrderId, channelStreamId, paidAmount);
         if (!payOrderResult) {
             log.error("支付单状态更新失败, payOrderId={}", payOrderId);
-            return;
+            return false;
         }
         // 4. 推进订单状态到已支付
         try {
@@ -61,13 +61,29 @@ public class PayApplicationService {
             orderPayRequest.setIdentifier(payOrder.getPayOrderId());
             OrderResponse<?> orderResponse = orderFacade.paySuccess(orderPayRequest);
             if (!orderResponse.getSuccess()) {log.error("订单支付推进失败, orderId={}, msg={}", payOrder.getBizNo(), orderResponse.getMessage());
-                return;
+                return false;
             }
         } catch (Exception e) {
             log.error("推进订单支付状态异常, payOrderId={}", payOrderId, e);
-            return;
+            return false;
         }
 
         log.info("支付成功处理完成, payOrderId={}, bizNo={}", payOrderId, payOrder.getBizNo());
+        return true;
+    }
+
+    /**
+     * 支付失败处理
+     */
+    public boolean payFailed(String payOrderId) {
+        PayOrder payOrder = payOrderService.queryByOrderId(payOrderId);
+        if (payOrder == null) {
+            log.error("支付单不存在, payOrderId={}", payOrderId);
+            return false;
+        }
+        if (payOrder.getOrderState() == com.nexo.common.api.pay.constant.PayState.FAILED) {
+            return true;
+        }
+        return payOrderService.payFailed(payOrderId);
     }
 }

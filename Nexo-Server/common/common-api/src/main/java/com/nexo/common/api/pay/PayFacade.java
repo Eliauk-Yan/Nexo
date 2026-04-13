@@ -13,7 +13,7 @@ import com.nexo.common.base.response.MultiResponse;
 public interface PayFacade {
 
     /**
-     * 创建支付单（生成支付链接）
+     * 创建支付单（生成支付参数）
      */
     PayResponse<PayOrderDTO> createPayOrder(PayCreateRequest request);
 

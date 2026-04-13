@@ -61,7 +61,7 @@ public class NFT extends BaseEntity {
     // 成功
     public void success() {
         this.state = NFTState.SUCCESS;
-        this.saleTime = LocalDateTime.now();
+        this.syncChainTime = LocalDateTime.now();
     }
 
     // 下架

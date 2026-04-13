@@ -67,14 +67,16 @@ public class PayFacadeImpl implements PayFacade {
             channelRequest.setAmount(yuanToCent(request.getOrderAmount())); //  金额
             channelRequest.setDescription(request.getMemo()); // 备注
             channelRequest.setAttach(request.getBizNo()); // 附加信息
+            channelRequest.setPayChannel(request.getPayChannel());
             PayChannelResponse channelResponse = payChannelServiceFactory.get(request.getPayChannel()).pay(channelRequest);
             // 5. 处理渠道响应
             if (channelResponse.getSuccess()) {
                 // 更新支付单状态为支付中
-                payOrderService.paying(payOrder.getPayOrderId(), channelResponse.getPayUrl());
-                payOrder.setPayUrl(channelResponse.getPayUrl());
+                payOrderService.paying(payOrder.getPayOrderId());
                 payOrder.setOrderState(PayState.PAYING);
-                response.setData(payOrderConvert.toDTO(payOrder));
+                PayOrderDTO payOrderDTO = payOrderConvert.toDTO(payOrder);
+                payOrderDTO.setWechatPayParams(channelResponse.getWechatPayParams());
+                response.setData(payOrderDTO);
                 response.setSuccess(true);
                 response.setCode(ResponseCode.SUCCESS.getCode());
                 response.setMessage(ResponseCode.SUCCESS.getMessage());
