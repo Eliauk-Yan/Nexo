@@ -1,24 +1,30 @@
 package com.nexo.business.pay.service;
 
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nexo.business.pay.domain.entity.PayOrder;
+import com.nexo.business.pay.exception.PayException;
 import com.nexo.business.pay.mapper.mybatis.PayOrderMapper;
 import com.nexo.common.api.pay.constant.PayState;
 import com.nexo.common.api.pay.request.PayCreateRequest;
-import jakarta.validation.constraints.NotNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.util.List;
+
+import static com.nexo.business.pay.exception.PayErrorCode.PAY_ORDER_UPDATE_FAILED;
 
 /**
  * 支付单服务
  */
+@RequiredArgsConstructor
 @Service
 @Slf4j
 public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
+
+    private final PayOrderMapper payOrderMapper;
 
     /**
      * 创建支付单
@@ -50,7 +56,25 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
      */
     public void paying(String payOrderId) {
         PayOrder payOrder = queryByOrderId(payOrderId);
-        saveOrUpdate(payOrder);
+        if (payOrder == null) {
+            throw new PayException(PAY_ORDER_UPDATE_FAILED);
+        }
+        if (payOrder.getOrderState() == PayState.PAYING || payOrder.isPaid()) {
+            return;
+        }
+        payOrder.paying();
+        LambdaUpdateWrapper<PayOrder> wrapper = new LambdaUpdateWrapper<PayOrder>()
+                .eq(PayOrder::getPayOrderId, payOrderId)
+                .eq(PayOrder::getOrderState, PayState.TO_PAY);
+        boolean updateResult = payOrderMapper.update(payOrder, wrapper) == 1;
+        if (!updateResult) {
+            PayOrder latestPayOrder = queryByOrderId(payOrderId);
+            if (latestPayOrder != null
+                    && (latestPayOrder.getOrderState() == PayState.PAYING || latestPayOrder.isPaid())) {
+                return;
+            }
+            throw new PayException(PAY_ORDER_UPDATE_FAILED);
+        }
     }
 
     /**
@@ -58,26 +82,25 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
      */
     public boolean paySuccess(String payOrderId, String channelStreamId, BigDecimal paidAmount) {
         PayOrder payOrder = queryByOrderId(payOrderId);
+        if (payOrder == null) {
+            throw new PayException(PAY_ORDER_UPDATE_FAILED);
+        }
+        if (payOrder.isPaid()) {
+            return true;
+        }
         payOrder.paySuccess(channelStreamId, paidAmount);
-        return saveOrUpdate(payOrder);
-    }
-
-    /**
-     * 支付失败
-     */
-    public boolean payFailed(String payOrderId) {
-        PayOrder payOrder = queryByOrderId(payOrderId);
-        payOrder.payFailed();
-        return saveOrUpdate(payOrder);
-    }
-
-    /**
-     * 支付超时
-     */
-    public boolean payExpired(String payOrderId) {
-        PayOrder payOrder = queryByOrderId(payOrderId);
-        payOrder.payExpired();
-        return saveOrUpdate(payOrder);
+        LambdaUpdateWrapper<PayOrder> wrapper = new LambdaUpdateWrapper<PayOrder>()
+                .eq(PayOrder::getPayOrderId, payOrderId)
+                .in(PayOrder::getOrderState, PayState.TO_PAY, PayState.PAYING);
+        boolean updateResult = payOrderMapper.update(payOrder, wrapper) == 1;
+        if (!updateResult) {
+            PayOrder latestPayOrder = queryByOrderId(payOrderId);
+            if (latestPayOrder != null && latestPayOrder.isPaid()) {
+                return true;
+            }
+            throw new PayException(PAY_ORDER_UPDATE_FAILED);
+        }
+        return true;
     }
 
     /**

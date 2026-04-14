@@ -129,71 +129,14 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
         return response;
     }
 
-
     @Override
-    public boolean paySuccess(OrderPayRequest request) {
-        TradeOrder order = orderMapper.selectOne(new LambdaQueryWrapper<TradeOrder>().eq(TradeOrder::getOrderId, request.getOrderId()));
-        if (order == null) {
-            log.error("订单不存在, orderId={}", request.getOrderId());
-            return false;
-        }
-        if (order.getOrderState() != TradeOrderState.CONFIRM) {
-            log.warn("订单状态不允许支付, orderId={}, state={}", request.getOrderId(), order.getOrderState());
-            return order.getOrderState() == TradeOrderState.PAID;
-        }
-        LambdaUpdateWrapper<TradeOrder> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(TradeOrder::getOrderId, request.getOrderId())
-                .eq(TradeOrder::getOrderState, TradeOrderState.CONFIRM)
-                .set(TradeOrder::getOrderState, TradeOrderState.PAID)
-                .set(TradeOrder::getPaymentAmount, request.getPaymentAmount())
-                .set(TradeOrder::getPaymentTime, request.getOperateTime())
-                .set(TradeOrder::getPaymentMethod, request.getPaymentMethod() != null ? request.getPaymentMethod().getCode() : null)
-                .set(TradeOrder::getPaymentStreamId, request.getPaymentStreamId());
-        boolean result = this.update(updateWrapper);
-        log.info("订单支付推进结果, orderId={}, result={}", request.getOrderId(), result);
-        if (result) {
-            try {
-                AssetAllocateRequest allocateRequest = new AssetAllocateRequest();
-                allocateRequest.setBusinessNo(order.getOrderId());
-                allocateRequest.setBusinessType(order.getNftType().name());
-                allocateRequest.setBuyerId(Long.parseLong(order.getBuyerId()));
-                allocateRequest.setArtworkId(Long.parseLong(order.getProductId()));
-                allocateRequest.setNftType(order.getNftType());
-                allocateRequest.setPurchasePrice(request.getPaymentAmount());
-                allocateRequest.setIdentifier(order.getIdentifier());
-                Boolean allocateResult = nftFacade.allocateAsset(allocateRequest);
-                if (Boolean.TRUE.equals(allocateResult)) {
-                    log.info("向买家发放数字资产成功, orderId={}, artworkId={}", order.getOrderId(), order.getProductId());
-                } else {
-                    log.error("向买家发放数字资产失败, orderId={}, artworkId={}", order.getOrderId(), order.getProductId());
-                }
-            } catch (Exception e) {
-                log.error("调用资产发放服务异常, orderId={}", order.getOrderId(), e);
-            }
-        }
-
-        return result;
+    public OrderResponse<?> paySuccess(OrderPayRequest request) {
+      return doExecute(request, tradeOrder -> tradeOrder.paySuccess(request));
     }
 
     @Override
-    public boolean finish(OrderFinishRequest request) {
-        TradeOrder order = orderMapper.selectOne(new LambdaQueryWrapper<TradeOrder>().eq(TradeOrder::getOrderId, request.getOrderId()));
-        // 订单校验
-        if (order == null) {
-            log.error("订单不存在, orderId={}", request.getOrderId());
-            return false;
-        }
-        if (order.getOrderState() == TradeOrderState.FINISH) {
-            return true;
-        }
-        if (order.getOrderState() != TradeOrderState.PAID) {
-            log.warn("订单状态不允许完成, orderId={}, state={}", request.getOrderId(), order.getOrderState());
-            return false;
-        }
-        // 状态转移
-        order.finish();
-        // 更新状态
-        return this.updateById(order);
+    public OrderResponse<?> finish(OrderFinishRequest request) {
+        return doExecute(request, tradeOrder -> tradeOrder.finish(request));
     }
 
     @Override

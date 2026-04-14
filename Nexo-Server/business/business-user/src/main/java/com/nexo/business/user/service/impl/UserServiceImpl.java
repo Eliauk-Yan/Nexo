@@ -144,21 +144,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         // 5. 上传文件
         String avatarUrl = fileService.uploadFile(avatar, filePath);
-        // 6. 更新用户信息
-        currentUser.setAvatarUrl(avatarUrl);
-        return userCacheService.updateById(currentUser);
+        // 6. 局部更新头像字段，避免把其他已解密字段整行写回数据库
+        return userCacheService.updateAvatarById(userId, avatarUrl);
     }
 
     @Override
     public Boolean updateNickName(String nickName) {
         // 1. 获取当前登录用户ID
         long userId = StpUtil.getLoginIdAsLong();
-        // 2. 根据用户ID查询用户信息
-        User user = userCacheService.getUserById(userId);
-        // 3. 更新用户信息
-        user.setNickName(nickName);
-        // 4. 返回更新结果
-        return userCacheService.updateById(user);
+        // 2. 局部更新昵称字段，避免把其他已解密字段整行写回数据库
+        return userCacheService.updateNickNameById(userId, nickName);
     }
 
     @Override

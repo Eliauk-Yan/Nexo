@@ -2,6 +2,7 @@ package com.nexo.business.order.interfaces.facade;
 
 import com.alibaba.fastjson.JSON;
 import com.nexo.business.order.domain.entity.TradeOrder;
+import com.nexo.business.order.domain.exception.OrderException;
 import com.nexo.business.order.domain.validator.OrderCreateValidator;
 import com.nexo.business.order.mapper.convert.OrderConvertor;
 import com.nexo.business.order.service.OrderService;
@@ -21,7 +22,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.DubboService;
 
+import java.util.Objects;
+
 import static com.nexo.business.order.domain.exception.OrderErrorCode.ORDER_CREATE_VALID_FAILED;
+import static com.nexo.business.order.domain.exception.OrderErrorCode.ORDER_ALREADY_CLOSED;
+import static com.nexo.business.order.domain.exception.OrderErrorCode.ORDER_ALREADY_PAID;
 
 /**
  * @classname OrderFacadeImpl
@@ -129,48 +134,39 @@ public class OrderFacadeImpl implements OrderFacade {
     }
 
 
-
     @Override
     public OrderResponse<?> paySuccess(OrderPayRequest request) {
-        OrderResponse<?> response = new OrderResponse<>();
         try {
-            boolean result = orderService.paySuccess(request);
-            response.setSuccess(result);
-            if (result) {
-                response.setCode(ResponseCode.SUCCESS.getCode());
-                response.setMessage(ResponseCode.SUCCESS.getMessage());
-            } else {
-                response.setCode("PAY_SUCCESS_FAILED");
-                response.setMessage("订单支付推进失败");
+            return orderService.paySuccess(request);
+        } catch (OrderException e) {
+            TradeOrder order = orderService.getOrder(request.getOrderId(), null);
+            OrderResponse<Object> response = new OrderResponse<>();
+            response.setOrderId(request.getOrderId());
+            if (order != null && order.getOrderState() == TradeOrderState.CLOSED) {
+                response.setSuccess(false);
+                response.setCode(ORDER_ALREADY_CLOSED.getCode());
+                response.setMessage(ORDER_ALREADY_CLOSED.getMessage());
+                return response;
             }
-        } catch (Exception e) {
-            log.error("订单支付推进异常, orderId={}", request.getOrderId(), e);
-            response.setSuccess(false);
-            response.setCode("PAY_SUCCESS_ERROR");
-            response.setMessage("订单支付推进异常: " + e.getMessage());
+            if (order != null && order.getOrderState() == TradeOrderState.PAID) {
+                if (Objects.equals(order.getPaymentStreamId(), request.getPaymentStreamId())
+                        && Objects.equals(order.getPaymentMethod(), request.getPaymentMethod().getCode())) {
+                    response.setSuccess(true);
+                    response.setCode(ResponseCode.DUPLICATED.getCode());
+                    response.setMessage(ResponseCode.DUPLICATED.getMessage());
+                    return response;
+                }
+                response.setSuccess(false);
+                response.setCode(ORDER_ALREADY_PAID.getCode());
+                response.setMessage(ORDER_ALREADY_PAID.getMessage());
+                return response;
+            }
+            throw e;
         }
-        return response;
     }
 
     @Override
     public OrderResponse<?> finish(OrderFinishRequest request) {
-        OrderResponse<?> response = new OrderResponse<>();
-        try {
-            boolean result = orderService.finish(request);
-            response.setSuccess(result);
-            if (result) {
-                response.setCode(ResponseCode.SUCCESS.getCode());
-                response.setMessage(ResponseCode.SUCCESS.getMessage());
-            } else {
-                response.setCode("ORDER_FINISH_FAILED");
-                response.setMessage("订单完成推进失败");
-            }
-        } catch (Exception e) {
-            log.error("订单完成推进异常, orderId={}", request.getOrderId(), e);
-            response.setSuccess(false);
-            response.setCode("ORDER_FINISH_ERROR");
-            response.setMessage("订单完成推进异常: " + e.getMessage());
-        }
-        return response;
+        return orderService.finish(request);
     }
 }

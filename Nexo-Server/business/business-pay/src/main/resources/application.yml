@@ -12,3 +12,12 @@ spring:
       - classpath:/base.yml
   application:
     name: business-pay
+
+wxpay:
+  appId: 你的AppId
+  mchId: 你的商户号
+  apiKey3: 你的APIv3密钥
+  serialNo: 你的商户API证书序列号
+  keyPath: classpath:cert/apiclient_key.pem
+  platformCertPath: classpath:cert/wechatpay.pem
+  notifyUrl: https://你的域名/wxpay/notify

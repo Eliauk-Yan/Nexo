@@ -140,26 +140,26 @@ public class NFTFacadeImpl implements NFTFacade {
         if (!saveResult) {
             return false;
         }
-        Thread.ofVirtual().start(() -> {
-            try {
-                ChainRequest chainRequest = new ChainRequest();
-                chainRequest.setIdentifier(request.getIdentifier());
-                chainRequest.setClassId(request.getArtworkId().toString());
-                chainRequest.setClassName(nft.getName());
-                chainRequest.setSerialNo(asset.getSerialNumber());
-                chainRequest.setRecipient(buyer.getAddress());
-                chainRequest.setBizType(ChainOperationBizType.ASSET.getCode());
-                chainRequest.setBizId(asset.getId().toString());
-                ChainResponse<ChainOperationData> chainResponse = chainFacade.mint(chainRequest);
-                if (chainResponse.getSuccess() && chainResponse.getData() != null) {
-                    log.info("资产铸造成功, assetId={}", asset.getId());
-                } else {
-                    log.error("资产铸造失败, assetId={}, message={}", asset.getId(), chainResponse.getMessage());
-                }
-            } catch (Exception e) {
-                log.error("资产铸造异常, assetId={}", asset.getId(), e);
+        try {
+            ChainRequest chainRequest = new ChainRequest();
+            chainRequest.setIdentifier(request.getIdentifier());
+            chainRequest.setClassId(request.getArtworkId().toString());
+            chainRequest.setClassName(nft.getName());
+            chainRequest.setSerialNo(asset.getSerialNumber());
+            chainRequest.setRecipient(buyer.getAddress());
+            chainRequest.setBizType(ChainOperationBizType.ASSET.getCode());
+            chainRequest.setBizId(asset.getId().toString());
+            ChainResponse<ChainOperationData> chainResponse = chainFacade.mint(chainRequest);
+            if (chainResponse.getSuccess() && chainResponse.getData() != null) {
+                log.info("资产铸造请求已提交, assetId={}", asset.getId());
+            } else {
+                log.error("资产铸造请求提交失败, assetId={}, message={}", asset.getId(), chainResponse.getMessage());
+                return false;
             }
-        });
+        } catch (Exception e) {
+            log.error("资产铸造请求异常, assetId={}", asset.getId(), e);
+            return false;
+        }
         return true;
     }
 

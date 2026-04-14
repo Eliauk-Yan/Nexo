@@ -158,21 +158,18 @@ public class PayOrder extends BaseEntity {
     /**
      * 推进到支付中
      */
-    public PayOrder paying(String payUrl) {
+    public void paying() {
         this.setOrderState(PayState.PAYING);
-        this.payUrl = payUrl;
-        return this;
     }
 
     /**
      * 支付成功
      */
-    public PayOrder paySuccess(String channelStreamId, BigDecimal paidAmount) {
+    public void paySuccess(String channelStreamId, BigDecimal paidAmount) {
         this.setOrderState(PayState.PAID);
         this.paySucceedTime = LocalDateTime.now();
         this.channelStreamId = channelStreamId;
         this.paidAmount = paidAmount;
-        return this;
     }
 
     /**

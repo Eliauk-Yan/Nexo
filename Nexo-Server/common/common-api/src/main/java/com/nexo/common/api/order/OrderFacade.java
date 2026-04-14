@@ -40,5 +40,4 @@ public interface OrderFacade {
      */
     OrderResponse<?> finish(OrderFinishRequest request);
 
-
 }

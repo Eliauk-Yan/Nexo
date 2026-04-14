@@ -48,11 +48,11 @@ public interface OrderService extends IService<TradeOrder> {
     /**
      * 支付成功
      */
-    boolean paySuccess(OrderPayRequest request);
+    OrderResponse<?> paySuccess(OrderPayRequest request);
 
     /**
      * 完成订单
      */
-    boolean finish(OrderFinishRequest request);
+    OrderResponse<?> finish(OrderFinishRequest request);
 
 }

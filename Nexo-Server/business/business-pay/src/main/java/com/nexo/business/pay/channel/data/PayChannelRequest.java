@@ -20,12 +20,12 @@ public class PayChannelRequest implements Serializable {
     /**
      * 支付单号
      */
-    private String orderId;
+    private String outTradeNo;
 
     /**
      * 金额（单位：分）
      */
-    private Long amount;
+    private Long totalFee;
 
     /**
      * 订单描述

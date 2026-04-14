@@ -4,6 +4,7 @@ import com.alicp.jetcache.anno.CacheInvalidate;
 import com.alicp.jetcache.anno.CacheRefresh;
 import com.alicp.jetcache.anno.CacheType;
 import com.alicp.jetcache.anno.Cached;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.nexo.business.user.domain.entity.User;
 import com.nexo.business.user.mapper.mybatis.UserMapper;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,22 @@ public class UserCacheService {
     public Boolean updateById(User user) {
         int res = userMapper.updateById(user);
         return res == 1;
+    }
+
+    @CacheInvalidate(name = ":user:cache:id:", key = "#userId")
+    public Boolean updateAvatarById(Long userId, String avatarUrl) {
+        LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<User>()
+                .eq(User::getId, userId)
+                .set(User::getAvatarUrl, avatarUrl);
+        return userMapper.update(null, wrapper) == 1;
+    }
+
+    @CacheInvalidate(name = ":user:cache:id:", key = "#userId")
+    public Boolean updateNickNameById(Long userId, String nickName) {
+        LambdaUpdateWrapper<User> wrapper = new LambdaUpdateWrapper<User>()
+                .eq(User::getId, userId)
+                .set(User::getNickName, nickName);
+        return userMapper.update(null, wrapper) == 1;
     }
 
 }

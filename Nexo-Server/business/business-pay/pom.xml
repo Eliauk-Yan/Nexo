@@ -60,8 +60,7 @@
         <dependency>
             <groupId>com.github.javen205</groupId>
             <artifactId>IJPay-WxPay</artifactId>
-            <version>2.9.12.1-17</version>
-            <scope>compile</scope>
+            <version>2.9.12.1</version>
         </dependency>
     </dependencies>
 

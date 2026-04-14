@@ -8,7 +8,9 @@ import lombok.Getter;
 @Getter
 public enum PayErrorCode implements ErrorCode {
 
-    ORDER_ALREADY_PAID("ORDER_ALREADY_PAID", "订单已支付");
+    ORDER_ALREADY_PAID("ORDER_ALREADY_PAID", "订单已支付"),
+
+    PAY_ORDER_UPDATE_FAILED("PAY_ORDER_UPDATE_FAILED", "支付单更新失败");
 
     private final String code;
 

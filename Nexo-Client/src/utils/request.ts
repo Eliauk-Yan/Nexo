@@ -14,6 +14,8 @@ interface RequestOptions {
   token?: string
   /** 已在请求层提示错误时，是否继续向上抛出异常 */
   throwOnError?: boolean
+  /** 是否抑制请求层的全局错误弹窗 */
+  suppressErrorAlert?: boolean
 }
 // 定义 API 错误接口
 interface ApiError extends Error {
@@ -33,6 +35,7 @@ const request = async (url: string, opts: RequestOptions = {}) => {
     headers: customHeaders,
     token: tokenOverride,
     throwOnError = true,
+    suppressErrorAlert = false,
   } = opts
   // 1. 从环境变量中获取基础 API 地址
   const apiUrl = process.env.EXPO_PUBLIC_API_BASE_URL
@@ -85,7 +88,9 @@ const request = async (url: string, opts: RequestOptions = {}) => {
       // 跳转到登录页
       router.replace('/(auth)/sign-in')
     } else {
-      Alert.alert('提示', errMsg)
+      if (!suppressErrorAlert) {
+        Alert.alert('提示', errMsg)
+      }
     }
     const error = new Error(errMsg) as ApiError
     error.status = response.status
@@ -102,7 +107,7 @@ const request = async (url: string, opts: RequestOptions = {}) => {
 export const get = <T = any>(
   url: string,
   params?: any,
-  options?: Pick<RequestOptions, 'token'>,
+  options?: Pick<RequestOptions, 'token' | 'suppressErrorAlert'>,
 ): Promise<T> => request(url, { method: 'GET', params, ...options })
 
 export function post<T = any>(

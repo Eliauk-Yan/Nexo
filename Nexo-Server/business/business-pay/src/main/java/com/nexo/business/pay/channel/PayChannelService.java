@@ -18,7 +18,5 @@ public interface PayChannelService {
     /**
      * 支付结果回调
      */
-    default boolean notify(HttpServletRequest request, HttpServletResponse response) {
-        return false;
-    }
+    boolean notify(HttpServletRequest request, HttpServletResponse response);
 }

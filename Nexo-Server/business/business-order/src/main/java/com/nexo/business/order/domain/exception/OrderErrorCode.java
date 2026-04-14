@@ -22,6 +22,10 @@ public enum OrderErrorCode implements ErrorCode {
 
     ORDER_NOT_EXIST("ORDER_NOT_EXIST", "订单不存在"),
 
+    ORDER_ALREADY_PAID("ORDER_ALREADY_PAID", "订单已支付"),
+
+    ORDER_ALREADY_CLOSED("ORDER_ALREADY_CLOSED", "订单已关闭"),
+
     PERMISSION_DENIED("PERMISSION_DENIED", "没有权限操作"),
 
     ORDER_STATE_ILLEGAL("ORDER_STATE_ILLEGAL", "订单状态非法"),

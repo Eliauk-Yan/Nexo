@@ -203,7 +203,7 @@ const OrderPage = () => {
         attempts += 1
 
         try {
-          const order = await orderApi.getOrder(orderId)
+          const order = await orderApi.getOrder(orderId, { suppressErrorAlert: true })
           if (!order) return
 
           if (order.orderState === 'PAID' || order.orderState === 'FINISH') {

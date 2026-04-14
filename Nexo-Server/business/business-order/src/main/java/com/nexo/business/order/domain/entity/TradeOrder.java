@@ -8,6 +8,8 @@ import com.nexo.common.api.order.constant.TradeOrderState;
 import com.nexo.common.api.nft.constant.NFTType;
 import com.nexo.common.api.order.request.OrderConfirmRequest;
 import com.nexo.common.api.order.request.OrderCreateRequest;
+import com.nexo.common.api.order.request.OrderFinishRequest;
+import com.nexo.common.api.order.request.OrderPayRequest;
 import com.nexo.common.api.user.constant.UserType;
 import com.nexo.common.datasource.entity.BaseEntity;
 import lombok.Data;
@@ -121,15 +123,18 @@ public class TradeOrder extends BaseEntity {
     }
 
     // 已付款
-    public void paid() {
-        this.orderState = TradeOrderState.PAID;
-        this.paymentTime = LocalDateTime.now();
+    public void paySuccess(OrderPayRequest request) {
+        this.setPaymentStreamId(request.getPaymentStreamId());
+        this.setPaymentTime(request.getOperateTime());
+        this.setPaymentMethod(request.getPaymentMethod().getCode());
+        this.setPaymentAmount(request.getPaymentAmount());
+        this.setOrderState(TradeOrderState.PAID);
     }
 
     // 完成
-    public void finish() {
+    public void finish(OrderFinishRequest request) {
+        this.setCompletionTime(request.getOperateTime());
         this.orderState = TradeOrderState.FINISH;
-        this.completionTime = LocalDateTime.now();
     }
 
     // 关闭

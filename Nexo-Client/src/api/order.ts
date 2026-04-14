@@ -80,7 +80,7 @@ export const orderApi = {
   /**
    * 获取单个订单详情（用于支付后轮询状态）
    */
-  getOrder: (orderId: string) => {
-    return get<OrderVO>('/order/get', { orderId })
+  getOrder: (orderId: string, options?: { suppressErrorAlert?: boolean }) => {
+    return get<OrderVO>('/order/get', { orderId }, options)
   },
 }

@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -43,9 +44,9 @@ public class PayFacadeImpl implements PayFacade {
     public PayResponse<PayOrderDTO> createPayOrder(PayCreateRequest request) {
         PayResponse<PayOrderDTO> response = new PayResponse<>();
         try {
-            // 1. 创建支付单
+            // 步骤1：先在本地创建支付单，幂等场景下可能直接拿到已有支付单
             PayOrder payOrder = payOrderService.create(request); // 这里是幂等的 可能会拿到同一条支付单
-            // 2. 如果支付单已在支付中，直接返回
+            // 步骤2：如果支付单已经处于支付中，直接把现有结果返回给前端
             if (payOrder.getOrderState() == PayState.PAYING) {
                 response.setData(payOrderConvert.toDTO(payOrder));
                 response.setSuccess(true);
@@ -53,25 +54,26 @@ public class PayFacadeImpl implements PayFacade {
                 response.setMessage(ResponseCode.SUCCESS.getMessage());
                 return response;
             }
-            // 3. 如果支付单已支付，返回错误
+            // 步骤3：如果支付单已经支付成功，则不允许再次发起支付
             if (payOrder.isPaid()) {
                 response.setSuccess(false);
                 response.setCode(PayErrorCode.ORDER_ALREADY_PAID.getCode());
                 response.setMessage(PayErrorCode.ORDER_ALREADY_PAID.getMessage());
                 return response;
             }
-            // 4. 调用支付渠道发起支付
-            // 构造支付请求
+            // 步骤4：把业务支付单转换成渠道侧需要的下单参数
             PayChannelRequest channelRequest = new PayChannelRequest();
-            channelRequest.setOrderId(payOrder.getPayOrderId()); // 订单号
-            channelRequest.setAmount(yuanToCent(request.getOrderAmount())); //  金额
+            channelRequest.setOutTradeNo(payOrder.getPayOrderId()); // 订单号
+            channelRequest.setTotalFee(request.getOrderAmount().multiply(new BigDecimal(100)).longValue()); //  金额 元转分
             channelRequest.setDescription(request.getMemo()); // 备注
             channelRequest.setAttach(request.getBizNo()); // 附加信息
             channelRequest.setPayChannel(request.getPayChannel());
+
+            // 步骤5：调用具体支付渠道发起下单，例如微信支付或 MOCK 支付
             PayChannelResponse channelResponse = payChannelServiceFactory.get(request.getPayChannel()).pay(channelRequest);
-            // 5. 处理渠道响应
+
+            // 步骤6：处理渠道响应，成功则把支付单更新为支付中，并返回调起支付参数
             if (channelResponse.getSuccess()) {
-                // 更新支付单状态为支付中
                 payOrderService.paying(payOrder.getPayOrderId());
                 payOrder.setOrderState(PayState.PAYING);
                 PayOrderDTO payOrderDTO = payOrderConvert.toDTO(payOrder);
@@ -110,13 +112,6 @@ public class PayFacadeImpl implements PayFacade {
         // 2. 转换为VO
         payQueryResponse.setData(payOrderConvert.toVOs(payOrders));
         return payQueryResponse;
-    }
-
-    /**
-     * 元转分
-     */
-    private Long yuanToCent(java.math.BigDecimal yuan) {
-        return yuan.multiply(new java.math.BigDecimal(100)).longValue();
     }
 }
 
