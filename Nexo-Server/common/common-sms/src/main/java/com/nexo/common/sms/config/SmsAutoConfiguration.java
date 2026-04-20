@@ -1,5 +1,7 @@
 package com.nexo.common.sms.config;
 
+import com.aliyun.auth.credentials.Credential;
+import com.aliyun.auth.credentials.provider.StaticCredentialProvider;
 import com.aliyun.sdk.service.dypnsapi20170525.AsyncClient;
 import com.nexo.common.sms.SmsService;
 import com.nexo.common.sms.impl.SmsServiceImpl;
@@ -26,8 +28,8 @@ public class SmsAutoConfiguration {
     public AsyncClient asyncClient(SmsProperties properties) {
         return AsyncClient.builder()
                 .region(properties.getRegionId())
-                .credentialsProvider(com.aliyun.auth.credentials.provider.StaticCredentialProvider.create(
-                        com.aliyun.auth.credentials.Credential.builder()
+                .credentialsProvider(StaticCredentialProvider.create(
+                        Credential.builder()
                                 .accessKeyId(properties.getAccessKeyId())
                                 .accessKeySecret(properties.getAccessKeySecret())
                                 .build()))

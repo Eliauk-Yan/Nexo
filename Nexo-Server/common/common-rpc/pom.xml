@@ -49,6 +49,11 @@
             <artifactId>gson</artifactId>
             <version>2.13.2</version>
         </dependency>
+        <!-- Dubbo JSON 工具加载 Java 8 时间类型模块 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
         <!--二进制序列化协议-->
         <dependency>
             <groupId>com.google.protobuf</groupId>

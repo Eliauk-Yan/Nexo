@@ -25,15 +25,22 @@ import com.nexo.common.api.blockchain.request.ChainRequest;
 import com.nexo.common.api.blockchain.response.ChainResponse;
 import com.nexo.common.api.blockchain.response.data.ChainCreateData;
 import com.nexo.common.api.user.constant.UserState;
+import com.nexo.common.api.user.response.data.InviteRankInfo;
 import com.nexo.common.api.user.response.data.UserInfo;
 import com.nexo.common.base.constant.CommonConstant;
 import com.nexo.common.base.response.PageResponse;
 import com.nexo.common.file.service.FileService;
+import com.nexo.common.lock.DistributeLock;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.redisson.api.RLock;
+import org.redisson.api.RScoredSortedSet;
+import org.redisson.api.RedissonClient;
+import org.redisson.client.protocol.ScoredEntry;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -41,6 +48,9 @@ import org.springframework.web.multipart.MultipartFile;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -57,7 +67,7 @@ import static com.nexo.business.user.domain.exception.UserErrorCode.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService, InitializingBean {
 
     private static final String DEFAULT_NICK_NAME_PREFIX = "C_";
 
@@ -68,6 +78,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private final UserAuthMapper userAuthMapper;
 
     private final FileService fileService;
+
+    private final RedissonClient redissonClient;
 
     @DubboReference(version = "1.0.0")
     private ChainFacade chainFacade;
@@ -105,6 +117,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private Cache<String, User> userCacheById;
 
     /**
+     * 邀请排行榜
+     */
+    private RScoredSortedSet<String> inviteRank;
+
+    /**
      * JetCache 编程式缓存初始化
      */
     @PostConstruct
@@ -117,16 +134,41 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         userCacheById = cacheManager.getOrCreateCache(idQc);
     }
 
+    @DistributeLock(keyExpression = "#phone", scene = "USER_REGISTER")
     @Override
-    public Boolean register(String phone) {
+    @Transactional(rollbackFor = Exception.class)
+    public Boolean register(String phone, String inviteCode) {
         // 1. 生成默认昵称
         String random = RandomUtil.randomString(6);
         String defaultNickName = DEFAULT_NICK_NAME_PREFIX + random + phone.substring(7, 11);
-        // 2. 保存用户
+        // 2. 设置邀请用户
+        String inviteId = null;
+        if (StringUtils.isNotBlank(inviteCode)) {
+            User inviter = userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getInviteCode, inviteCode));
+            if (inviter == null) {
+                throw new UserException(INVITE_CODE_INVALID);
+            }
+            inviteId = inviter.getId().toString();
+        }
+        // 3. 设置邀请码
+        String myInviteCode = RandomUtil.randomString(6);
+        // 4. 保存用户
         User user = new User();
-        user.register(defaultNickName, phone);
-        int insertRow = userMapper.insert(user);
-        return insertRow == 1;
+        user.register(defaultNickName, phone, inviteId, myInviteCode);
+        if (userMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getPhone, phone)) != null) {
+            throw new UserException(PHONE_ALREADY_EXISTS);
+        }
+        boolean insertRes = userMapper.insert(user) == 1;
+        if (!insertRes) {
+            throw new UserException(USER_INSERT_FAILED);
+        }
+        // 4. 更新排行榜
+        updateInviteRank(inviteId);
+        // 5. 更新邀请人缓存
+        if (inviteId != null) {
+            userCacheById.remove(inviteId);
+        }
+        return true;
     }
 
     @Override
@@ -356,4 +398,65 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return PageResponse.success(userPage.getRecords(), (int) userPage.getTotal(), size, current);
     }
 
+    @Override
+    public List<InviteRankInfo> getTopN(Integer topN) {
+        // 1. 获取排名前N
+        Collection<ScoredEntry<String>> rankInfos = inviteRank.entryRangeReversed(0, topN - 1);
+        // 2. 组装数据并返回
+        List<InviteRankInfo> inviteRankInfos = new ArrayList<>();
+        if (rankInfos != null) {
+            for (ScoredEntry<String> rankInfo : rankInfos) {
+                InviteRankInfo inviteRankInfo = new InviteRankInfo();
+                String userId = rankInfo.getValue();
+                if (StringUtils.isNotBlank(userId)) {
+                    User user = userCacheService.getUserById(Long.valueOf(userId));
+                    if (user != null) {
+                        inviteRankInfo.setNickName(user.getNickName());
+                        inviteRankInfo.setAvatar(user.getAvatarUrl());
+                        inviteRankInfo.setInviteScore(rankInfo.getScore().intValue());
+                        inviteRankInfos.add(inviteRankInfo);
+                    }
+                }
+            }
+        }
+        return inviteRankInfos;
+    }
+
+    @Override
+    public Integer getInviteRank(String userId) {
+        Integer rank = inviteRank.revRank(userId);
+        if (rank != null) {
+            return rank + 1;
+        }
+        return null;
+    }
+
+    private void updateInviteRank(String inviterId) {
+        // 1. 没有邀请人直接返回
+        if (inviterId == null) {
+            return;
+        }
+        // 2. 创建锁
+        RLock rLock = redissonClient.getLock(inviterId);
+        // 3. 加锁
+        rLock.lock();
+        try {
+            // 4. 执行任务
+            Double score = inviteRank.getScore(inviterId);
+            if (score == null) {
+                score = 0.0;
+            }
+            long currentTimeStamp = System.currentTimeMillis(); // 13位
+            double timePartScore = 1 - (double) currentTimeStamp / 10000000000000L;
+            inviteRank.add(score.intValue() + 100.0 + timePartScore, inviterId);
+        } finally {
+            // 5. 释放锁
+            rLock.unlock();
+        }
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        this.inviteRank = redissonClient.getScoredSortedSet("inviteRank");
+    }
 }

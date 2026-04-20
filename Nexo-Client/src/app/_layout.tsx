@@ -23,7 +23,7 @@ const AuthLayout = () => {
     if (isLoading) return
 
     if (session && segments[0] === '(auth)') {
-      router.replace('/home/home')
+      router.replace('/account/account')
     }
   }, [session, segments, isLoading, router])
 
@@ -51,13 +51,6 @@ const AuthLayout = () => {
       />
 
       <Stack.Screen
-        name="notification"
-        options={{
-          headerShown: false,
-        }}
-      />
-
-      <Stack.Screen
         name="setting"
         options={{
           headerShown: false,
@@ -68,6 +61,14 @@ const AuthLayout = () => {
         name="order"
         options={{
           title: '订单',
+          headerShown: true,
+        }}
+      />
+
+      <Stack.Screen
+        name="my-assets"
+        options={{
+          title: '我的数字资产',
           headerShown: true,
         }}
       />

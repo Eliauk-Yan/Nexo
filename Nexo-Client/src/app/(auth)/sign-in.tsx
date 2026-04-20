@@ -32,6 +32,7 @@ export default function SignIn() {
   const { signIn } = useSession()
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [agreed, setAgreed] = useState(false)
 
@@ -40,11 +41,41 @@ export default function SignIn() {
   }, [phone])
 
   const isCodeValid = useMemo(() => code.trim().length === 6, [code])
-  const canSendCode = isPhoneValid && agreed && !loading
-  const canLogin = isPhoneValid && isCodeValid && agreed && !loading
+  const canSendCode = isPhoneValid && !loading
+  const canLogin = isPhoneValid && isCodeValid && !loading
+
+  const confirmAgreement = () => {
+    if (agreed) return Promise.resolve(true)
+
+    return new Promise<boolean>((resolve) => {
+      Alert.alert(
+        '用户协议与隐私政策',
+        '请阅读并同意《用户协议》和《隐私政策》后继续。',
+        [
+          {
+            text: '不同意',
+            style: 'cancel',
+            onPress: () => resolve(false),
+          },
+          {
+            text: '同意',
+            onPress: () => {
+              setAgreed(true)
+              resolve(true)
+            },
+          },
+        ],
+        {
+          cancelable: true,
+          onDismiss: () => resolve(false),
+        },
+      )
+    })
+  }
 
   const handleSendCode = async () => {
     if (!canSendCode) return
+    if (!(await confirmAgreement())) return
 
     setLoading(true)
     try {
@@ -59,6 +90,7 @@ export default function SignIn() {
 
   const handleLogin = async () => {
     if (!canLogin) return
+    if (!(await confirmAgreement())) return
 
     setLoading(true)
     try {
@@ -66,6 +98,7 @@ export default function SignIn() {
         phone,
         verifyCode: code,
         rememberMe: true,
+        inviteCode: inviteCode.trim() || undefined,
       })
       const token = response.token
       let userInfo = response.userInfo
@@ -79,11 +112,58 @@ export default function SignIn() {
       }
 
       signIn(token, userInfo!)
-      router.replace('/account/account')
     } catch (error) {
       Alert.alert('登录失败', error instanceof Error ? error.message : '登录失败')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleAppleLogin = async () => {
+    if (loading) return
+    if (!(await confirmAgreement())) return
+
+    try {
+      const isAvailable = await AppleAuthentication.isAvailableAsync()
+      if (!isAvailable) {
+        Alert.alert('提示', '当前设备不支持 Apple 登录')
+        return
+      }
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      })
+      setLoading(true)
+      try {
+        const response = await authApi.appleLogin({
+          identityToken: credential.identityToken!,
+          authorizationCode: credential.authorizationCode,
+          user: credential.fullName?.givenName
+            ? `${credential.fullName?.familyName || ''}${credential.fullName?.givenName || ''}`
+            : null,
+        })
+
+        const token = response.token
+        let userInfo = response.userInfo
+
+        if (!userInfo?.nickName && !userInfo?.avatarUrl) {
+          try {
+            userInfo = await authApi.getCurrentUser(token)
+          } catch {
+            userInfo = { id: '', nickName: '', avatarUrl: '', role: '' }
+          }
+        }
+
+        signIn(token, userInfo!)
+      } finally {
+        setLoading(false)
+      }
+    } catch (e: any) {
+      if (e.code === 'ERR_REQUEST_CANCELED') {
+        // 用户取消，可以忽略
+      }
     }
   }
 
@@ -151,6 +231,17 @@ export default function SignIn() {
             </HStack>
           </Section>
 
+          <Section title="邀请码">
+            <TextField
+              placeholder="请输入邀请码（选填）"
+              keyboardType="default"
+              autocorrection={false}
+              allowNewlines={false}
+              defaultValue={inviteCode}
+              onChangeText={(value) => setInviteCode(value.trim().slice(0, 20))}
+            />
+          </Section>
+
           <Section modifiers={[listRowBackground('clear')]}>
             <RNHostView matchContents={true}>
               <View style={styles.socialArea}>
@@ -160,54 +251,7 @@ export default function SignIn() {
                     icon="apple"
                     size={22}
                     color="#111827"
-                    onPress={async () => {
-                      if (!agreed) {
-                        return Alert.alert('提示', '请先阅读并同意《用户协议》和《隐私政策》')
-                      }
-                      try {
-                        const isAvailable = await AppleAuthentication.isAvailableAsync()
-                        if (!isAvailable) {
-                          Alert.alert('提示', '当前设备不支持 Apple 登录')
-                          return
-                        }
-                        const credential = await AppleAuthentication.signInAsync({
-                          requestedScopes: [
-                            AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-                            AppleAuthentication.AppleAuthenticationScope.EMAIL,
-                          ],
-                        })
-                        setLoading(true)
-                        try {
-                          const response = await authApi.appleLogin({
-                            identityToken: credential.identityToken!,
-                            authorizationCode: credential.authorizationCode,
-                            user: credential.fullName?.givenName
-                              ? `${credential.fullName?.familyName || ''}${credential.fullName?.givenName || ''}`
-                              : null,
-                          })
-
-                          const token = response.token
-                          let userInfo = response.userInfo
-
-                          if (!userInfo?.nickName && !userInfo?.avatarUrl) {
-                            try {
-                              userInfo = await authApi.getCurrentUser(token)
-                            } catch {
-                              userInfo = { id: '', nickName: '', avatarUrl: '', role: '' }
-                            }
-                          }
-
-                          signIn(token, userInfo!)
-                          router.replace('/account/account')
-                        } finally {
-                          setLoading(false)
-                        }
-                      } catch (e: any) {
-                        if (e.code === 'ERR_REQUEST_CANCELED') {
-                          // 用户取消，可以忽略
-                        }
-                      }
-                    }}
+                    onPress={() => void handleAppleLogin()}
                   />
                 </View>
               </View>

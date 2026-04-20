@@ -1,39 +1,46 @@
-# redis 配置
 spring:
   data:
     redis:
-      host: 47.99.39.81 # redis 地址
-      port: 6379 # redis 端口
-      password: B@n@n@_La15_YSJ # redis 密码
-      database: 1 # redis 数据库
-      lettuce: # lettuce 连接池
-        pool: # 连接池
-          max-active: 32 # 连接池最大连接数
-          max-idle: 16 # 连接池最大空闲数
-          min-idle: 8 # 连接池最小空闲数
-      # Redisson 配置
-      redisson:
-        threads: 16
-        nettyThreads: 32
+      host: 47.99.39.81
+      port: 6379
+      database: 1
+      password: B@n@n@_La15_YSJ
+      timeout: 10s
+      connect-timeout: 5s
+      ssl:
+        enabled: false
+
+  redis:
+    redisson:
+      config: |
         singleServerConfig:
           address: "redis://47.99.39.81:6379"
           password: "B@n@n@_La15_YSJ"
           database: 1
-          connectionPoolSize: 64
-          connectionMinimumIdleSize: 24
-          retryInterval: 1500
-          timeout: 3000
-# JetCache 配置
+          idleConnectionTimeout: 30000
+          connectTimeout: 5000
+          timeout: 5000
+          retryAttempts: 3
+          subscriptionsPerConnection: 5
+          subscriptionConnectionMinimumIdleSize: 1
+          subscriptionConnectionPoolSize: 5
+          connectionMinimumIdleSize: 2
+          connectionPoolSize: 16
+          dnsMonitoringInterval: 5000
+        threads: 4
+        nettyThreads: 4
+        transportMode: "NIO"
+
 jetcache:
-  statIntervalMinutes: 15 # 统计间隔
-  areaInCacheName: false # 缓存名称中不包含 area
-  local: # 本地一级缓存
+  statIntervalMinutes: 15
+  areaInCacheName: false
+  local:
     default:
-      type: caffeine # 缓存类型
-      keyConvertor: fastjson2 # 缓存 key 转换器
-  remote: # 远程二级缓存
+      type: caffeine
+      keyConvertor: fastjson2
+  remote:
     default:
-      type: redisson # 缓存类型
-      keyConvertor: fastjson2 # 缓存 key 转换器
-      valueEncoder: java # 缓存 value 编码器，将 value 转换成 byte[]
-      valueDecoder: java # 缓存 value 解码器，将 byte[] 转换成 value
+      type: redisson
+      keyConvertor: fastjson2
+      valueEncoder: java
+      valueDecoder: java

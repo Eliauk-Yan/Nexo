@@ -54,10 +54,16 @@ public class User extends BaseEntity {
     @TableField(typeHandler = AesEncryptTypeHandler.class)
     private String idCard;
 
-    public void register(String defaultNickName, String phone) {
+    private String inviteCode;
+
+    private String inviteId;
+
+    public void register(String defaultNickName, String phone, String inviteId, String myInviteCode) {
         this.nickName = defaultNickName;
         this.phone = phone;
         this.role = UserRole.COLLECTOR;
         this.state = UserState.INIT;
+        this.inviteId = inviteId;
+        this.inviteCode = myInviteCode;
     }
 }

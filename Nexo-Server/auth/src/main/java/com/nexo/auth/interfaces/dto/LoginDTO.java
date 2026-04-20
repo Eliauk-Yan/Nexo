@@ -15,6 +15,8 @@ public class LoginDTO {
 
     private String verifyCode;
 
+    private String inviteCode;
+
     private Boolean rememberMe;
 
 }

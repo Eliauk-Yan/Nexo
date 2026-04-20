@@ -43,32 +43,29 @@ public class NotificationFacadeImpl implements NotificationFacade {
         stringRedisTemplate.opsForValue().set(CAPTCHA_KEY_PREFIX + phone, verifyCode, Duration.ofMinutes(5));
         // 4. 保存通知信息
         Notification notification = notificationService.saveSmsNotification(phone, verifyCode);
-        // TODO 暂时测试
-        if (false) {
-            // 5. 异步发送信息
-            smsService.sendSmsVerifyCode(notification.getTarget(), notification.getContent())
-                    .whenCompleteAsync((response, throwable) -> {
-                        if (throwable != null) {
-                            // 5.1 有异常发送失败
-                            log.error("短信发送异常: {}", throwable.getMessage(), throwable);
-                            notification.setStatus(NotificationState.FAILED);
-                            notificationService.updateById(notification);
-                        } else if (response != null && response.getBody().getSuccess()) {
-                            // 5.2 发送成功
-                            log.info("短信发送成功，手机号: {}", notification.getTarget());
-                            notification.setStatus(NotificationState.SUCCESS);
-                            notification.setSuccessTime(LocalDateTime.now());
-                            notificationService.updateById(notification);
-                        } else {
-                            // 5.3 无异常但响应失败 频繁发送... 没有额度...
-                            String errorMsg = (response != null) ? response.getBody().getMessage() : "未知错误";
-                            log.error("短信发送失败: {}", errorMsg);
-                            notification.setStatus(NotificationState.FAILED);
-                            notification.setFailMessage(errorMsg);
-                            notificationService.updateById(notification);
-                        }
-                    });
-        }
+        // 5. 异步发送信息
+        smsService.sendSmsVerifyCode(notification.getTarget(), notification.getContent())
+                .whenCompleteAsync((response, throwable) -> {
+                    if (throwable != null) {
+                        // 5.1 有异常发送失败
+                        log.error("短信发送异常: {}", throwable.getMessage(), throwable);
+                        notification.setStatus(NotificationState.FAILED);
+                        notificationService.updateById(notification);
+                    } else if (response != null && response.getBody().getSuccess()) {
+                        // 5.2 发送成功
+                        log.info("短信发送成功，手机号: {}", notification.getTarget());
+                        notification.setStatus(NotificationState.SUCCESS);
+                        notification.setSuccessTime(LocalDateTime.now());
+                        notificationService.updateById(notification);
+                    } else {
+                        // 5.3 无异常但响应失败 频繁发送... 没有额度...
+                        String errorMsg = (response != null) ? response.getBody().getMessage() : "未知错误";
+                        log.error("短信发送失败: {}", errorMsg);
+                        notification.setStatus(NotificationState.FAILED);
+                        notification.setFailMessage(errorMsg);
+                        notificationService.updateById(notification);
+                    }
+                });
         // 6. 返回结果
         NotificationResponse response = new NotificationResponse();
         response.setSuccess(true);

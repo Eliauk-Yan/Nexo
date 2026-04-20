@@ -1,5 +1,5 @@
 // 路由认证(参考官网): https://docs.expo.dev/router/advanced/authentication/
-import { use, createContext, type PropsWithChildren } from 'react'
+import { use, createContext, useCallback, useMemo, type PropsWithChildren } from 'react'
 import type { UserInfo } from '@/api/auth'
 
 // 用于将认证状态（如 Token）持久化到手机本地存储中，防止重启 App 后登录失效
@@ -57,25 +57,30 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const [[isUserLoading, user], setUser] = useStorageState<UserInfo>('userinfo')
 
   const isLoading = isSessionLoading || isUserLoading
+  const signIn = useCallback(
+    (token: string, userInfo: UserInfo) => {
+      setSession(token)
+      setUser(userInfo)
+    },
+    [setSession, setUser],
+  )
+  const signOut = useCallback(() => {
+    setSession(null)
+    setUser(null)
+  }, [setSession, setUser])
+  const value = useMemo(
+    () => ({
+      signIn,
+      signOut,
+      session,
+      user,
+      isLoading,
+    }),
+    [isLoading, session, signIn, signOut, user],
+  )
 
   return (
-    <AuthContext.Provider
-      value={{
-        // 执行登录：调用 setSession 将 token 写入本地存储
-        signIn: (token: string, userInfo: UserInfo) => {
-          setSession(token)
-          setUser(userInfo)
-        },
-        // 执行登出：将本地存储的 token 设为 null
-        signOut: () => {
-          setSession(null)
-          setUser(null)
-        },
-        session, // 当前 Token 内容
-        user, // 当前用户信息
-        isLoading, // 初始化加载状态
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {/* 渲染子组件，通常是整个应用的路由系统 */}
       {children}
     </AuthContext.Provider>

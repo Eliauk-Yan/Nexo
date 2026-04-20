@@ -11,6 +11,10 @@ export interface UserInfo {
   email?: string
   /** 链地址/钱包地址 */
   account?: string
+  /** 后端返回的链地址字段 */
+  address?: string
+  /** 我的邀请码 */
+  inviteCode?: string
   /** 实名认证状态 */
   certification?: boolean
   /** 是否绑定了苹果账号 */
@@ -28,12 +32,18 @@ export interface RealNameAuthDTO {
   idCardNo: string
 }
 
+export interface InviteRankInfo {
+  nickName?: string
+  inviteScore?: number
+  avatar?: string
+}
+
 export const userApi = {
   /**
    * 获取用户信息（与后端 Result&lt;UserInfo&gt; 一致）
    */
   getUserProfile: () => {
-    return get<UserInfo>('/user/profile')
+    return get<UserInfo>('/user/profile').then(normalizeUserInfo)
   },
 
   /**
@@ -60,4 +70,35 @@ export const userApi = {
   updateAvatar: (data: FormData) => {
     return put<string>('/user/avatar', data)
   },
+
+  /**
+   * 获取邀请积分排行榜
+   */
+  getInviteTopN: (topN = 100) => {
+    return get<InviteRankInfo[]>('/user/invite/getTopN', { topN })
+  },
+
+  /**
+   * 获取当前用户邀请积分排名
+   */
+  getMyInviteRank: () => {
+    return get<number | null>('/user/invite/getMyRank')
+  },
+}
+
+export function normalizeUserInfo(data?: UserInfo | null): UserInfo {
+  return {
+    id: data?.id ?? '',
+    nickName: data?.nickName,
+    avatarUrl: data?.avatarUrl,
+    role: data?.role,
+    state: data?.state,
+    phone: data?.phone,
+    email: data?.email,
+    address: data?.address,
+    account: data?.address ?? data?.account,
+    inviteCode: data?.inviteCode,
+    certification: data?.certification,
+    hasAppleBound: data?.hasAppleBound,
+  }
 }

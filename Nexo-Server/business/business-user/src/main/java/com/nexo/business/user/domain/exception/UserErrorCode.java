@@ -25,6 +25,12 @@ public enum UserErrorCode implements ErrorCode {
 
     USER_NOT_EXIST("USER_NOT_EXIST", "用户不存在"),
 
+    PHONE_ALREADY_EXISTS("PHONE_ALREADY_EXISTS", "电话号码已被使用"),
+
+    INVITE_CODE_INVALID("INVITE_CODE_INVALID", "邀请码无效"),
+
+    USER_INSERT_FAILED("USER_INSERT_FAILED", "用户插入失败"),
+
     REAL_NAME_AUTH_FAILED("REAL_NAME_AUTH_FAILED", "实名认证失败"),
 
     REAL_NAME_AUTH_SERVICE_ERROR("REAL_NAME_AUTH_SERVICE_ERROR", "实名认证服务错误");

@@ -181,10 +181,6 @@ const Home = () => {
         }}
       />
 
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button icon="bell" onPress={() => router.push('/notification')} />
-      </Stack.Toolbar>
-
       <Stack.SearchBar
         placeholder="搜索藏品"
         onChangeText={(event) => setSearchText(event.nativeEvent.text)}
@@ -198,10 +194,7 @@ const Home = () => {
         keyExtractor={(item) => String(item.id)}
         numColumns={2}
         columnWrapperStyle={styles.row}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          flexGrow: 1,
-        }}
+        contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -220,6 +213,10 @@ const Home = () => {
 const styles = StyleSheet.create({
   rootContainer: {
     flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    flexGrow: 1,
   },
   row: {
     justifyContent: 'space-between',

@@ -23,19 +23,12 @@
         <!-- Spring Cloud Gateway -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-gateway-server-webflux </artifactId>
+            <artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>
         </dependency>
         <dependency>
             <groupId>com.nexo.common.api</groupId>
             <artifactId>common-api</artifactId>
             <version>1.0-SNAPSHOT</version>
-            <!--TODO 临时处理 避免依赖冲突-->
-            <exclusions>
-                <exclusion>
-                    <groupId>com.nexo.common.datasource</groupId>
-                    <artifactId>common-datasource</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!--公共配置模块-->
         <dependency>
@@ -52,14 +45,14 @@
         <!-- Sa-Token 权限认证（Reactor响应式集成）, 在线文档：https://sa-token.cc -->
         <dependency>
             <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-reactor-spring-boot3-starter</artifactId>
-            <version>1.44.0</version>
+            <artifactId>sa-token-reactor-spring-boot4-starter</artifactId>
+            <version>1.45.0</version>
         </dependency>
         <!-- Sa-Token 整合 Redis （使用 jackson 序列化方式） -->
         <dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-redis-jackson</artifactId>
-            <version>1.44.0</version>
+            <version>1.45.0</version>
         </dependency>
         <!-- Sa-Token 集成 Redis -->
         <dependency>

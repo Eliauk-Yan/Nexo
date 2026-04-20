@@ -6,4 +6,5 @@ export { authApi } from './auth';
 export { artworkApi } from './artwork';
 export { tradeApi } from './trade';
 export { orderApi } from './order';
+export { userApi } from './user';
 

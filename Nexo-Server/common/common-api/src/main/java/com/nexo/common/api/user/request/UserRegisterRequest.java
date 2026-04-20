@@ -21,4 +21,6 @@ public class UserRegisterRequest extends BaseRequest {
 
     private String phone;
 
+    private String inviteCode;
+
 }

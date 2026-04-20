@@ -39,14 +39,14 @@
         <!-- Sa-Token 权限认证（SpringBoot3集成）-->
         <dependency>
             <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-spring-boot3-starter</artifactId>
-            <version>1.44.0</version>
+            <artifactId>sa-token-spring-boot4-starter</artifactId>
+            <version>1.45.0</version>
         </dependency>
         <!-- Sa-Token 整合 Redis （使用 jackson 序列化方式） -->
         <dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-redis-jackson</artifactId>
-            <version>1.44.0</version>
+            <version>1.45.0</version>
         </dependency>
         <!-- Sa-Token 集成 Redis -->
         <dependency>

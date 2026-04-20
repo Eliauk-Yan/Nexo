@@ -9,7 +9,8 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
 import com.nexo.common.api.user.constant.UserPermission;
 import com.nexo.common.api.user.constant.UserRole;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -20,8 +21,9 @@ import org.springframework.context.annotation.Configuration;
  * @created by YanShijie
  */
 @Configuration
-@Slf4j
 public class SaTokenConfigure {
+
+    private static final Logger log = LoggerFactory.getLogger(SaTokenConfigure.class);
 
     // 注册 Sa-Token全局过滤器
     @Bean
@@ -30,7 +32,7 @@ public class SaTokenConfigure {
                 // 拦截地址
                 .addInclude("/**")
                 // 开放地址
-                .addExclude("/favicon.ico", "/auth/**", "/artwork/list")
+                .addExclude("/favicon.ico", "/auth/**", "/artwork/list", "/user/invite/getTopN")
                 // 鉴权方法：每次访问进入
                 .setAuth(_ -> {
                     // 登录校验

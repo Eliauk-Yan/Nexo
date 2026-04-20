@@ -3,9 +3,13 @@ package com.nexo.business.user.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.nexo.business.user.domain.entity.User;
 import com.nexo.business.user.interfaces.dto.RealNameAuthDTO;
+import com.nexo.common.api.user.response.data.InviteRankInfo;
 import com.nexo.common.api.user.response.data.UserInfo;
 import com.nexo.common.base.response.PageResponse;
+import jakarta.validation.constraints.Max;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 public interface UserService extends IService<User> {
 
@@ -33,7 +37,7 @@ public interface UserService extends IService<User> {
     /**
      * 用户注册
      */
-    Boolean register(String phone);
+    Boolean register(String phone, String inviteCode);
 
     /**
      * 根据手机号查询用户信息
@@ -64,4 +68,14 @@ public interface UserService extends IService<User> {
      * 根据关键字分页查询用户信息
      */
     PageResponse<User> pageQueryByState(String keyword, String state, String nickName, String role, Boolean certification, int current, int size);
+
+    /**
+     * 获取积分排名前N排名信息
+     */
+    List<InviteRankInfo> getTopN(@Max(100) Integer topN);
+
+    /**
+     * 获取自己排名
+     */
+    Integer getInviteRank(String userId);
 }

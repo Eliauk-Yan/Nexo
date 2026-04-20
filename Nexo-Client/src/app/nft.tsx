@@ -36,15 +36,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { useEvent } from 'expo'
 import ExpoWeChat from 'expo-wechat'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  Alert,
-  Platform,
-  StyleSheet,
-  Text as RNText,
-  TouchableOpacity,
-  useColorScheme,
-  View,
-} from 'react-native'
+import { Alert, Platform, StyleSheet, Text as RNText, TouchableOpacity, View } from 'react-native'
 import Spinner from 'react-native-loading-spinner-overlay'
 
 const STATUS_MAP = {
@@ -106,7 +98,6 @@ const PaymentMethodIcon = ({
 export default function NftDetail() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const router = useRouter()
-  const colorScheme = useColorScheme()
   const { session, isLoading: isSessionLoading } = useSession()
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -383,7 +374,16 @@ export default function NftDetail() {
     } finally {
       setLoading(false)
     }
-  }, [getWeChatConfigError, isOrderSyncingError, payWithRetry, pendingOrderId, pollOrderStatus, selectedPaymentType, waitForOrderReady, wechatConfigured])
+  }, [
+    getWeChatConfigError,
+    isOrderSyncingError,
+    payWithRetry,
+    pendingOrderId,
+    pollOrderStatus,
+    selectedPaymentType,
+    waitForOrderReady,
+    wechatConfigured,
+  ])
 
   const handlePrepareOrder = useCallback(async () => {
     if (pendingOrderId) {
@@ -508,21 +508,21 @@ export default function NftDetail() {
             </Text>
           </Section>
         </List>
-        <BottomSheet
-          isPresented={paymentSheetVisible}
-          onIsPresentedChange={setPaymentSheetVisible}
-        >
-            <Group
-              modifiers={[
-                presentationDetents([{ height: 360 }]),
-                presentationDragIndicator('visible'),
-                interactiveDismissDisabled(loading || purchasing),
-              ]}
-            >
+        <BottomSheet isPresented={paymentSheetVisible} onIsPresentedChange={setPaymentSheetVisible}>
+          <Group
+            modifiers={[
+              presentationDetents([{ height: 360 }]),
+              presentationDragIndicator('visible'),
+              interactiveDismissDisabled(loading || purchasing),
+            ]}
+          >
             <VStack
               spacing={12}
               alignment="center"
-              modifiers={[padding({ top: 24, horizontal: 20, bottom: 8 }), frame({ maxWidth: 9999 })]}
+              modifiers={[
+                padding({ top: 24, horizontal: 20, bottom: 8 }),
+                frame({ maxWidth: 9999 }),
+              ]}
             >
               <Text
                 modifiers={[
@@ -554,22 +554,23 @@ export default function NftDetail() {
                       setSelectedPaymentType(method.type)
                     }}
                   >
-                      <HStack spacing={12}>
-                        <HStack spacing={10}>
-                          <PaymentMethodIcon label={method.iconLabel} backgroundColor={method.iconColor} />
-                          <Text modifiers={[foregroundStyle('#111111')]}>{method.title}</Text>
-                        </HStack>
-                        <Spacer />
-                        <SwiftImage
-                          systemName={
-                            selectedPaymentType === method.type
-                              ? 'checkmark.circle.fill'
-                              : 'circle'
-                          }
-                          size={18}
-                          color={selectedPaymentType === method.type ? '#007AFF' : '#C7C7CC'}
+                    <HStack spacing={12}>
+                      <HStack spacing={10}>
+                        <PaymentMethodIcon
+                          label={method.iconLabel}
+                          backgroundColor={method.iconColor}
                         />
+                        <Text modifiers={[foregroundStyle('#111111')]}>{method.title}</Text>
                       </HStack>
+                      <Spacer />
+                      <SwiftImage
+                        systemName={
+                          selectedPaymentType === method.type ? 'checkmark.circle.fill' : 'circle'
+                        }
+                        size={18}
+                        color={selectedPaymentType === method.type ? '#007AFF' : '#C7C7CC'}
+                      />
+                    </HStack>
                   </Button>
                 ))}
               </Section>
@@ -601,12 +602,7 @@ export default function NftDetail() {
             glassEffectStyle="regular"
             tintColor={artwork.productState === 'SELLING' ? '#007AFF' : 'rgba(142,142,147,0.18)'}
           >
-            <RNText
-              style={[
-                styles.glassButtonText,
-                { color: colorScheme === 'dark' ? '#F2F2F2' : '#000000' },
-              ]}
-            >
+            <RNText style={styles.glassButtonText}>
               {artwork.productState === 'SELLING'
                 ? purchasing
                   ? '购买处理中...'
@@ -666,7 +662,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   glassButtonText: {
-    color: '#111111',
+    color: '#FFFFFF',
     fontSize: 17,
     fontWeight: '700',
   },

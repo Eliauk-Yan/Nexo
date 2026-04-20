@@ -6,7 +6,7 @@ import * as AppleAuthentication from 'expo-apple-authentication'
 import { Stack, useRouter } from 'expo-router'
 import { Host, LabeledContent, List, Section, Text } from '@expo/ui/swift-ui'
 import { listStyle, onTapGesture } from '@expo/ui/swift-ui/modifiers'
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { Alert } from 'react-native'
 
 const defaultProfile: UserInfo = {
@@ -22,12 +22,12 @@ const AccountSecurity = () => {
   const { session, user, signIn, isLoading: isSessionLoading } = useSession()
   const [profile, setProfile] = useState<UserInfo>(defaultProfile)
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     const res = await userApi.getUserProfile()
     const merged = res ? { ...defaultProfile, ...user, ...res } : defaultProfile
     setProfile(merged)
     return res
-  }
+  }, [user])
 
   useEffect(() => {
     if (isSessionLoading) return
@@ -73,7 +73,11 @@ const AccountSecurity = () => {
                     }
                     try {
                       await userApi.realNameAuthentication({ realName: name, idCardNo: idCard })
-                      await refreshProfile()
+                      const newProfile = await refreshProfile()
+                      if (session && newProfile) {
+                        signIn(session, { ...user, ...newProfile })
+                      }
+                      Alert.alert('成功', '实名认证已完成')
                     } catch (err) {
                       console.error('实名认证提交失败', err)
                       Alert.alert('提交失败', '请稍后重试')
@@ -187,7 +191,10 @@ const AccountSecurity = () => {
       })
       Alert.alert('成功', '已成功绑定 Apple 账号')
       // 绑定成功后刷新 profile 以更新状态
-      await refreshProfile()
+      const newProfile = await refreshProfile()
+      if (session && newProfile) {
+        signIn(session, { ...user, ...newProfile })
+      }
     } catch (e: any) {
       if (e.code === 'ERR_REQUEST_CANCELED') {
         // 用户取消，忽略

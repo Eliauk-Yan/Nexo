@@ -7,11 +7,6 @@ import com.nexo.auth.interfaces.vo.LoginVO;
 public interface AuthService {
 
     /**
-     * 发送短信验证码
-     */
-    Boolean sendSmsVerifyCode(String phone);
-
-    /**
      * 登录
      */
     LoginVO login(LoginDTO request);

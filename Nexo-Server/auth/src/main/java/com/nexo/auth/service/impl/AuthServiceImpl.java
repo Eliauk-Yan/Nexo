@@ -9,8 +9,6 @@ import com.nexo.auth.interfaces.dto.LoginDTO;
 import com.nexo.auth.interfaces.vo.LoginVO;
 import com.nexo.auth.domain.exception.AuthException;
 import com.nexo.auth.service.AuthService;
-import com.nexo.common.api.notification.NotificationFacade;
-import com.nexo.common.api.notification.response.NotificationResponse;
 import com.nexo.common.api.user.UserFacade;
 import com.nexo.common.api.user.constant.UserRole;
 import com.nexo.common.api.user.request.UserQueryRequest;
@@ -47,24 +45,11 @@ public class AuthServiceImpl implements AuthService {
     private final StringRedisTemplate stringRedisTemplate;
 
     /**
-     * 通知服务接口
-     */
-    @DubboReference(version = "1.0.0")
-    private NotificationFacade notificationFacade;
-
-    /**
      * 用户服务接口
      */
     @DubboReference(version = "1.0.0")
     private UserFacade userFacade;
 
-    @Override
-    public Boolean sendSmsVerifyCode(String phone) {
-        // 1. 发送验证码
-        NotificationResponse response = notificationFacade.sendSmsVerifyCode(phone);
-        // 2. 返回结果
-        return response.getSuccess();
-    }
 
     @Override
     public LoginVO login(LoginDTO request) {
@@ -77,6 +62,7 @@ public class AuthServiceImpl implements AuthService {
             // 3.1 构造注册请求
             UserRegisterRequest registerRequest = new UserRegisterRequest();
             registerRequest.setPhone(request.getPhone());
+            registerRequest.setInviteCode(request.getInviteCode());
             // 3.2 注册用户
             UserResponse register = userFacade.register(registerRequest);
             // 4. 返回结果

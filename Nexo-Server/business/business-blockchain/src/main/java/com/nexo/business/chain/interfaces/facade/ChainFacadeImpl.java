@@ -45,6 +45,8 @@ public class ChainFacadeImpl implements ChainFacade {
         return getChainService().mint(request);
     }
 
+
+
     private ChainService getChainService() {
         if (ProfileConstant.DEV.equals(profile)) {
             return chainServiceFactory.get(ChainType.MOCK);

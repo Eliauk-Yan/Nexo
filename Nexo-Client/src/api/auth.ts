@@ -1,5 +1,5 @@
 import { post, get } from '@/utils/request'
-import type { UserInfo as UserInfoProfile } from '@/api/user'
+import { normalizeUserInfo, type UserInfo as UserInfoProfile } from '@/api/user'
 
 /**
  * 登录表单
@@ -8,6 +8,7 @@ export interface LoginForm {
   phone: string
   verifyCode: string
   rememberMe: boolean
+  inviteCode?: string
 }
 
 /** 会话中的用户信息，与 api/user 的 UserInfo 兼容 */
@@ -44,20 +45,29 @@ export const authApi = {
       phone: data.phone,
       verifyCode: data.verifyCode,
       rememberMe: data.rememberMe ?? true,
+      ...(data.inviteCode ? { inviteCode: data.inviteCode } : {}),
     })
   },
 
   /**
    * Apple 登录
    */
-  appleLogin: (data: { identityToken: string; authorizationCode: string | null; user: string | null }) => {
+  appleLogin: (data: {
+    identityToken: string
+    authorizationCode: string | null
+    user: string | null
+  }) => {
     return post('/auth/login/apple', data)
   },
 
   /**
    * Apple 绑定
    */
-  bindApple: (data: { identityToken: string; authorizationCode: string | null; user: string | null }) => {
+  bindApple: (data: {
+    identityToken: string
+    authorizationCode: string | null
+    user: string | null
+  }) => {
     return post('/auth/bind/apple', data)
   },
 
@@ -73,18 +83,7 @@ export const authApi = {
    * @param token 登录后拿到的 token，用于首次请求（此时尚未写入存储）
    */
   getCurrentUser: (token: string) => {
-    return get<UserInfoProfile>('/user/profile', undefined, { token }).then((data) => ({
-      id: data?.id ?? '',
-      nickName: data?.nickName ?? '',
-      avatarUrl: data?.avatarUrl ?? '',
-      role: data?.role ?? '',
-      phone: data?.phone,
-      email: data?.email,
-      // 后端目前返回的是 address，这里兼容映射到前端使用的 account 字段
-      account: (data as any).address ?? (data as any).account,
-      certification: data?.certification,
-      state: data?.state,
-    }))
+    return get<UserInfoProfile>('/user/profile', undefined, { token }).then(normalizeUserInfo)
   },
 
   /**

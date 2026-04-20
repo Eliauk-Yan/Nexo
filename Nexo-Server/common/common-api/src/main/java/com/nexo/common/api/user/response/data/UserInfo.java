@@ -35,8 +35,9 @@ public class UserInfo implements Serializable {
 
     private String address;
 
+    private String inviteCode;
+
     private Boolean certification;
 
     private Boolean hasAppleBound;
-
 }

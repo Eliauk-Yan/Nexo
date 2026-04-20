@@ -4,7 +4,7 @@ import com.nexo.common.api.notification.response.NotificationResponse;
 
 /**
  * @classname NotificationFacade
- * @description 通知服务对外接口（供其他模块调用）
+ * @description 通知服务对外接口
  * @date 2025/11/28 15:45
  * @created by YanShijie
  */

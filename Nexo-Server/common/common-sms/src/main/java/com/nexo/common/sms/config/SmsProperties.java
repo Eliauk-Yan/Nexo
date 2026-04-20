@@ -26,7 +26,7 @@ public class SmsProperties {
     private String templateCode;
 
     /**
-     * 检查必需配置是否完整
+     * 检查配置是否完整
      */
     public boolean isConfigCompleted() {
         return accessKeyId != null && accessKeySecret != null

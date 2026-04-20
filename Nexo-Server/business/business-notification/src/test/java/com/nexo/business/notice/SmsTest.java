@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-
 /**
  * @classname SmsTest
  * @description 测试短信服务
@@ -19,8 +18,15 @@ public class SmsTest {
     SmsService smsService;
 
     @Test
-    void testSms() {
-        smsService.sendSmsVerifyCode("15114785913", "888888");
+    public void testSms() {
+        smsService.sendSmsVerifyCode("15114785913", "888888").whenCompleteAsync((success, failure) -> {
+            if (failure != null) {
+                System.out.println(failure.getMessage());
+            } else  {
+                System.out.println(success);
+            }
+        });
+
     }
 
 }

@@ -25,10 +25,10 @@
             <artifactId>common-cache</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
-        <!-- Spring AOP -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
+            <version>4.0.0-M2</version>
         </dependency>
     </dependencies>
 

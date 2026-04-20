@@ -9,8 +9,6 @@ type ThemeMode = 'system' | 'light' | 'dark'
 const GeneralSetting = () => {
   const router = useRouter()
 
-  const [pushNotification, setPushNotification] = useState(true)
-
   // 默认跟随系统
   const [themeMode, setThemeMode] = useState<ThemeMode>('system')
 
@@ -66,14 +64,6 @@ const GeneralSetting = () => {
                 {themeMode === 'system' ? '跟随系统' : themeMode === 'dark' ? '深色' : '浅色'}
               </Text>
             </LabeledContent>
-          </Section>
-          <Section title="通知">
-            <Toggle
-              label="推送通知"
-              systemImage="bell.fill"
-              isOn={pushNotification}
-              onIsOnChange={setPushNotification}
-            />
           </Section>
           <Section title="关于">
             <LabeledContent label="版本号">

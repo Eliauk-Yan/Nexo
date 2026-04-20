@@ -52,7 +52,7 @@ public class UserFacadeImpl implements UserFacade {
     @Override
     public UserResponse register(UserRegisterRequest request) {
         // 1. 注册用户
-        Boolean result = userService.register(request.getPhone());
+        Boolean result = userService.register(request.getPhone(), request.getInviteCode());
         // 2. 组装响应结果
         UserResponse response = new UserResponse();
         response.setSuccess(result);

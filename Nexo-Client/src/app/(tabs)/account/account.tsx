@@ -1,23 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import Feather from '@expo/vector-icons/Feather'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import React, { useMemo, useState } from 'react'
 import { Stack, useFocusEffect, useRouter } from 'expo-router'
-import { Alert, Image as RNImage, Pressable, StyleSheet, Text as RNText, View, useColorScheme, ActivityIndicator } from 'react-native'
-import { Image as ExpoImage } from 'expo-image'
+import { Alert, Image as RNImage, StyleSheet, View } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import * as Haptics from 'expo-haptics'
 
 import {
-  BottomSheet,
   Button,
-  Group,
   HStack,
   Host,
   Image,
   List,
   Popover,
   RNHostView,
-  ScrollView,
   Section,
   Spacer,
   Text,
@@ -28,183 +22,67 @@ import {
   buttonStyle,
   controlSize,
   font,
-  frame,
   foregroundStyle,
   listStyle,
-  multilineTextAlignment,
   onTapGesture,
   padding,
-  presentationDetents,
-  presentationDragIndicator,
   tint,
 } from '@expo/ui/swift-ui/modifiers'
 
-import { artworkApi, Asset } from '@/api/artwork'
-import { borderRadius, colors, spacing, typography } from '@/config/theme'
 import { useSession } from '@/utils/ctx'
-
-function chunk<T>(arr: T[], size: number) {
-  const result: T[][] = []
-  for (let i = 0; i < arr.length; i += size) {
-    result.push(arr.slice(i, i + size))
-  }
-  return result
-}
-
-function EmptyAssets() {
-  return (
-    <View style={styles.emptyContainer}>
-      <Feather name="inbox" size={48} color="#8E8E93" />
-      <RNText style={styles.emptyText}>暂无相关藏品</RNText>
-    </View>
-  )
-}
-
-function getAssetStateLabel(state?: string) {
-  switch (state) {
-    case 'INIT':
-      return '铸造中'
-    case 'ACTIVE':
-      return '已持有'
-    default:
-      return '已失效'
-  }
-}
-
-function AssetCard({ asset }: { asset: Asset }) {
-  const colorScheme = useColorScheme()
-  const isDark = colorScheme === 'dark'
-
-  const cardBg = isDark ? colors.backgroundCard : '#FFFFFF'
-  const cardBorder = isDark ? colors.border : 'rgba(15, 23, 42, 0.08)'
-  const frameBg = isDark ? colors.backgroundSecondary : '#F3F4F6'
-  const titleColor = isDark ? colors.text : '#111827'
-  const secondaryText = isDark ? colors.textSecondary : '#6B7280'
-  const badgeBg = isDark ? 'rgba(0,0,0,0.58)' : 'rgba(255,255,255,0.92)'
-  const badgeBorder = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(15, 23, 42, 0.08)'
-  const priceColor = '#0A84FF'
-  const badgeText = '#0A84FF'
-  const shadowOpacity = isDark ? 0.12 : 0.06
-
-  return (
-    <View style={styles.assetCardOuter}>
-      <View
-        style={[
-          styles.assetCardContainer,
-          {
-            backgroundColor: cardBg,
-            borderColor: cardBorder,
-            shadowOpacity,
-          },
-        ]}
-      >
-        <View style={styles.assetImageContainer}>
-          <View style={[styles.assetImageFrame, { backgroundColor: frameBg }]}>
-            <RNImage source={{ uri: asset.artworkCover }} style={styles.assetImage} />
-          </View>
-
-          <View
-            style={[
-              styles.assetStatusBadge,
-              {
-                backgroundColor: badgeBg,
-                borderColor: badgeBorder,
-              },
-            ]}
-          >
-            <RNText style={[styles.assetStatusText, { color: badgeText }]}>
-              {getAssetStateLabel(asset.state)}
-            </RNText>
-          </View>
-        </View>
-
-        <View style={styles.assetInfoContainer}>
-          <RNText style={[styles.assetTitle, { color: titleColor }]} numberOfLines={1}>
-            {asset.artworkName}
-          </RNText>
-
-          <View style={styles.assetSerialContainer}>
-            <MaterialCommunityIcons name="barcode-scan" size={12} color={secondaryText} />
-            <RNText style={[styles.assetSerialText, { color: secondaryText }]} numberOfLines={1}>
-              #{asset.serialNumber ? `${asset.serialNumber.substring(0, 8)}...` : '-'}
-            </RNText>
-          </View>
-
-          <View style={styles.assetFooter}>
-            <View style={styles.assetPriceContainer}>
-              <RNText style={[styles.assetPriceLabel, { color: secondaryText }]}>买入价</RNText>
-              <RNText style={[styles.assetPriceValue, { color: priceColor }]}>
-                ¥{asset.purchasePrice}
-              </RNText>
-            </View>
-          </View>
-        </View>
-      </View>
-    </View>
-  )
-}
+import { userApi } from '@/api/user'
 
 export default function ProfileScreen() {
   const router = useRouter()
-  const { user, session } = useSession()
+  const { user, session, signIn } = useSession()
   const isLogin = !!session
 
-  const [assets, setAssets] = useState<Asset[]>([])
-  const [loading, setLoading] = useState(false)
   const [isAccountPopoverPresented, setIsAccountPopoverPresented] = useState(false)
-  const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
-  const [isAssetSheetPresented, setIsAssetSheetPresented] = useState(false)
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!session) return
+
+      let isActive = true
+      userApi
+        .getUserProfile()
+        .then((profile) => {
+          if (isActive) {
+            signIn(session, profile)
+          }
+        })
+        .catch((error) => {
+          console.error('刷新用户信息失败', error)
+        })
+
+      return () => {
+        isActive = false
+      }
+    }, [session, signIn]),
+  )
 
   const handleCopy = async (text: string, label: string) => {
     try {
       await Clipboard.setStringAsync(text)
       try {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-      } catch (hapticError) {
+      } catch {
         // Haptics might not be available
       }
       Alert.alert('提示', `${label}已复制到剪贴板`)
     } catch (error) {
       console.error('Clipboard error:', error)
-      // Fallback: If native module is missing, still show the alert but warn about the copy failure
-      // or just rely on the user being able to long-press if we set selectable={true}
       Alert.alert('复制失败', '无法自动复制，请长按文本进行手动选择复制。')
     }
   }
-  const fetchMyAssets = useCallback(async () => {
-    if (!isLogin) {
-      setAssets([])
-      return
-    }
 
-    try {
-      setLoading(true)
-      const response = await artworkApi.getMyAssets(1, 20)
-      const items = (response as any).records || response || []
-      setAssets(Array.isArray(items) ? items : [])
-    } catch (error) {
-      console.error(error)
-    } finally {
-      setLoading(false)
-    }
-  }, [isLogin])
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchMyAssets().catch(() => { })
-    }, [fetchMyAssets]),
-  )
-
-  useEffect(() => {
-    fetchMyAssets().catch(() => { })
-  }, [fetchMyAssets])
-
-  const assetRows = useMemo(() => chunk(assets, 2), [assets])
   const shortAccount = useMemo(() => {
     if (!user?.account) return '暂未绑定链地址'
     if (user.account.length <= 18) return user.account
     return `${user.account.slice(0, 8)}...${user.account.slice(-6)}`
   }, [user?.account])
+
+  const inviteCode = user?.inviteCode || '暂无邀请码'
 
   return (
     <>
@@ -216,7 +94,7 @@ export default function ProfileScreen() {
       />
 
       <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button icon="bell" onPress={() => router.push('/notification')} />
+        <Stack.Toolbar.Button icon="gearshape" onPress={() => router.push('/setting')} />
       </Stack.Toolbar>
 
       <Host style={styles.host}>
@@ -238,7 +116,7 @@ export default function ProfileScreen() {
                   </View>
                 </RNHostView>
 
-                <VStack spacing={6}>
+                <VStack alignment="leading" spacing={6}>
                   <Text
                     modifiers={[font({ size: 24, weight: 'bold' }), foregroundStyle('primary')]}
                   >
@@ -246,7 +124,7 @@ export default function ProfileScreen() {
                   </Text>
 
                   {!isLogin ? (
-                    <Text modifiers={[font({ size: 14 }), foregroundStyle('secondary')]}>
+                    <Text modifiers={[font({ size: 10 }), foregroundStyle('secondary')]}>
                       登录后可以查看更多功能
                     </Text>
                   ) : (
@@ -268,8 +146,8 @@ export default function ProfileScreen() {
                         />
                       </Popover.Trigger>
                       <Popover.Content>
-                        <VStack spacing={8} modifiers={[padding({ all: 12 })]}>
-                          <Text modifiers={[font({ size: 12 }), foregroundStyle('secondary')]}>
+                        <VStack>
+                          <Text modifiers={[font({ size: 10 }), foregroundStyle('secondary')]}>
                             链账户地址
                           </Text>
                           <Button
@@ -305,6 +183,29 @@ export default function ProfileScreen() {
             </VStack>
           </Section>
 
+          {isLogin && (
+            <Section title="我的邀请">
+              <HStack
+                spacing={12}
+                modifiers={[
+                  padding({ vertical: 10 }),
+                  onTapGesture(() => {
+                    if (user?.inviteCode) {
+                      handleCopy(user.inviteCode, '邀请码')
+                    }
+                  }),
+                ]}
+              >
+                <Image systemName="person.2.fill" size={18} color="#0A84FF" />
+                <Text modifiers={[font({ size: 16, weight: 'medium' })]}>邀请码</Text>
+                <Spacer />
+                <Text modifiers={[font({ size: 15 }), foregroundStyle('secondary')]}>
+                  {inviteCode}
+                </Text>
+              </HStack>
+            </Section>
+          )}
+
           <Section title="快捷入口">
             <HStack
               spacing={12}
@@ -312,6 +213,16 @@ export default function ProfileScreen() {
             >
               <Image systemName="bag.fill" size={18} color="#0A84FF" />
               <Text modifiers={[font({ size: 16, weight: 'medium' })]}>订单</Text>
+              <Spacer />
+              <Image systemName="chevron.right" size={13} color="#8E8E93" />
+            </HStack>
+
+            <HStack
+              spacing={12}
+              modifiers={[padding({ vertical: 10 }), onTapGesture(() => router.push('/my-assets'))]}
+            >
+              <Image systemName="rectangle.stack.fill" size={18} color="#0A84FF" />
+              <Text modifiers={[font({ size: 16, weight: 'medium' })]}>我的数字资产</Text>
               <Spacer />
               <Image systemName="chevron.right" size={13} color="#8E8E93" />
             </HStack>
@@ -328,153 +239,8 @@ export default function ProfileScreen() {
               <Spacer />
               <Image systemName="chevron.right" size={13} color="#8E8E93" />
             </HStack>
-
-            <HStack
-              spacing={12}
-              modifiers={[padding({ vertical: 10 }), onTapGesture(() => router.push('/setting'))]}
-            >
-              <Image systemName="gearshape.fill" size={18} color="#0A84FF" />
-              <Text modifiers={[font({ size: 16, weight: 'medium' })]}>设置</Text>
-              <Spacer />
-              <Image systemName="chevron.right" size={13} color="#8E8E93" />
-            </HStack>
           </Section>
-
-          {!isLogin ? (
-            <Section title="数字资产">
-              <RNHostView matchContents>
-                <EmptyAssets />
-              </RNHostView>
-            </Section>
-          ) : (
-            <Section title="我的数字资产">
-              {assets.length > 0 ? (
-                <ScrollView>
-                  <VStack spacing={12} modifiers={[padding({ vertical: 8 })]}>
-                    {assetRows.map((row, rowIndex) => (
-                      <HStack key={rowIndex} spacing={12}>
-                        {row.map((item) => (
-                          <RNHostView key={String(item.id)} matchContents>
-                            <View style={styles.assetCardWrap}>
-                              <Pressable
-                                onPress={() => {
-                                  setSelectedAsset(item)
-                                  setIsAssetSheetPresented(true)
-                                }}
-                              >
-                                <AssetCard asset={item} />
-                              </Pressable>
-                            </View>
-                          </RNHostView>
-                        ))}
-                        {row.length === 1 ? <View style={styles.assetCardWrap} /> : null}
-                      </HStack>
-                    ))}
-                  </VStack>
-                </ScrollView>
-              ) : loading ? (
-                <View style={styles.loadingWrapper}>
-                  <ActivityIndicator size="small" color="#0A84FF" />
-                  <RNText style={styles.loadingText}>加载中...</RNText>
-                </View>
-              ) : (
-                <RNHostView matchContents>
-                  <EmptyAssets />
-                </RNHostView>
-              )}
-            </Section>
-          )}
         </List>
-
-        <BottomSheet
-          isPresented={isAssetSheetPresented}
-          onIsPresentedChange={setIsAssetSheetPresented}
-        >
-          <Group
-            modifiers={[
-              presentationDetents([{ height: 500 }]),
-              presentationDragIndicator('visible'),
-            ]}
-          >
-            {selectedAsset && (
-              <VStack spacing={0}>
-                <List modifiers={[listStyle('insetGrouped')]}>
-                  <Section title="基础信息">
-                    <HStack spacing={12}>
-                      <Image systemName="tag" size={16} color="#0A84FF" />
-                      <Text modifiers={[foregroundStyle('primary')]}>藏品名称</Text>
-                      <Spacer />
-                      <Text modifiers={[foregroundStyle('secondary')]}>
-                        {selectedAsset.artworkName}
-                      </Text>
-                    </HStack>
-
-                    <HStack spacing={12}>
-                      <Image systemName="info.circle" size={16} color="#5856D6" />
-                      <Text modifiers={[foregroundStyle('primary')]}>持有状态</Text>
-                      <Spacer />
-                      <Text modifiers={[foregroundStyle('secondary')]}>
-                        {getAssetStateLabel(selectedAsset.state)}
-                      </Text>
-                    </HStack>
-                  </Section>
-
-                  <Section title="详细参数">
-                    <HStack spacing={12}>
-                      <Image systemName="barcode.viewfinder" size={16} color="#0A84FF" />
-                      <Text modifiers={[foregroundStyle('primary')]}>标识符</Text>
-                      <Spacer />
-                      <Button
-                        label={`${selectedAsset.serialNumber.substring(0, 8)}...${selectedAsset.serialNumber.slice(-6)}`}
-                        onPress={() => handleCopy(selectedAsset.serialNumber, '资产唯一标识')}
-                        modifiers={[buttonStyle('plain'), tint('#8E8E93'), font({ size: 13 })]}
-                      />
-                    </HStack>
-
-                    <HStack spacing={12}>
-                      <Image systemName="yensign.circle" size={16} color="#22C55E" />
-                      <Text modifiers={[foregroundStyle('primary')]}>买入价</Text>
-                      <Spacer />
-                      <Text modifiers={[foregroundStyle('secondary')]}>
-                        ¥{selectedAsset.purchasePrice}
-                      </Text>
-                    </HStack>
-
-                    {selectedAsset.transactionHash && (
-                      <HStack spacing={12}>
-                        <Image systemName="link" size={16} color="#5856D6" />
-                        <Text modifiers={[foregroundStyle('primary')]}>交易哈希</Text>
-                        <Spacer />
-                        <Button
-                          label={`${selectedAsset.transactionHash.substring(0, 10)}...${selectedAsset.transactionHash.slice(-6)}`}
-                          onPress={() => handleCopy(selectedAsset.transactionHash, '交易哈希')}
-                          modifiers={[buttonStyle('plain'), tint('#8E8E93'), font({ size: 13 })]}
-                        />
-                      </HStack>
-                    )}
-
-                    <HStack spacing={12}>
-                      <Image systemName="calendar" size={16} color="#FF9500" />
-                      <Text modifiers={[foregroundStyle('primary')]}>获得时间</Text>
-                      <Spacer />
-                      <Text modifiers={[foregroundStyle('secondary')]}>
-                        {new Date(selectedAsset.createdAt).toLocaleString('zh-CN')}
-                      </Text>
-                    </HStack>
-                  </Section>
-
-                  <Section>
-                    <Button
-                      label="关闭"
-                      onPress={() => setIsAssetSheetPresented(false)}
-                      modifiers={[buttonStyle('plain'), tint('#8E8E93'), frame({ maxWidth: 9999 })]}
-                    />
-                  </Section>
-                </List>
-              </VStack>
-            )}
-          </Group>
-        </BottomSheet>
       </Host>
     </>
   )
@@ -502,123 +268,5 @@ const styles = StyleSheet.create({
     height: 72,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  assetCardWrap: {
-    width: 160,
-  },
-  assetCardOuter: {
-    backgroundColor: 'transparent',
-    width: '100%',
-    padding: spacing.xs,
-  },
-  assetCardContainer: {
-    borderRadius: 28,
-    padding: spacing.sm,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 6,
-    elevation: 2,
-    borderWidth: 1,
-  },
-  assetImageContainer: {
-    width: '100%',
-    aspectRatio: 1,
-    marginBottom: spacing.sm,
-    position: 'relative',
-  },
-  assetImageFrame: {
-    flex: 1,
-    borderRadius: borderRadius.md,
-    overflow: 'hidden',
-    borderWidth: 0,
-  },
-  assetImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  assetStatusBadge: {
-    position: 'absolute',
-    top: spacing.xs,
-    right: spacing.xs,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: borderRadius.sm,
-    borderWidth: 1,
-  },
-  assetStatusText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.medium,
-  },
-  assetInfoContainer: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-  },
-  assetTitle: {
-    fontSize: typography.fontSize.md,
-    fontWeight: typography.fontWeight.bold,
-    marginBottom: spacing.xs,
-  },
-  assetSerialContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: spacing.sm,
-  },
-  assetSerialText: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: 'monospace',
-  },
-  assetFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-  },
-  assetPriceContainer: {
-    flexDirection: 'column',
-  },
-  assetPriceLabel: {
-    fontSize: 10,
-    marginBottom: 2,
-  },
-  assetPriceValue: {
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.bold,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 24,
-  },
-  emptyText: {
-    fontSize: typography.fontSize.md,
-    marginTop: 12,
-    color: '#8E8E93',
-  },
-  sheetImage: {
-    width: 100,
-    height: 100,
-    aspectRatio: 1,
-    borderRadius: 16,
-    backgroundColor: '#F3F4F6',
-  },
-  sheetStatusBadge: {
-    fontSize: 11,
-    fontWeight: '600',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  loadingWrapper: {
-    paddingVertical: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingText: {
-    marginTop: 8,
-    fontSize: 12,
-    color: '#8E8E93',
   },
 })
