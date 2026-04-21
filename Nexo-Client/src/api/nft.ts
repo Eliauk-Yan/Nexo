@@ -33,8 +33,20 @@ export interface QueryNFTRequest {
   keyword?: string
 }
 
+export type AssetState = 'INIT' | 'ACTIVE' | 'DESTROYING' | 'DESTROYED'
+
+export interface QueryAssetListRequest {
+  currentPage: number
+  pageSize: number
+  keyword?: string
+  state?: AssetState
+}
+
 export interface Asset {
   id: number
+  nftId?: number
+  nftName?: string
+  nftCover?: string
   artworkId: number
   artworkName: string
   artworkCover: string
@@ -45,12 +57,9 @@ export interface Asset {
   createdAt: string
 }
 
-export interface PageAssetResponse {
-  records: Asset[]
-  total: number
-  size: number
-  current: number
-  pages: number
+export interface TransferAssetRequest {
+  assetId: string
+  recipeId: string
 }
 
 export const nftApi = {
@@ -58,7 +67,11 @@ export const nftApi = {
    * 获取藏品列表
    */
   list: (param: QueryNFTRequest) => {
-    return get<NFT[]>('/artwork/list', param)
+    return get<NFT[]>('/artwork/list', {
+      keyword: param.keyword,
+      currentPage: param.currentPage,
+      pageSize: param.pageSize,
+    })
   },
 
   /**
@@ -71,8 +84,20 @@ export const nftApi = {
   /**
    * 获取我的数字资产列表
    */
-  getMyAssets: (currentPage: number, pageSize: number) => {
-    return get<Asset[]>('/artwork/myAssets', { current: currentPage, size: pageSize })
+  getMyAssets: (param: QueryAssetListRequest) => {
+    return get<Asset[]>('/artwork/asset/list', {
+      keyword: param.keyword,
+      state: param.state,
+      currentPage: param.currentPage,
+      pageSize: param.pageSize,
+    }).then((assets) =>
+      (assets || []).map((asset) => ({
+        ...asset,
+        artworkId: asset.artworkId ?? asset.nftId ?? 0,
+        artworkName: asset.artworkName ?? asset.nftName ?? '',
+        artworkCover: asset.artworkCover ?? asset.nftCover ?? '',
+      })),
+    )
   },
 
   /**
@@ -84,6 +109,16 @@ export const nftApi = {
       method: 'POST',
       params: { assetId: id },
       body: { assetId: id },
+    }) as Promise<boolean>
+  },
+
+  /**
+   * 转增我的数字资产
+   */
+  transferAsset: (data: TransferAssetRequest) => {
+    return request('/artwork/transfer', {
+      method: 'POST',
+      body: data,
     }) as Promise<boolean>
   },
 }

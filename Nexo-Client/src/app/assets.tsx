@@ -35,7 +35,6 @@ import {
   buttonStyle,
   controlSize,
   font,
-  frame,
   foregroundStyle,
   listRowBackground,
   listStyle,
@@ -43,10 +42,12 @@ import {
   presentationDetents,
   presentationDragIndicator,
   tint,
+  frame,
 } from '@expo/ui/swift-ui/modifiers'
 
 import { nftApi, Asset } from '@/api/nft'
 import { borderRadius, colors, spacing, typography } from '@/config/theme'
+import { showErrorAlert } from '@/utils/error'
 import { useSession } from '@/utils/ctx'
 
 function chunk<T>(arr: T[], size: number) {
@@ -210,7 +211,6 @@ export default function MyAssetsScreen() {
       }
       Alert.alert('提示', `${label}已复制到剪贴板`)
     } catch (error) {
-      console.error('Clipboard error:', error)
       Alert.alert('复制失败', '无法自动复制，请长按文本进行手动选择复制。')
     }
   }
@@ -223,11 +223,14 @@ export default function MyAssetsScreen() {
 
     try {
       setLoading(true)
-      const response = await nftApi.getMyAssets(1, 20)
-      const items = (response as any).records || response || []
+      const response = await nftApi.getMyAssets({
+        currentPage: 1,
+        pageSize: 20,
+      })
+      const items = response || []
       setAssets(Array.isArray(items) ? items : [])
     } catch (error) {
-      console.error(error)
+      showErrorAlert(error, '加载资产失败，请稍后重试。')
     } finally {
       setLoading(false)
     }
@@ -263,7 +266,7 @@ export default function MyAssetsScreen() {
               setSelectedAsset(null)
               await fetchMyAssets()
             } catch (error) {
-              console.error('Destroy asset error:', error)
+              showErrorAlert(error, '销毁资产失败，请稍后重试。')
             } finally {
               setDestroyingAssetId(null)
             }
@@ -291,7 +294,7 @@ export default function MyAssetsScreen() {
     <View style={styles.container}>
       <Stack.Screen
         options={{
-          headerTitle: '我的数字资产',
+          headerTitle: '我的资产',
           headerTransparent: true,
         }}
       />
@@ -305,7 +308,7 @@ export default function MyAssetsScreen() {
           <Section modifiers={[listRowBackground('clear')]}>
             <VStack alignment="leading" spacing={8}>
               <Text modifiers={[font({ size: 32, weight: 'bold' }), foregroundStyle('primary')]}>
-                我的数字资产
+                我的资产
               </Text>
               <Text modifiers={[font({ size: 15 }), foregroundStyle('secondary')]}>
                 查看已购藏品、资产标识与链上交易信息
@@ -399,21 +402,7 @@ export default function MyAssetsScreen() {
                       <Image systemName="info.circle" size={16} color={selectedStateStyle.text} />
                       <Text modifiers={[foregroundStyle('primary')]}>持有状态</Text>
                       <Spacer />
-                      <RNHostView matchContents>
-                        <View
-                          style={[
-                            styles.assetStatePill,
-                            {
-                              backgroundColor: selectedStateStyle.background,
-                              borderColor: selectedStateStyle.border,
-                            },
-                          ]}
-                        >
-                          <RNText style={[styles.assetStatePillText, { color: selectedStateStyle.text }]}>
-                            {getAssetStateLabel(selectedAsset.state)}
-                          </RNText>
-                        </View>
-                      </RNHostView>
+                      <Text modifiers={[foregroundStyle('secondary')]}>{getAssetStateLabel(selectedAsset.state)}</Text>
                     </HStack>
                   </Section>
 
@@ -460,22 +449,19 @@ export default function MyAssetsScreen() {
                       </Text>
                     </HStack>
                   </Section>
-
-                  {selectedAsset.state === 'ACTIVE' && (
-                    <Section modifiers={[listRowBackground('clear')]}>
-                      <Button
-                        label={destroyingAssetId === selectedAsset.id ? '提交中...' : '销毁资产'}
-                        onPress={() => handleDestroyAsset(selectedAsset)}
-                        modifiers={[
-                          buttonStyle('glassProminent'),
-                          tint('#FF3B30'),
-                          controlSize('extraLarge'),
-                          frame({ maxWidth: 9999 }),
-                        ]}
-                      />
-                    </Section>
-                  )}
                 </List>
+                {selectedAsset.state === 'ACTIVE' && (
+                    <Button
+                      label={destroyingAssetId === selectedAsset.id ? '提交中...' : '销毁资产'}
+                      onPress={() => handleDestroyAsset(selectedAsset)}
+                      modifiers={[
+                        buttonStyle('glassProminent'),
+                        tint('#FF3B30'),
+                        controlSize('extraLarge'),
+                        frame({ maxWidth: 9999 }),
+                      ]}
+                    />
+                  )}
               </VStack>
             )}
           </Group>
@@ -539,16 +525,6 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.medium,
   },
-  assetStatePill: {
-    borderWidth: 1,
-    borderRadius: borderRadius.sm,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  assetStatePillText: {
-    fontSize: typography.fontSize.xs,
-    fontWeight: typography.fontWeight.medium,
-  },
   assetInfoContainer: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -604,5 +580,15 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 12,
     color: '#8E8E93',
+  },
+  transferInput: {
+    borderWidth: 1,
+    borderColor: 'rgba(10,132,255,0.28)',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: '#111827',
+    backgroundColor: '#F8FAFC',
   },
 })

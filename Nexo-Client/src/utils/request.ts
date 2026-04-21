@@ -1,8 +1,8 @@
 // @ts-ignore
 import urlcat from 'urlcat'
 import * as SecureStore from 'expo-secure-store'
-import { Alert } from 'react-native'
 import { router } from 'expo-router'
+import { markErrorAlertShown, showErrorAlert } from '@/utils/error'
 
 // 定义请求选项接口
 interface RequestOptions {
@@ -54,8 +54,7 @@ const request = async (url: string, opts: RequestOptions = {}) => {
   // 4. 从选项或安全存储中获取 token（登录后立即拉取用户信息时可传入 token 覆盖）
   const token =
     tokenOverride ??
-    (await SecureStore.getItemAsync(STORAGE_KEYS.TOKEN).catch((e) => {
-      console.error('从安全存储中获取token失败', e)
+    (await SecureStore.getItemAsync(STORAGE_KEYS.TOKEN).catch(() => {
       return null
     }))
   if (token) {
@@ -71,9 +70,20 @@ const request = async (url: string, opts: RequestOptions = {}) => {
     headers,
     body: body instanceof FormData ? body : body ? JSON.stringify(body) : undefined,
   }
-  // 7. 发送请求
-  const response = await fetch(requestUrl, config)
-  const res = await response.json()
+  let response: Response
+  let res: any
+  try {
+    response = await fetch(requestUrl, config)
+    res = await response.json()
+  } catch (error) {
+    if (!suppressErrorAlert) {
+      showErrorAlert(error, '网络请求失败，请检查网络后重试。')
+    }
+    if (throwOnError) {
+      throw error
+    }
+    return undefined
+  }
   // 8. 处理响应
   const isSaTokenError = typeof res.code === 'number' && res.code !== 200
   if (!response.ok || res.success === false || isSaTokenError) {
@@ -82,19 +92,20 @@ const request = async (url: string, opts: RequestOptions = {}) => {
     // 未登录：不弹窗，直接跳转到登录页
     if (errMsg === '未登录' || response.status === 401) {
       // 清理本地 token，避免后续请求继续携带无效凭证
-      await SecureStore.deleteItemAsync(STORAGE_KEYS.TOKEN).catch((e) => {
-        console.error('清理token失败', e)
-      })
+      await SecureStore.deleteItemAsync(STORAGE_KEYS.TOKEN).catch(() => {})
       // 跳转到登录页
       router.replace('/(auth)/sign-in')
     } else {
       if (!suppressErrorAlert) {
-        Alert.alert('提示', errMsg)
+        showErrorAlert(errMsg)
       }
     }
     const error = new Error(errMsg) as ApiError
     error.status = response.status
     error.errors = res.errors
+    if (!suppressErrorAlert) {
+      markErrorAlertShown(error)
+    }
     if (throwOnError) {
       throw error
     }

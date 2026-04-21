@@ -2,6 +2,7 @@ import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
 import Feather from '@expo/vector-icons/Feather'
 import { nftApi } from '@/api'
 import { NFT } from '@/api/nft'
+import { showErrorAlert } from '@/utils/error'
 import { Stack, useFocusEffect, useRouter } from 'expo-router'
 import {
   FlatList,
@@ -112,7 +113,7 @@ const Home = () => {
 
       setArtworks(Array.isArray(response) ? response : [])
     } catch (error) {
-      console.error('获取藏品失败:', error)
+      showErrorAlert(error, '获取藏品失败，请稍后重试。')
       setArtworks([])
     } finally {
       if (!silent) {

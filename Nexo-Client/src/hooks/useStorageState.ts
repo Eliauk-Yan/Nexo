@@ -2,6 +2,7 @@
 import { useEffect, useCallback, useReducer } from 'react'
 import * as SecureStore from 'expo-secure-store'
 import { Platform } from 'react-native'
+import { showErrorAlert } from '@/utils/error'
 
 type UseStateHook<T> = [[boolean, T | null], (value: T | null) => void]
 
@@ -22,7 +23,7 @@ export async function setStorageItemAsync(key: string, value: any | null) {
         localStorage.setItem(key, stringValue)
       }
     } catch (e) {
-      console.error('Local storage is unavailable:', e)
+      showErrorAlert(e, '本地存储不可用，请稍后重试。')
     }
   } else {
     if (value == null) {
@@ -51,7 +52,7 @@ export function useStorageState<T = string>(key: string): UseStateHook<T> {
           }
         }
       } catch (e) {
-        console.error('Local storage is unavailable:', e)
+        showErrorAlert(e, '本地存储不可用，请稍后重试。')
       }
     } else {
       SecureStore.getItemAsync(key).then((value: string | null) => {

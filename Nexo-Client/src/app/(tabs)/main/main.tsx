@@ -14,6 +14,7 @@ import {
 import { nftApi, userApi } from '@/api'
 import { NFT } from '@/api/nft'
 import { InviteRankInfo } from '@/api/user'
+import { showErrorAlert } from '@/utils/error'
 import { useSession } from '@/utils/ctx'
 
 const formatPrice = (price: string | number) => {
@@ -90,7 +91,7 @@ export default function MainScreen() {
         setMyRank(null)
       }
     } catch (error) {
-      console.error('获取积分排行榜失败:', error)
+      showErrorAlert(error, '获取积分排行榜失败，请稍后重试。')
     }
   }, [isLogin])
 
@@ -102,7 +103,7 @@ export default function MainScreen() {
       })
       setLatestArtworks(Array.isArray(response) ? response.slice(0, 6) : [])
     } catch (error) {
-      console.error('获取最新藏品失败:', error)
+      showErrorAlert(error, '获取最新藏品失败，请稍后重试。')
     }
   }, [])
 

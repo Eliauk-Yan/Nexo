@@ -15,6 +15,7 @@ import com.nexo.business.collection.service.AssetService;
 import com.nexo.common.api.inventory.response.InventoryResponse;
 import com.nexo.common.api.nft.NFTFacade;
 import com.nexo.common.api.nft.constant.NFTType;
+import com.nexo.common.api.nft.constant.ProductSaleBizType;
 import com.nexo.common.api.nft.request.*;
 import com.nexo.common.api.nft.response.NFTResponse;
 import com.nexo.common.api.nft.response.NFTUpdateInventoryResponse;
@@ -135,7 +136,7 @@ public class NFTFacadeImpl implements NFTFacade {
         asset.setReferencePrice(nft.getPrice());
         asset.setRarity(null);
         asset.setBusinessNo(request.getBusinessNo());
-        asset.setBusinessType(request.getBusinessType());
+        asset.setBusinessType(ProductSaleBizType.PRIMARY_TRADE);
         boolean saveResult = assetService.save(asset);
         if (!saveResult) {
             return false;

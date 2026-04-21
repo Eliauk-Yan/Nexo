@@ -2,6 +2,7 @@ package com.nexo.business.collection.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.nexo.common.api.nft.constant.AssetState;
+import com.nexo.common.api.nft.constant.ProductSaleBizType;
 import com.nexo.common.datasource.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -20,33 +21,80 @@ import java.time.LocalDateTime;
 @TableName("assets")
 public class Asset extends BaseEntity {
 
+    /**
+     * 藏品ID
+     */
     private Long nftId;
 
+    /**
+     * 购买价格
+     */
     private BigDecimal purchasePrice;
 
+    /**
+     * 藏品编号
+     */
     private String serialNumber;
 
+    /**
+     * 藏品唯一编号
+     */
     private String nftIdentifier;
 
+    /**
+     * 上一个持有人ID
+     */
     private Long previousHolderId;
 
+    /**
+     * 当前持有人ID
+     */
     private Long currentHolderId;
 
+    /**
+     * 资产状态
+     */
     private AssetState state;
 
+    /**
+     * 交易Hash
+     */
     private String transactionHash;
 
+    /**
+     * 参考价格
+     */
     private BigDecimal referencePrice;
 
+    /**
+     * 稀有度
+     */
     private String rarity;
 
+    /**
+     * 链同步时间
+     */
     private LocalDateTime syncChainTime;
 
-    private LocalDateTime destructionTime;
+    /**
+     * 销毁时间
+     */
+    private LocalDateTime destroyTime;
 
+    /**
+     * 持有时间
+     */
+    private LocalDateTime holdTime;
+
+    /**
+     * 业务编号
+     */
     private String businessNo;
 
-    private String businessType;
+    /**
+     * 业务类型
+     */
+    private ProductSaleBizType businessType;
 
     // 资产初始化
     public void init() {
@@ -54,10 +102,18 @@ public class Asset extends BaseEntity {
     }
 
     // 资产激活
-    public void active(String transactionHash) {
+    public void active(String transactionHash, String nftIdentifier) {
         this.transactionHash = transactionHash;
+        this.nftIdentifier = nftIdentifier;
         this.syncChainTime = LocalDateTime.now();
         this.state = AssetState.ACTIVE;
+    }
+
+    /**
+     * 资产失效
+     */
+    public void inactive() {
+        this.state = AssetState.INACTIVE;
     }
 
     /**
@@ -65,7 +121,7 @@ public class Asset extends BaseEntity {
      */
     public void destroying() {
         this.state = AssetState.DESTROYING;
-        this.destructionTime = LocalDateTime.now();
+        this.destroyTime = LocalDateTime.now();
     }
 
     /**
@@ -73,7 +129,7 @@ public class Asset extends BaseEntity {
      */
     public void destroyed() {
         this.state = AssetState.DESTROYED;
-        this.destructionTime = LocalDateTime.now();
+        this.destroyTime = LocalDateTime.now();
     }
 
 }

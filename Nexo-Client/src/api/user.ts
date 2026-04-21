@@ -38,6 +38,13 @@ export interface InviteRankInfo {
   avatar?: string
 }
 
+/** 简要用户信息，/user/info/phone 返回此类型 */
+export interface SimpleUserInfo {
+  id: number
+  nickName?: string
+  avatarUrl?: string
+}
+
 export const userApi = {
   /**
    * 获取用户信息（与后端 Result&lt;UserInfo&gt; 一致）
@@ -83,6 +90,13 @@ export const userApi = {
    */
   getMyInviteRank: () => {
     return get<number | null>('/user/invite/getMyRank')
+  },
+
+  /**
+   * 根据手机号查询用户简要信息（用于转赠查询受赠人）
+   */
+  getUserByPhone: (phone: string) => {
+    return get<SimpleUserInfo>('/user/info/phone', { phone }, { suppressErrorAlert: true })
   },
 }
 

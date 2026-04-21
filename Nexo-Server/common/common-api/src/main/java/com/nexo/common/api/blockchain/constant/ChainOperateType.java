@@ -18,7 +18,9 @@ public enum ChainOperateType {
 
     NFT_MINT("NFT_MINT", "NFT铸造"),
 
-    NFT_DESTROY("NFT_DESTROY", "NFT销毁");
+    NFT_DESTROY("NFT_DESTROY", "NFT销毁"),
+
+    NFT_TRANSFER("NFT_TRANSFER", "NFT转增");
 
     private final String code;
 

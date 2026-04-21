@@ -40,4 +40,21 @@ public class UserInfo implements Serializable {
     private Boolean certification;
 
     private Boolean hasAppleBound;
+
+    /**
+     * 是否有购买资格
+     */
+    public boolean canBuy() {
+        // 1. 角色不是普通人
+        if (this.getRole() != null && this.getRole() != UserRole.COLLECTOR) {
+            return false;
+        }
+        // 2. 状态不为激活 也就是没有实名认证或者被冻结
+        if (this.getState() != null && this.getState() != UserState.ACTIVE) {
+            return false;
+        }
+        // 3. 没有实名认证
+        return this.getState() == null || this.certification;
+    }
+
 }

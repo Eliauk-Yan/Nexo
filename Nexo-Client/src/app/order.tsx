@@ -2,6 +2,7 @@ import { orderApi, OrderState, OrderVO } from '@/api/order'
 import { PaymentType, tradeApi } from '@/api/trade'
 import { colors, spacing, typography } from '@/config/theme'
 import { ensureWeChatRegistered, getWeChatConfigError, isWeChatConfigured } from '@/utils/wechat'
+import { showErrorAlert } from '@/utils/error'
 import { useSession } from '@/utils/ctx'
 import Feather from '@expo/vector-icons/Feather'
 import { useEvent } from 'expo'
@@ -165,7 +166,7 @@ const OrderPage = () => {
 
         setOrders(Array.isArray(res) ? res : [])
       } catch (error) {
-        console.error('获取订单列表失败:', error)
+        showErrorAlert(error, '获取订单列表失败，请稍后重试。')
         setOrders([])
       } finally {
         if (!silent) setLoading(false)
@@ -222,7 +223,7 @@ const OrderPage = () => {
           if (isOrderSyncingError(error)) {
             return
           }
-          console.error('轮询订单状态失败:', error)
+          showErrorAlert(error, '获取订单状态失败，请稍后重试。')
         }
 
         if (attempts >= maxAttempts) {
@@ -349,8 +350,7 @@ const OrderPage = () => {
             Alert.alert('提示', '订单已取消。')
             await fetchOrders(activeTab)
           } catch (error) {
-            console.error('取消订单失败:', error)
-            Alert.alert('提示', '取消订单失败，请稍后重试。')
+            showErrorAlert(error, '取消订单失败，请稍后重试。')
           }
         },
       },
@@ -379,9 +379,8 @@ const OrderPage = () => {
       }
     } catch (error) {
       setPurchasingOrderId('')
-      console.error('支付失败:', error)
       if (!isOrderSyncingError(error)) {
-        Alert.alert('提示', error instanceof Error ? error.message : '支付失败，请稍后重试。')
+        showErrorAlert(error, '支付失败，请稍后重试。')
       }
     }
   }

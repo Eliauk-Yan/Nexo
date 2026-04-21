@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 /**
  * @classname AssetVO
- * @description 个人资产视图对象
+ * @description 个人资产
  * @date 2026/03/08
  */
 @Data
@@ -20,17 +20,17 @@ public class AssetVO {
     /**
      * 所属藏品ID
      */
-    private Long artworkId;
+    private Long nftId;
 
     /**
      * 藏品名称
      */
-    private String artworkName;
+    private String nftName;
 
     /**
      * 藏品封面图
      */
-    private String artworkCover;
+    private String nftCover;
 
     /**
      * 购入价格

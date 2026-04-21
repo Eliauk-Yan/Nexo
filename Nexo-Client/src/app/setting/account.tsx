@@ -1,6 +1,7 @@
 import { userApi, UserInfo } from '@/api/user'
 import { authApi } from '@/api/auth'
 import { useSession } from '@/utils/ctx'
+import { showErrorAlert } from '@/utils/error'
 import * as ImagePicker from 'expo-image-picker'
 import * as AppleAuthentication from 'expo-apple-authentication'
 import { Stack, useRouter } from 'expo-router'
@@ -35,7 +36,7 @@ const AccountSecurity = () => {
       router.replace('/(auth)/sign-in')
       return
     }
-    refreshProfile().catch((err) => console.error(err))
+    refreshProfile().catch((err) => showErrorAlert(err, '获取个人信息失败，请稍后重试。'))
   }, [isSessionLoading, refreshProfile, router, session])
 
   const nickname = profile?.nickName || '未设置'
@@ -79,8 +80,7 @@ const AccountSecurity = () => {
                       }
                       Alert.alert('成功', '实名认证已完成')
                     } catch (err) {
-                      console.error('实名认证提交失败', err)
-                      Alert.alert('提交失败', '请稍后重试')
+                      showErrorAlert(err, '实名认证提交失败，请稍后重试。')
                     }
                   },
                 },
@@ -115,7 +115,7 @@ const AccountSecurity = () => {
                   signIn(session, { ...user, ...newProfile } as any)
                 }
               } catch (err) {
-                console.error('更新昵称失败', err)
+                showErrorAlert(err, '更新昵称失败，请稍后重试。')
               }
             }
           },
@@ -157,8 +157,8 @@ const AccountSecurity = () => {
           signIn(session, { ...user, ...newProfile } as any)
         }
         Alert.alert('成功', '头像已更新')
-      } catch {
-        Alert.alert('失败', '头像更新失败，请重试')
+      } catch (err) {
+        showErrorAlert(err, '头像更新失败，请重试。')
       }
     }
   }
@@ -199,7 +199,7 @@ const AccountSecurity = () => {
       if (e.code === 'ERR_REQUEST_CANCELED') {
         // 用户取消，忽略
       } else {
-        // 错误已由 request 拦截器统一弹窗处理
+        showErrorAlert(e, '绑定 Apple 账号失败，请稍后重试。')
       }
     }
   }

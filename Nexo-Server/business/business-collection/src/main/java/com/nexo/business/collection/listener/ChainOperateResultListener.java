@@ -10,6 +10,7 @@ import com.nexo.common.api.blockchain.response.data.ChainResultData;
 import com.nexo.common.api.inventory.InventoryFacade;
 import com.nexo.common.api.inventory.request.InventoryRequest;
 import com.nexo.common.api.inventory.response.InventoryResponse;
+import com.nexo.common.api.nft.constant.AssetState;
 import com.nexo.common.api.nft.constant.NFTType;
 import com.nexo.common.api.order.OrderFacade;
 import com.nexo.common.api.order.request.OrderFinishRequest;
@@ -22,13 +23,12 @@ import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
 import java.util.function.Consumer;
 
-import static com.nexo.business.collection.domain.exception.NFTErrorCode.NFT_INVENTORY_INIT_FAILED;
-import static com.nexo.business.collection.domain.exception.NFTErrorCode.NFT_QUERY_FAILED;
-import static com.nexo.business.collection.domain.exception.NFTErrorCode.NFT_UPDATE_FAILED;
+import static com.nexo.business.collection.domain.exception.NFTErrorCode.*;
 import static com.nexo.common.api.nft.constant.AssetState.DESTROYED;
 import static com.nexo.common.api.nft.constant.AssetState.DESTROYING;
 
@@ -68,6 +68,10 @@ public class ChainOperateResultListener extends StreamConsumer {
                     // 资产销毁
                     handleAssetDestroyed(chainOperateBody);
                     break;
+                case NFT_TRANSFER:
+                    // 资产转增
+                    handleAssetTransfer(chainOperateBody, chainResultData);
+                    break;
                 default:
                     log.warn("未处理的链回调操作类型, bizType={}, operateType={}", chainOperateBody.getBizType(), chainOperateBody.getOperateType());
             }
@@ -97,8 +101,8 @@ public class ChainOperateResultListener extends StreamConsumer {
         if (asset == null) {
             throw new NFTException(NFT_QUERY_FAILED);
         }
-        // 2. 状态转移
-        asset.active(chainResultData.getTxHash());
+        // 2. 状态激活
+        asset.active(chainResultData.getTxHash(), chainResultData.getNftId());
         boolean activated = assetService.updateById(asset);
         if (!activated) {
             throw new NFTException(NFT_UPDATE_FAILED);
@@ -122,7 +126,7 @@ public class ChainOperateResultListener extends StreamConsumer {
         Long assetId = Long.parseLong(chainOperateBody.getBizId());
         Asset asset = assetService.getById(assetId);
         if (asset == null) {
-            throw new NFTException(NFT_QUERY_FAILED);
+            throw new NFTException(ASSET_QUERY_FAILED);
         }
         if (DESTROYED.equals(asset.getState())) {
             return;
@@ -133,6 +137,19 @@ public class ChainOperateResultListener extends StreamConsumer {
         }
         asset.destroyed();
         if (!assetService.updateById(asset)) {
+            throw new NFTException(NFT_UPDATE_FAILED);
+        }
+    }
+
+    private void handleAssetTransfer(ChainOperateBody chainOperateBody, ChainResultData chainResultData) {
+        //藏品铸造成功有nftId和txHash
+        Asset newAsset = assetService.getById(Long.valueOf(chainOperateBody.getBizId()));
+        if (newAsset == null || !newAsset.getState().equals(AssetState.INIT)) {
+            throw new NFTException(ASSET_QUERY_FAILED);
+        }
+        newAsset.active(chainResultData.getNftId(), chainResultData.getTxHash());
+        boolean result = assetService.updateById(newAsset);
+        if (!result) {
             throw new NFTException(NFT_UPDATE_FAILED);
         }
     }

@@ -7,6 +7,7 @@ import Spinner from 'react-native-loading-spinner-overlay'
 import { authApi } from '@/api'
 import { LiquidGlassButton } from '@/components/ui'
 import { useSession } from '@/utils/ctx'
+import { showErrorAlert } from '@/utils/error'
 import * as AppleAuthentication from 'expo-apple-authentication'
 import {
   Button,
@@ -82,7 +83,7 @@ export default function SignIn() {
       await authApi.sendVerificationCode(phone)
       Alert.alert('提示', `验证码已发送至 ${phone}`)
     } catch (error) {
-      Alert.alert('提示', error instanceof Error ? error.message : '发送验证码失败')
+      showErrorAlert(error, '发送验证码失败')
     } finally {
       setLoading(false)
     }
@@ -113,7 +114,7 @@ export default function SignIn() {
 
       signIn(token, userInfo!)
     } catch (error) {
-      Alert.alert('登录失败', error instanceof Error ? error.message : '登录失败')
+      showErrorAlert(error, '登录失败')
     } finally {
       setLoading(false)
     }
@@ -163,6 +164,8 @@ export default function SignIn() {
     } catch (e: any) {
       if (e.code === 'ERR_REQUEST_CANCELED') {
         // 用户取消，可以忽略
+      } else {
+        showErrorAlert(e, 'Apple 登录失败，请稍后重试。')
       }
     }
   }

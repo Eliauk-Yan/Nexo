@@ -31,6 +31,7 @@ import {
 
 import { useSession } from '@/utils/ctx'
 import { userApi } from '@/api/user'
+import { showErrorAlert } from '@/utils/error'
 
 export default function ProfileScreen() {
   const router = useRouter()
@@ -52,7 +53,7 @@ export default function ProfileScreen() {
           }
         })
         .catch((error) => {
-          console.error('刷新用户信息失败', error)
+          showErrorAlert(error, '刷新用户信息失败，请稍后重试。')
         })
 
       return () => {
@@ -71,7 +72,6 @@ export default function ProfileScreen() {
       }
       Alert.alert('提示', `${label}已复制到剪贴板`)
     } catch (error) {
-      console.error('Clipboard error:', error)
       Alert.alert('复制失败', '无法自动复制，请长按文本进行手动选择复制。')
     }
   }
@@ -222,20 +222,17 @@ export default function ProfileScreen() {
               modifiers={[padding({ vertical: 10 }), onTapGesture(() => router.push('/assets'))]}
             >
               <Image systemName="rectangle.stack.fill" size={18} color="#0A84FF" />
-              <Text modifiers={[font({ size: 16, weight: 'medium' })]}>数字资产</Text>
+              <Text modifiers={[font({ size: 16, weight: 'medium' })]}>我的资产</Text>
               <Spacer />
               <Image systemName="chevron.right" size={13} color="#8E8E93" />
             </HStack>
 
             <HStack
               spacing={12}
-              modifiers={[
-                padding({ vertical: 10 }),
-                onTapGesture(() => router.push('/blockchain')),
-              ]}
+              modifiers={[padding({ vertical: 10 }), onTapGesture(() => router.push('/transfer'))]}
             >
-              <Image systemName="link.circle.fill" size={18} color="#0A84FF" />
-              <Text modifiers={[font({ size: 16, weight: 'medium' })]}>区块链查询</Text>
+              <Image systemName="arrowshape.turn.up.right.fill" size={18} color="#0A84FF" />
+              <Text modifiers={[font({ size: 16, weight: 'medium' })]}>资产转赠</Text>
               <Spacer />
               <Image systemName="chevron.right" size={13} color="#8E8E93" />
             </HStack>

@@ -52,24 +52,25 @@ public class MockChainServiceImpl extends AbstractChainService {
 
     @Override
     public ChainResponse<ChainOperationData> onChain(ChainRequest request) {
-        return (ChainResponse<ChainOperationData>) doPostExecute(request, resolveBizType(request), ChainOperateType.NFT_ON_CHAIN, _ -> {
+        return (ChainResponse<ChainOperationData>) doPostExecute(request, ChainOperationBizType.NFT, ChainOperateType.NFT_ON_CHAIN, _ -> {
         });
     }
 
     @Override
     public ChainResponse<ChainOperationData> mint(ChainRequest request) {
-        return (ChainResponse<ChainOperationData>) doPostExecute(request, resolveBizType(request), ChainOperateType.NFT_MINT, _ -> {
+        return (ChainResponse<ChainOperationData>) doPostExecute(request, ChainOperationBizType.NFT, ChainOperateType.NFT_MINT, _ -> {
         });
     }
 
     @Override
     public ChainResponse<ChainOperationData> transfer(ChainRequest request) {
-        return null;
+        return (ChainResponse<ChainOperationData>) doPostExecute(request, ChainOperationBizType.ASSET, ChainOperateType.NFT_TRANSFER, _ -> {
+        });
     }
 
     @Override
     public ChainResponse<ChainOperationData> destroy(ChainRequest request) {
-        return (ChainResponse<ChainOperationData>) doPostExecute(request, resolveBizType(request), ChainOperateType.NFT_DESTROY, _ -> {
+        return (ChainResponse<ChainOperationData>) doPostExecute(request, ChainOperationBizType.ASSET, ChainOperateType.NFT_DESTROY, _ -> {
         });
     }
 
@@ -98,17 +99,5 @@ public class MockChainServiceImpl extends AbstractChainService {
         response.setData(data);
         // 3. 返回MOCK响应
         return response;
-    }
-
-    private ChainOperationBizType resolveBizType(ChainRequest request) {
-        if (request == null || request.getBizType() == null || request.getBizType().isBlank()) {
-            return ChainOperationBizType.NFT;
-        }
-        for (ChainOperationBizType type : ChainOperationBizType.values()) {
-            if (type.getCode().equalsIgnoreCase(request.getBizType())) {
-                return type;
-            }
-        }
-        return ChainOperationBizType.NFT;
     }
 }

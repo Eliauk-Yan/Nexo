@@ -10,7 +10,9 @@ import lombok.Getter;
 @Getter
 public enum ProductSaleBizType {
 
-    PRIMARY_TRADE("PRIMARY_TRADE", "一级市场交易");
+    PRIMARY_TRADE("PRIMARY_TRADE", "一级市场交易"),
+
+    TRANSFER("TRANSFER", "转赠");
 
     private final String code;
 

@@ -4,17 +4,22 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.nexo.business.collection.domain.entity.Asset;
 import com.nexo.business.collection.domain.entity.NFT;
+import com.nexo.business.collection.domain.exception.NFTException;
 import com.nexo.business.collection.interfaces.param.DestroyParam;
 import com.nexo.business.collection.interfaces.param.NFTPageQueryParam;
+import com.nexo.business.collection.interfaces.param.TransferParam;
 import com.nexo.business.collection.interfaces.vo.NFTVO;
 import com.nexo.business.collection.interfaces.vo.AssetVO;
+import com.nexo.business.collection.service.impl.AssetCacheService;
 import com.nexo.common.api.blockchain.ChainFacade;
 import com.nexo.common.api.blockchain.constant.ChainOperateType;
 import com.nexo.common.api.blockchain.constant.ChainOperationBizType;
 import com.nexo.common.api.blockchain.request.ChainRequest;
 import com.nexo.common.api.blockchain.response.ChainResponse;
 import com.nexo.common.api.blockchain.response.data.ChainOperationData;
+import com.nexo.common.api.nft.constant.AssetState;
 import com.nexo.common.api.nft.request.AssetDestroyRequest;
+import com.nexo.common.api.nft.request.AssetTransferRequest;
 import com.nexo.common.api.nft.response.data.NFTInfo;
 import com.nexo.business.collection.mapper.convert.NFTConvertor;
 import com.nexo.business.collection.service.NFTService;
@@ -29,10 +34,10 @@ import com.nexo.common.web.result.MultiResult;
 import com.nexo.common.web.result.Result;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.web.bind.annotation.*;
 
+import static com.nexo.business.collection.domain.exception.NFTErrorCode.*;
 import static com.nexo.common.file.constant.FileConstant.SEPARATOR;
 
 /**
@@ -50,6 +55,8 @@ public class NFTController {
     private final NFTConvertor nftConvertor;
 
     private final AssetService assetService;
+
+    private final AssetCacheService assetCacheService;
 
     @DubboReference(version = "1.0.0")
     private ChainFacade chainFacade;
@@ -69,7 +76,7 @@ public class NFTController {
     /**
      * 获取藏品详情
      */
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     public Result<NFTInfo> getNFTDetail(@PathVariable Long id) {
         return Result.success(NFTService.getNFTInfo(id));
     }
@@ -77,11 +84,13 @@ public class NFTController {
     /**
      * 获取资产
      */
-    @GetMapping("/myAssets")
-    public MultiResult<AssetVO> getMyAssets(
-            @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size) {
-        Page<AssetVO> page = assetService.getMyAssets(current, size);
+    @GetMapping("/asset/list")
+    public MultiResult<AssetVO> getAssetList(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) AssetState state,
+            @RequestParam(defaultValue = "10") long pageSize,
+            @RequestParam(defaultValue = "1") long currentPage) {
+        Page<AssetVO> page = assetService.getAssetList(keyword, state, currentPage, pageSize);
         return MultiResult.multiSuccess(page.getRecords(), page.getTotal(), page.getCurrent(), page.getSize());
     }
 
@@ -105,6 +114,52 @@ public class NFTController {
             chainRequest.setClassId(asset.getNftId().toString());
             chainRequest.setNtfId(String.valueOf(asset.getNftId()));
             ChainResponse<ChainOperationData> response = chainFacade.destroy(chainRequest);
+            return Result.success(response.getSuccess());
+        }
+        return Result.success(false);
+    }
+
+    @PostMapping("/transfer")
+    public Result<Boolean> transfer(@RequestBody @Valid TransferParam param) {
+        // 1. 校验 不能转让给自己
+        String userId = (String) StpUtil.getLoginId();
+        if (userId.equals(param.getRecipeId())) {
+            throw new NFTException(CANNOT_TRANSFER_TO_YOURSELF);
+        }
+        // 2. 查询资产
+        Asset asset = assetCacheService.getAssetById(Long.parseLong(param.getAssetId()));
+        // 3. 查询用户
+        UserQueryRequest userQueryRequest = new UserQueryRequest();
+        userQueryRequest.setId(Long.parseLong(param.getRecipeId()));
+        UserQueryResponse<UserInfo> userQueryResponse = userFacade.userQuery(userQueryRequest);
+        UserInfo reciveUserInfo = userQueryResponse.getData();
+        // 4. 校验用户是否存在
+        if (reciveUserInfo == null || !userQueryResponse.getSuccess()) {
+            throw new NFTException(USER_NOT_EXIST);
+        }
+        // 5. 校验用户是否有权限购买
+        if (!reciveUserInfo.canBuy()) {
+            throw new NFTException(BUYER_ILLEGAL);
+        }
+        // 6. 转增
+        if (asset != null) {
+            // 6.1 本地数据更新
+            AssetTransferRequest assetTransferRequest = new AssetTransferRequest();
+            assetTransferRequest.setRecipeId(param.getRecipeId()); // 接受人ID
+            assetTransferRequest.setAssetId(param.getAssetId()); // 资产ID
+            assetTransferRequest.setOperator(userId); // 用户ID
+            assetTransferRequest.setIdentify(param.getAssetId() + SEPARATOR + assetTransferRequest.getEventType().getCode()); // 幂等号
+            Asset newAsset = assetService.transfer(assetTransferRequest);
+            // 6.2 区块链操作
+            ChainRequest chainRequest = new ChainRequest();
+            chainRequest.setBizId(String.valueOf(newAsset.getId()));
+            chainRequest.setIdentifier(param.getAssetId() + SEPARATOR + param.getRecipeId() + SEPARATOR + ChainOperateType.NFT_TRANSFER.getCode());
+            UserInfo currentUser = StpUtil.getSession().getModel("userInfo", UserInfo.class);
+            chainRequest.setOwner(currentUser.getAddress());
+            chainRequest.setClassId(asset.getNftId().toString());
+            chainRequest.setNtfId(String.valueOf(asset.getNftIdentifier()));
+            chainRequest.setRecipient(reciveUserInfo.getAddress());
+            ChainResponse<ChainOperationData> response = chainFacade.transfer(chainRequest);
             return Result.success(response.getSuccess());
         }
         return Result.success(false);

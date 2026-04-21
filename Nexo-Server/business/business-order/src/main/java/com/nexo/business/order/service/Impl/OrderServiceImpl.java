@@ -118,6 +118,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
         }
         TradeOrderStream tradeOrderStream = new TradeOrderStream();
         BeanUtils.copyProperties(tradeOrder, tradeOrderStream);
+        tradeOrderStream.setId(null);
         tradeOrderStream.setStreamType(request.getOrderEvent());
         tradeOrderStream.setStreamIdentifier(request.getIdentifier());
         result = orderStreamMapper.insert(tradeOrderStream) == 1;

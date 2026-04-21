@@ -1,6 +1,7 @@
 package com.nexo.business.collection.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -15,12 +16,15 @@ import com.nexo.business.collection.service.AssetService;
 import com.nexo.business.collection.service.NFTService;
 import com.nexo.common.api.nft.constant.AssetEvent;
 import com.nexo.common.api.nft.constant.AssetState;
+import com.nexo.common.api.nft.constant.ProductSaleBizType;
 import com.nexo.common.api.nft.request.AssetDestroyRequest;
+import com.nexo.common.api.nft.request.AssetTransferRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -41,51 +45,14 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
 
     private final AssetStreamMapper assetStreamMapper;
 
+    private final AssetMapper assetMapper;
+
     @Override
-    public Page<AssetVO> getMyAssets(Long current, Long size) {
+    public Page<AssetVO> getAssetList(String keyword, AssetState state, Long current, Long size) {
+        // 1. 查询资产列表
         Long userId = StpUtil.getLoginIdAsLong();
-
-        // 1. 分页查询当前用户的资产
-        Page<Asset> pageReq = new Page<>(current, size);
-        LambdaQueryWrapper<Asset> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Asset::getCurrentHolderId, userId);
-        wrapper.orderByDesc(Asset::getCreatedAt);
-        Page<Asset> assetPage = this.page(pageReq, wrapper);
-
-        // 2. 转换成VO
-        Page<AssetVO> voPage = new Page<>(assetPage.getCurrent(), assetPage.getSize(), assetPage.getTotal());
-
-        if (assetPage.getRecords().isEmpty()) {
-            voPage.setRecords(Collections.emptyList());
-            return voPage;
-        }
-
-        // 3. 提取所有的 artworkId 并批量查询 ArtWork 信息
-        List<Long> artworkIds = assetPage.getRecords().stream()
-                .map(Asset::getNftId)
-                .distinct()
-                .collect(Collectors.toList());
-
-        Map<Long, NFT> artworkMap = NFTService.listByIds(artworkIds).stream()
-                .collect(Collectors.toMap(NFT::getId, a -> a));
-
-        // 4. 组装数据
-        List<AssetVO> vos = assetPage.getRecords().stream().map(asset -> {
-            AssetVO vo = new AssetVO();
-            BeanUtils.copyProperties(asset, vo);
-            vo.setState(asset.getState() != null ? asset.getState().name() : null);
-
-            NFT NFT = artworkMap.get(asset.getNftId());
-            if (NFT != null) {
-                vo.setArtworkName(NFT.getName());
-                vo.setArtworkCover(NFT.getCover());
-            }
-
-            return vo;
-        }).collect(Collectors.toList());
-
-        voPage.setRecords(vos);
-        return voPage;
+        Page<AssetVO> page = new Page<>(current, size);
+        return assetMapper.getAssetList(page, userId, StringUtils.hasText(keyword) ? keyword.trim() : null, state == null ? null : state.name());
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -119,5 +86,63 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
             throw new NFTException(ASSET_STREAM_SAVE_FAILED);
         }
         return asset;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public Asset transfer(AssetTransferRequest assetTransferRequest) {
+        // 1. 查询资产并校验
+        Asset oldAsset = this.getById(assetTransferRequest.getAssetId());
+        if (oldAsset == null) {
+            throw new NFTException(ASSET_QUERY_FAILED);
+        }
+        if (oldAsset.getState() != AssetState.ACTIVE) {
+            throw new NFTException(ASSET_CHECK_ERROR);
+        }
+        if (!oldAsset.getCurrentHolderId().toString().equals(assetTransferRequest.getOperator())) {
+            throw new NFTException(ASSET_CHECK_ERROR);
+        }
+        // 2. 原资产失效 更新状态并添加流水
+        oldAsset.inactive();
+        boolean inactiveRes = this.updateById(oldAsset);
+        if (!inactiveRes) {
+            throw new NFTException(ASSET_UPDATE_FAILED);
+        }
+        AssetStream assetStream = new AssetStream();
+        assetStream.setAssetId(oldAsset.getId());
+        assetStream.setOperator(assetTransferRequest.getOperator());
+        assetStream.setStreamType(AssetEvent.TRANSFER.getCode() + "_OUT");
+        assetStream.setIdentifier(assetTransferRequest.getIdentify());
+        boolean assetStreamSaveRes = assetStreamMapper.insert(assetStream) == 1;
+        if (!assetStreamSaveRes) {
+            throw new NFTException(ASSET_STREAM_SAVE_FAILED);
+        }
+        // 3. 新资产生成 创建新资产并添加流水
+        Asset newAsset = new Asset();
+        BeanUtils.copyProperties(oldAsset, newAsset);
+        newAsset.setId(null);
+        newAsset.setCreatedAt(null);
+        newAsset.setUpdatedAt(null);
+        newAsset.setVersion(null);
+        newAsset.setDeleted(null);
+        newAsset.setCurrentHolderId(Long.parseLong(assetTransferRequest.getRecipeId()));
+        newAsset.setState(AssetState.INIT);
+        newAsset.setHoldTime(LocalDateTime.now());
+        newAsset.setBusinessType(ProductSaleBizType.TRANSFER);
+        newAsset.setPreviousHolderId(oldAsset.getCurrentHolderId());
+        boolean newAssetInsertRes = this.save(newAsset);
+        if (!newAssetInsertRes) {
+            throw new NFTException(ASSET_UPDATE_FAILED);
+        }
+        AssetStream saveAssetStream = new AssetStream();
+        saveAssetStream.setAssetId(newAsset.getId());
+        saveAssetStream.setOperator(assetTransferRequest.getOperator());
+        saveAssetStream.setStreamType(AssetEvent.TRANSFER.getCode() + "_IN");
+        saveAssetStream.setIdentifier(assetTransferRequest.getIdentify());
+        boolean saveAssetStreamRes = assetStreamMapper.insert(saveAssetStream) == 1;
+        if (!saveAssetStreamRes) {
+            throw new NFTException(ASSET_STREAM_SAVE_FAILED);
+        }
+        return newAsset;
     }
 }

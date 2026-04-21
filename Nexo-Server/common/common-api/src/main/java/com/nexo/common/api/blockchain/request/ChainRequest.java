@@ -24,7 +24,7 @@ public class ChainRequest extends BaseRequest {
     private String identifier;
 
     /**
-     * 藏品类别ID
+     * 藏品类别ID(藏品ID)
      */
     private String classId;
 
@@ -49,7 +49,7 @@ public class ChainRequest extends BaseRequest {
     private String owner;
 
     /**
-     * ntf唯一id
+     * ntf唯一编号
      */
     private String ntfId;
 

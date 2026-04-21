@@ -32,7 +32,13 @@ public enum NFTErrorCode implements ErrorCode {
 
     ASSET_QUERY_FAILED("ASSET_QUERY_FAILED", "资产查询失败"),
 
-    ASSET_STREAM_SAVE_FAILED("ASSET_STREAM_SAVE_FAILED", "资产流水保存失败");
+    ASSET_STREAM_SAVE_FAILED("ASSET_STREAM_SAVE_FAILED", "资产流水保存失败"),
+
+    CANNOT_TRANSFER_TO_YOURSELF("CANNOT_TRANSFER_TO_YOURSELF", "不能转让给自己"),
+
+    USER_NOT_EXIST("USER_NOT_EXIST", "用户不存在"),
+
+    BUYER_ILLEGAL("BUYER_ILLEGAL", "买家非法");
 
     private final String code;
 

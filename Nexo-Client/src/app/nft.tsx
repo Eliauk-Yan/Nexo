@@ -3,6 +3,7 @@ import { NFTDetail } from '@/api/nft'
 import { PaymentType } from '@/api/trade'
 import { ensureWeChatRegistered, getWeChatConfigError, isWeChatConfigured } from '@/utils/wechat'
 import { useSession } from '@/utils/ctx'
+import { showErrorAlert } from '@/utils/error'
 import {
   BottomSheet,
   Button,
@@ -207,7 +208,7 @@ export default function NftDetail() {
           if (isOrderSyncingError(error)) {
             return
           }
-          console.error('轮询订单状态失败:', error)
+          showErrorAlert(error, '获取订单状态失败，请稍后重试。')
         }
 
         if (attempts >= maxAttempts) {
@@ -238,7 +239,6 @@ export default function NftDetail() {
             await sleep(500)
             continue
           }
-          console.log('等待订单落库中:', orderId, attempt + 1, error)
         }
 
         await sleep(500)
@@ -367,9 +367,8 @@ export default function NftDetail() {
       }
     } catch (error) {
       setPurchasing(false)
-      console.error('发起购买失败:', error)
       if (!isOrderSyncingError(error)) {
-        Alert.alert('提示', error instanceof Error ? error.message : '发起购买失败，请稍后重试。')
+        showErrorAlert(error, '发起购买失败，请稍后重试。')
       }
     } finally {
       setLoading(false)
@@ -409,8 +408,7 @@ export default function NftDetail() {
       setPendingOrderId(orderId)
       setPaymentSheetVisible(true)
     } catch (error) {
-      console.error('创建订单失败:', error)
-      Alert.alert('提示', error instanceof Error ? error.message : '创建订单失败，请稍后重试。')
+      showErrorAlert(error, '创建订单失败，请稍后重试。')
     } finally {
       setLoading(false)
     }

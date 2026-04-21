@@ -1,6 +1,7 @@
 import { authApi } from '@/api'
 import { userApi } from '@/api/user'
 import { useSession } from '@/utils/ctx'
+import { showErrorAlert } from '@/utils/error'
 import {
   Button,
   Host,
@@ -31,8 +32,7 @@ const Setting = () => {
       await userApi.getUserProfile()
       router.push('/setting/account')
     } catch (error) {
-      console.error('获取用户信息失败:', error)
-      Alert.alert('提示', '获取用户信息失败，请稍后重试。')
+      showErrorAlert(error, '获取用户信息失败，请稍后重试。')
     } finally {
       setAccountLoading(false)
     }
@@ -48,7 +48,7 @@ const Setting = () => {
           try {
             await authApi.logout()
           } catch (error) {
-            console.error('退出登录失败:', error)
+            showErrorAlert(error, '退出登录失败，请稍后重试。')
           } finally {
             signOut()
             router.replace('/home/home')
