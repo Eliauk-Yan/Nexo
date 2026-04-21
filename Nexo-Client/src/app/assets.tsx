@@ -23,6 +23,7 @@ import {
   Host,
   Image,
   List,
+  Picker,
   RNHostView,
   ScrollView,
   Section,
@@ -39,13 +40,15 @@ import {
   listRowBackground,
   listStyle,
   padding,
+  pickerStyle,
   presentationDetents,
   presentationDragIndicator,
+  tag,
   tint,
   frame,
 } from '@expo/ui/swift-ui/modifiers'
 
-import { nftApi, Asset } from '@/api/nft'
+import { nftApi, Asset, AssetState } from '@/api/nft'
 import { borderRadius, colors, spacing, typography } from '@/config/theme'
 import { showErrorAlert } from '@/utils/error'
 import { useSession } from '@/utils/ctx'
@@ -67,6 +70,12 @@ function EmptyAssets({ message = '暂无相关藏品' }: { message?: string }) {
   )
 }
 
+function formatShortText(value?: string | null, head = 8, tail = 6) {
+  if (!value) return '-'
+  if (value.length <= head + tail + 3) return value
+  return `${value.substring(0, head)}...${value.slice(-tail)}`
+}
+
 function getAssetStateLabel(state?: string) {
   switch (state) {
     case 'INIT':
@@ -81,6 +90,14 @@ function getAssetStateLabel(state?: string) {
       return '已失效'
   }
 }
+
+const ASSET_TABS: { id: string; label: string; state?: AssetState }[] = [
+  { id: 'all', label: '全部' },
+  { id: 'active', label: '已持有', state: 'ACTIVE' },
+  { id: 'minting', label: '铸造中', state: 'INIT' },
+  { id: 'destroying', label: '销毁中', state: 'DESTROYING' },
+  { id: 'destroyed', label: '已销毁', state: 'DESTROYED' },
+]
 
 function getAssetStateStyle(state?: string, isDark = false) {
   switch (state) {
@@ -200,6 +217,9 @@ export default function MyAssetsScreen() {
   const [destroyingAssetId, setDestroyingAssetId] = useState<number | null>(null)
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
   const [isAssetSheetPresented, setIsAssetSheetPresented] = useState(false)
+  const [activeTab, setActiveTab] = useState('all')
+  const [keyword, setKeyword] = useState('')
+  const [searchText, setSearchText] = useState('')
 
   const handleCopy = async (text: string, label: string) => {
     try {
@@ -215,7 +235,7 @@ export default function MyAssetsScreen() {
     }
   }
 
-  const fetchMyAssets = useCallback(async () => {
+  const fetchMyAssets = useCallback(async (tabId = activeTab, searchKeyword = keyword) => {
     if (!isLogin) {
       setAssets([])
       return
@@ -223,9 +243,12 @@ export default function MyAssetsScreen() {
 
     try {
       setLoading(true)
+      const state = ASSET_TABS.find((tab) => tab.id === tabId)?.state
       const response = await nftApi.getMyAssets({
         currentPage: 1,
         pageSize: 20,
+        keyword: searchKeyword.trim() || undefined,
+        state,
       })
       const items = response || []
       setAssets(Array.isArray(items) ? items : [])
@@ -234,7 +257,7 @@ export default function MyAssetsScreen() {
     } finally {
       setLoading(false)
     }
-  }, [isLogin])
+  }, [activeTab, isLogin, keyword])
 
   const handleDestroyAsset = useCallback(
     (asset: Asset) => {
@@ -264,7 +287,7 @@ export default function MyAssetsScreen() {
               Alert.alert('提示', '销毁请求已提交')
               setIsAssetSheetPresented(false)
               setSelectedAsset(null)
-              await fetchMyAssets()
+              await fetchMyAssets(activeTab, keyword)
             } catch (error) {
               showErrorAlert(error, '销毁资产失败，请稍后重试。')
             } finally {
@@ -274,18 +297,22 @@ export default function MyAssetsScreen() {
         },
       ])
     },
-    [fetchMyAssets],
-  )
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchMyAssets().catch(() => {})
-    }, [fetchMyAssets]),
+    [activeTab, fetchMyAssets, keyword],
   )
 
   useEffect(() => {
-    fetchMyAssets().catch(() => {})
-  }, [fetchMyAssets])
+    const timer = setTimeout(() => {
+      setKeyword(searchText)
+    }, 400)
+
+    return () => clearTimeout(timer)
+  }, [searchText])
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyAssets(activeTab, keyword).catch(() => {})
+    }, [activeTab, fetchMyAssets, keyword]),
+  )
 
   const assetRows = useMemo(() => chunk(assets, 2), [assets])
   const selectedStateStyle = getAssetStateStyle(selectedAsset?.state, isDark)
@@ -299,23 +326,17 @@ export default function MyAssetsScreen() {
         }}
       />
 
+      <Stack.SearchBar
+        placeholder="搜索资产"
+        onChangeText={(event) => setSearchText(event.nativeEvent.text)}
+      />
+
       <Stack.Toolbar placement="left">
         <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.back()} />
       </Stack.Toolbar>
 
       <Host style={styles.host}>
         <List modifiers={[listStyle('insetGrouped')]}>
-          <Section modifiers={[listRowBackground('clear')]}>
-            <VStack alignment="leading" spacing={8}>
-              <Text modifiers={[font({ size: 32, weight: 'bold' }), foregroundStyle('primary')]}>
-                我的资产
-              </Text>
-              <Text modifiers={[font({ size: 15 }), foregroundStyle('secondary')]}>
-                查看已购藏品、资产标识与链上交易信息
-              </Text>
-            </VStack>
-          </Section>
-
           {!isLogin ? (
             <>
               <Section title="资产列表">
@@ -336,7 +357,23 @@ export default function MyAssetsScreen() {
               </Section>
             </>
           ) : (
-            <Section title="资产列表">
+            <>
+            <Section modifiers={[listRowBackground('clear')]}>
+              <Picker
+                label="资产状态"
+                selection={activeTab}
+                onSelectionChange={(selection) => setActiveTab(selection as string)}
+                modifiers={[pickerStyle('segmented')]}
+              >
+                {ASSET_TABS.map((tab) => (
+                  <Text key={tab.id} modifiers={[tag(tab.id)]}>
+                    {tab.label}
+                  </Text>
+                ))}
+              </Picker>
+            </Section>
+
+            <Section title="资产列表" modifiers={[listRowBackground('clear')]}>
               {assets.length > 0 ? (
                 <ScrollView>
                   <VStack spacing={12} modifiers={[padding({ vertical: 8 })]}>
@@ -372,6 +409,7 @@ export default function MyAssetsScreen() {
                 </RNHostView>
               )}
             </Section>
+            </>
           )}
         </List>
 
@@ -412,8 +450,12 @@ export default function MyAssetsScreen() {
                       <Text modifiers={[foregroundStyle('primary')]}>标识符</Text>
                       <Spacer />
                       <Button
-                        label={`${selectedAsset.serialNumber.substring(0, 8)}...${selectedAsset.serialNumber.slice(-6)}`}
-                        onPress={() => handleCopy(selectedAsset.serialNumber, '资产唯一标识')}
+                        label={formatShortText(selectedAsset.serialNumber)}
+                        onPress={() => {
+                          if (selectedAsset.serialNumber) {
+                            handleCopy(selectedAsset.serialNumber, '资产唯一标识')
+                          }
+                        }}
                         modifiers={[buttonStyle('plain'), tint('#8E8E93'), font({ size: 13 })]}
                       />
                     </HStack>
@@ -433,7 +475,7 @@ export default function MyAssetsScreen() {
                         <Text modifiers={[foregroundStyle('primary')]}>交易哈希</Text>
                         <Spacer />
                         <Button
-                          label={`${selectedAsset.transactionHash.substring(0, 10)}...${selectedAsset.transactionHash.slice(-6)}`}
+                          label={formatShortText(selectedAsset.transactionHash, 10, 6)}
                           onPress={() => handleCopy(selectedAsset.transactionHash, '交易哈希')}
                           modifiers={[buttonStyle('plain'), tint('#8E8E93'), font({ size: 13 })]}
                         />

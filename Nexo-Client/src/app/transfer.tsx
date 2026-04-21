@@ -148,7 +148,7 @@ export default function TransferScreen() {
                 // Haptics might not be available
               }
               Alert.alert('转赠成功', '资产已成功转赠，链上确认可能需要一些时间。', [
-                { text: '好的', onPress: () => router.back() },
+                { text: '好的', onPress: () => router.replace('/assets') },
               ])
             } catch (error) {
               showErrorAlert(error, '转赠失败，请稍后重试。')
