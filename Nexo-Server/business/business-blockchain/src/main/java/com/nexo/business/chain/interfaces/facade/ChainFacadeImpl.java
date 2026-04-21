@@ -45,6 +45,15 @@ public class ChainFacadeImpl implements ChainFacade {
         return getChainService().mint(request);
     }
 
+    @Override
+    public ChainResponse<ChainOperationData> transfer(ChainRequest request) {
+        return getChainService().transfer(request);
+    }
+
+    @Override
+    public ChainResponse<ChainOperationData> destroy(ChainRequest request) {
+        return getChainService().destroy(request);
+    }
 
 
     private ChainService getChainService() {

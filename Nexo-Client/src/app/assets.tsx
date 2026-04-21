@@ -45,7 +45,7 @@ import {
   tint,
 } from '@expo/ui/swift-ui/modifiers'
 
-import { artworkApi, Asset } from '@/api/artwork'
+import { nftApi, Asset } from '@/api/nft'
 import { borderRadius, colors, spacing, typography } from '@/config/theme'
 import { useSession } from '@/utils/ctx'
 
@@ -72,8 +72,47 @@ function getAssetStateLabel(state?: string) {
       return '铸造中'
     case 'ACTIVE':
       return '已持有'
+    case 'DESTROYING':
+      return '销毁中'
+    case 'DESTROYED':
+      return '已销毁'
     default:
       return '已失效'
+  }
+}
+
+function getAssetStateStyle(state?: string, isDark = false) {
+  switch (state) {
+    case 'INIT':
+      return {
+        text: '#FF9500',
+        background: isDark ? 'rgba(255,149,0,0.18)' : 'rgba(255,149,0,0.12)',
+        border: isDark ? 'rgba(255,149,0,0.38)' : 'rgba(255,149,0,0.28)',
+      }
+    case 'ACTIVE':
+      return {
+        text: '#22C55E',
+        background: isDark ? 'rgba(34,197,94,0.18)' : 'rgba(34,197,94,0.12)',
+        border: isDark ? 'rgba(34,197,94,0.38)' : 'rgba(34,197,94,0.28)',
+      }
+    case 'DESTROYING':
+      return {
+        text: '#5856D6',
+        background: isDark ? 'rgba(88,86,214,0.2)' : 'rgba(88,86,214,0.12)',
+        border: isDark ? 'rgba(88,86,214,0.42)' : 'rgba(88,86,214,0.28)',
+      }
+    case 'DESTROYED':
+      return {
+        text: '#FF3B30',
+        background: isDark ? 'rgba(255,59,48,0.18)' : 'rgba(255,59,48,0.12)',
+        border: isDark ? 'rgba(255,59,48,0.38)' : 'rgba(255,59,48,0.28)',
+      }
+    default:
+      return {
+        text: '#8E8E93',
+        background: isDark ? 'rgba(142,142,147,0.18)' : 'rgba(142,142,147,0.12)',
+        border: isDark ? 'rgba(142,142,147,0.34)' : 'rgba(142,142,147,0.24)',
+      }
   }
 }
 
@@ -86,10 +125,8 @@ function AssetCard({ asset }: { asset: Asset }) {
   const frameBg = isDark ? colors.backgroundSecondary : '#F3F4F6'
   const titleColor = isDark ? colors.text : '#111827'
   const secondaryText = isDark ? colors.textSecondary : '#6B7280'
-  const badgeBg = isDark ? 'rgba(0,0,0,0.58)' : 'rgba(255,255,255,0.92)'
-  const badgeBorder = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(15, 23, 42, 0.08)'
+  const stateStyle = getAssetStateStyle(asset.state, isDark)
   const priceColor = '#0A84FF'
-  const badgeText = '#0A84FF'
   const shadowOpacity = isDark ? 0.12 : 0.06
 
   return (
@@ -113,12 +150,12 @@ function AssetCard({ asset }: { asset: Asset }) {
             style={[
               styles.assetStatusBadge,
               {
-                backgroundColor: badgeBg,
-                borderColor: badgeBorder,
+                backgroundColor: stateStyle.background,
+                borderColor: stateStyle.border,
               },
             ]}
           >
-            <RNText style={[styles.assetStatusText, { color: badgeText }]}>
+            <RNText style={[styles.assetStatusText, { color: stateStyle.text }]}>
               {getAssetStateLabel(asset.state)}
             </RNText>
           </View>
@@ -152,11 +189,14 @@ function AssetCard({ asset }: { asset: Asset }) {
 
 export default function MyAssetsScreen() {
   const router = useRouter()
+  const colorScheme = useColorScheme()
+  const isDark = colorScheme === 'dark'
   const { session } = useSession()
   const isLogin = !!session
 
   const [assets, setAssets] = useState<Asset[]>([])
   const [loading, setLoading] = useState(false)
+  const [destroyingAssetId, setDestroyingAssetId] = useState<number | null>(null)
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
   const [isAssetSheetPresented, setIsAssetSheetPresented] = useState(false)
 
@@ -183,7 +223,7 @@ export default function MyAssetsScreen() {
 
     try {
       setLoading(true)
-      const response = await artworkApi.getMyAssets(1, 20)
+      const response = await nftApi.getMyAssets(1, 20)
       const items = (response as any).records || response || []
       setAssets(Array.isArray(items) ? items : [])
     } catch (error) {
@@ -192,6 +232,47 @@ export default function MyAssetsScreen() {
       setLoading(false)
     }
   }, [isLogin])
+
+  const handleDestroyAsset = useCallback(
+    (asset: Asset) => {
+      if (asset.state !== 'ACTIVE') {
+        Alert.alert('提示', '只有已持有的资产可以销毁。')
+        return
+      }
+
+      Alert.alert('销毁确认', '销毁会提交链上处理，确认后不可恢复。', [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '确认销毁',
+          style: 'destructive',
+          onPress: async () => {
+            if (!asset.id) {
+              Alert.alert('提示', '资产ID为空，请刷新资产列表后重试。')
+              return
+            }
+            try {
+              setDestroyingAssetId(asset.id)
+              await nftApi.destroyAsset(asset.id)
+              try {
+                await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+              } catch {
+                // Haptics might not be available
+              }
+              Alert.alert('提示', '销毁请求已提交')
+              setIsAssetSheetPresented(false)
+              setSelectedAsset(null)
+              await fetchMyAssets()
+            } catch (error) {
+              console.error('Destroy asset error:', error)
+            } finally {
+              setDestroyingAssetId(null)
+            }
+          },
+        },
+      ])
+    },
+    [fetchMyAssets],
+  )
 
   useFocusEffect(
     useCallback(() => {
@@ -204,6 +285,7 @@ export default function MyAssetsScreen() {
   }, [fetchMyAssets])
 
   const assetRows = useMemo(() => chunk(assets, 2), [assets])
+  const selectedStateStyle = getAssetStateStyle(selectedAsset?.state, isDark)
 
   return (
     <View style={styles.container}>
@@ -314,12 +396,24 @@ export default function MyAssetsScreen() {
                     </HStack>
 
                     <HStack spacing={12}>
-                      <Image systemName="info.circle" size={16} color="#5856D6" />
+                      <Image systemName="info.circle" size={16} color={selectedStateStyle.text} />
                       <Text modifiers={[foregroundStyle('primary')]}>持有状态</Text>
                       <Spacer />
-                      <Text modifiers={[foregroundStyle('secondary')]}>
-                        {getAssetStateLabel(selectedAsset.state)}
-                      </Text>
+                      <RNHostView matchContents>
+                        <View
+                          style={[
+                            styles.assetStatePill,
+                            {
+                              backgroundColor: selectedStateStyle.background,
+                              borderColor: selectedStateStyle.border,
+                            },
+                          ]}
+                        >
+                          <RNText style={[styles.assetStatePillText, { color: selectedStateStyle.text }]}>
+                            {getAssetStateLabel(selectedAsset.state)}
+                          </RNText>
+                        </View>
+                      </RNHostView>
                     </HStack>
                   </Section>
 
@@ -367,13 +461,20 @@ export default function MyAssetsScreen() {
                     </HStack>
                   </Section>
 
-                  <Section>
-                    <Button
-                      label="关闭"
-                      onPress={() => setIsAssetSheetPresented(false)}
-                      modifiers={[buttonStyle('plain'), tint('#8E8E93'), frame({ maxWidth: 9999 })]}
-                    />
-                  </Section>
+                  {selectedAsset.state === 'ACTIVE' && (
+                    <Section modifiers={[listRowBackground('clear')]}>
+                      <Button
+                        label={destroyingAssetId === selectedAsset.id ? '提交中...' : '销毁资产'}
+                        onPress={() => handleDestroyAsset(selectedAsset)}
+                        modifiers={[
+                          buttonStyle('glassProminent'),
+                          tint('#FF3B30'),
+                          controlSize('extraLarge'),
+                          frame({ maxWidth: 9999 }),
+                        ]}
+                      />
+                    </Section>
+                  )}
                 </List>
               </VStack>
             )}
@@ -435,6 +536,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   assetStatusText: {
+    fontSize: typography.fontSize.xs,
+    fontWeight: typography.fontWeight.medium,
+  },
+  assetStatePill: {
+    borderWidth: 1,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  assetStatePillText: {
     fontSize: typography.fontSize.xs,
     fontWeight: typography.fontWeight.medium,
   },

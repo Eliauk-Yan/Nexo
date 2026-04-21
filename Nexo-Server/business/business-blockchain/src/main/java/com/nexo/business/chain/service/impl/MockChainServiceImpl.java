@@ -63,6 +63,17 @@ public class MockChainServiceImpl extends AbstractChainService {
     }
 
     @Override
+    public ChainResponse<ChainOperationData> transfer(ChainRequest request) {
+        return null;
+    }
+
+    @Override
+    public ChainResponse<ChainOperationData> destroy(ChainRequest request) {
+        return (ChainResponse<ChainOperationData>) doPostExecute(request, resolveBizType(request), ChainOperateType.NFT_DESTROY, _ -> {
+        });
+    }
+
+    @Override
     public ChainResponse<ChainResultData> queryChainResult(ChainQueryRequest request) {
         ChainResponse<ChainResultData> response = new ChainResponse<>();
         response.setSuccess(true);

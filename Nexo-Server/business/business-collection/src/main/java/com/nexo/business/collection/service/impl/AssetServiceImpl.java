@@ -2,25 +2,31 @@ package com.nexo.business.collection.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nexo.business.collection.domain.entity.Asset;
+import com.nexo.business.collection.domain.entity.AssetStream;
 import com.nexo.business.collection.domain.entity.NFT;
-import com.nexo.business.collection.domain.enums.AssetState;
+import com.nexo.business.collection.domain.exception.NFTException;
 import com.nexo.business.collection.interfaces.vo.AssetVO;
 import com.nexo.business.collection.mapper.mybatis.AssetMapper;
+import com.nexo.business.collection.mapper.mybatis.AssetStreamMapper;
 import com.nexo.business.collection.service.AssetService;
 import com.nexo.business.collection.service.NFTService;
+import com.nexo.common.api.nft.constant.AssetEvent;
+import com.nexo.common.api.nft.constant.AssetState;
+import com.nexo.common.api.nft.request.AssetDestroyRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static com.nexo.business.collection.domain.exception.NFTErrorCode.*;
 
 /**
  * @classname AssetServiceImpl
@@ -32,6 +38,8 @@ import java.util.stream.Collectors;
 public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements AssetService {
 
     private final NFTService NFTService;
+
+    private final AssetStreamMapper assetStreamMapper;
 
     @Override
     public Page<AssetVO> getMyAssets(Long current, Long size) {
@@ -80,20 +88,36 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
         return voPage;
     }
 
+    @Transactional(rollbackFor = Exception.class)
     @Override
-    public boolean activateAsset(Long assetId, String transactionHash) {
-        Asset asset = this.getById(assetId);
+    public Asset destroy(AssetDestroyRequest request) {
+        // 1. 查找并校验要销毁的资产
+        Asset asset = this.getById(request.getAssetId());
         if (asset == null) {
-            return false;
+            throw new NFTException(ASSET_QUERY_FAILED);
         }
-        if (asset.getState() == AssetState.ACTIVE) {
-            return true;
+        if (!asset.getCurrentHolderId().toString().equals(request.getOperator())) {
+            throw new NFTException(ASSET_CHECK_ERROR);
         }
-        LambdaUpdateWrapper<Asset> updateWrapper = new LambdaUpdateWrapper<>();
-        updateWrapper.eq(Asset::getId, assetId)
-                .set(Asset::getState, AssetState.ACTIVE)
-                .set(Asset::getTransactionHash, transactionHash)
-                .set(Asset::getSyncChainTime, LocalDateTime.now());
-        return this.update(updateWrapper);
+        if (asset.getState() == AssetState.DESTROYING || asset.getState() == AssetState.DESTROYED) {
+            return asset;
+        }
+        // 2. 状态转移
+        asset.destroying();
+        // 3. 创建资产流水
+        AssetStream assetStream = new AssetStream();
+        assetStream.setAssetId(asset.getId());
+        assetStream.setIdentifier(request.getIdentify());
+        assetStream.setOperator(request.getOperator());
+        assetStream.setStreamType(AssetEvent.DESTROY.getCode());
+        boolean result = this.updateById(asset);
+        if (!result) {
+            throw new NFTException(ASSET_UPDATE_FAILED);
+        }
+        boolean saveResult = assetStreamMapper.insert(assetStream) == 1;
+        if (!saveResult) {
+            throw new NFTException(ASSET_STREAM_SAVE_FAILED);
+        }
+        return asset;
     }
 }

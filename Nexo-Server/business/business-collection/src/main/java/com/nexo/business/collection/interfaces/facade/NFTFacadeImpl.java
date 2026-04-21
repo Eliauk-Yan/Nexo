@@ -4,7 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.nexo.business.collection.domain.entity.*;
 import com.nexo.business.collection.domain.entity.NFT;
-import com.nexo.business.collection.domain.enums.AssetState;
+import com.nexo.common.api.nft.constant.AssetState;
 import com.nexo.business.collection.domain.exception.NFTException;
 import com.nexo.business.collection.mapper.convert.NFTConvertor;
 import com.nexo.business.collection.mapper.convert.ArtworkInventoryStreamConvert;

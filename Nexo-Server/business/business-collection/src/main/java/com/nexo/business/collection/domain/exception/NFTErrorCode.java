@@ -24,7 +24,15 @@ public enum NFTErrorCode implements ErrorCode {
 
     NFT_INVENTORY_STREAM_SAVE_FAILED("NFT_INVENTORY_STREAM_SAVE_FAILED", "藏品库存流保存失败"),
 
-    NFT_NOT_FOUND("NFT_NOT_FOUND", "藏品不存在"),;
+    NFT_NOT_FOUND("NFT_NOT_FOUND", "藏品不存在"),
+
+    ASSET_CHECK_ERROR("ASSET_CHECK_ERROR", "资产检查错误"),
+
+    ASSET_UPDATE_FAILED("ASSET_UPDATE_FAILED", "资产更新失败"),
+
+    ASSET_QUERY_FAILED("ASSET_QUERY_FAILED", "资产查询失败"),
+
+    ASSET_STREAM_SAVE_FAILED("ASSET_STREAM_SAVE_FAILED", "资产流水保存失败");
 
     private final String code;
 

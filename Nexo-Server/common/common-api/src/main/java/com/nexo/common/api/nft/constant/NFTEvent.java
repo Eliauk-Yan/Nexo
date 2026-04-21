@@ -14,7 +14,6 @@ public enum NFTEvent {
 
     REMOVE("REMOVE", "下架"),
 
-
     MODIFY_INVENTORY("MODIFY_INVENTORY", "修改藏品库存"),
 
     MODIFY_PRICE("MODIFY_PRICE", "修改藏品价格"),

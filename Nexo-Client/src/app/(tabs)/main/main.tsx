@@ -11,8 +11,8 @@ import {
   useColorScheme,
 } from 'react-native'
 
-import { artworkApi, userApi } from '@/api'
-import { Artwork } from '@/api/artwork'
+import { nftApi, userApi } from '@/api'
+import { NFT } from '@/api/nft'
 import { InviteRankInfo } from '@/api/user'
 import { useSession } from '@/utils/ctx'
 
@@ -29,12 +29,12 @@ const LatestArtworkCard = memo(function LatestArtworkCard({
   textSub,
   onPress,
 }: {
-  artwork: Artwork
+  artwork: NFT
   cardBg: string
   imageBg: string
   textMain: string
   textSub: string
-  onPress: (artwork: Artwork) => void
+  onPress: (artwork: NFT) => void
 }) {
   return (
     <TouchableOpacity
@@ -74,7 +74,7 @@ export default function MainScreen() {
 
   const [rankingUsers, setRankingUsers] = useState<InviteRankInfo[]>([])
   const [myRank, setMyRank] = useState<number | null>(null)
-  const [latestArtworks, setLatestArtworks] = useState<Artwork[]>([])
+  const [latestArtworks, setLatestArtworks] = useState<NFT[]>([])
   const hasLoadedRef = useRef(false)
   const lastLoginStateRef = useRef(isLogin)
 
@@ -96,7 +96,7 @@ export default function MainScreen() {
 
   const fetchLatestArtworks = useCallback(async () => {
     try {
-      const response = await artworkApi.list({
+      const response = await nftApi.list({
         currentPage: 1,
         pageSize: 6,
       })

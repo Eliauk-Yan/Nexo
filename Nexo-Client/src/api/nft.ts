@@ -1,6 +1,6 @@
-import { get } from '@/utils/request'
+import request, { get } from '@/utils/request'
 
-export interface Artwork {
+export interface NFT {
   id: number
   name: string
   cover: string
@@ -15,7 +15,7 @@ export interface Artwork {
   productState: 'NOT_FOR_SALE' | 'SELLING' | 'SOLD_OUT' | 'COMING_SOON' | 'WAIT_FOR_SALE'
 }
 
-export interface ArtworkDetail {
+export interface NFTDetail {
   id: number
   name: string
   cover: string
@@ -27,7 +27,7 @@ export interface ArtworkDetail {
   productState: 'NOT_FOR_SALE' | 'SELLING' | 'SOLD_OUT' | 'COMING_SOON' | 'WAIT_FOR_SALE'
 }
 
-export interface QueryArtWorkRequest {
+export interface QueryNFTRequest {
   currentPage: number
   pageSize: number
   keyword?: string
@@ -53,19 +53,19 @@ export interface PageAssetResponse {
   pages: number
 }
 
-export const artworkApi = {
+export const nftApi = {
   /**
    * 获取藏品列表
    */
-  list: (param: QueryArtWorkRequest) => {
-    return get<Artwork[]>('/artwork/list', param)
+  list: (param: QueryNFTRequest) => {
+    return get<NFT[]>('/artwork/list', param)
   },
 
   /**
    * 获取藏品详情
    */
   getDetail: (id: number) => {
-    return get<ArtworkDetail>(`/artwork/${id}`)
+    return get<NFTDetail>(`/artwork/${id}`)
   },
 
   /**
@@ -73,5 +73,17 @@ export const artworkApi = {
    */
   getMyAssets: (currentPage: number, pageSize: number) => {
     return get<Asset[]>('/artwork/myAssets', { current: currentPage, size: pageSize })
+  },
+
+  /**
+   * 销毁我的数字资产
+   */
+  destroyAsset: (assetId: number) => {
+    const id = String(assetId)
+    return request('/artwork/destroy', {
+      method: 'POST',
+      params: { assetId: id },
+      body: { assetId: id },
+    }) as Promise<boolean>
   },
 }

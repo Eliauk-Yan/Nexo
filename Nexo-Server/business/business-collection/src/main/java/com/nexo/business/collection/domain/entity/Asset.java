@@ -1,7 +1,7 @@
 package com.nexo.business.collection.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.nexo.business.collection.domain.enums.AssetState;
+import com.nexo.common.api.nft.constant.AssetState;
 import com.nexo.common.datasource.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -59,4 +59,21 @@ public class Asset extends BaseEntity {
         this.syncChainTime = LocalDateTime.now();
         this.state = AssetState.ACTIVE;
     }
+
+    /**
+     * 销毁中
+     */
+    public void destroying() {
+        this.state = AssetState.DESTROYING;
+        this.destructionTime = LocalDateTime.now();
+    }
+
+    /**
+     * 已销毁
+     */
+    public void destroyed() {
+        this.state = AssetState.DESTROYED;
+        this.destructionTime = LocalDateTime.now();
+    }
+
 }

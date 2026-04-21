@@ -219,10 +219,10 @@ export default function ProfileScreen() {
 
             <HStack
               spacing={12}
-              modifiers={[padding({ vertical: 10 }), onTapGesture(() => router.push('/my-assets'))]}
+              modifiers={[padding({ vertical: 10 }), onTapGesture(() => router.push('/assets'))]}
             >
               <Image systemName="rectangle.stack.fill" size={18} color="#0A84FF" />
-              <Text modifiers={[font({ size: 16, weight: 'medium' })]}>我的数字资产</Text>
+              <Text modifiers={[font({ size: 16, weight: 'medium' })]}>数字资产</Text>
               <Spacer />
               <Image systemName="chevron.right" size={13} color="#8E8E93" />
             </HStack>

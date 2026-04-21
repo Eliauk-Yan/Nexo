@@ -29,6 +29,8 @@ import java.util.function.Consumer;
 import static com.nexo.business.collection.domain.exception.NFTErrorCode.NFT_INVENTORY_INIT_FAILED;
 import static com.nexo.business.collection.domain.exception.NFTErrorCode.NFT_QUERY_FAILED;
 import static com.nexo.business.collection.domain.exception.NFTErrorCode.NFT_UPDATE_FAILED;
+import static com.nexo.common.api.nft.constant.AssetState.DESTROYED;
+import static com.nexo.common.api.nft.constant.AssetState.DESTROYING;
 
 /**
  * 链上操作结果监听器
@@ -61,6 +63,10 @@ public class ChainOperateResultListener extends StreamConsumer {
                 case NFT_MINT:
                     // 藏品铸造
                     handleAssetActivated(chainOperateBody, chainResultData);
+                    break;
+                case NFT_DESTROY:
+                    // 资产销毁
+                    handleAssetDestroyed(chainOperateBody);
                     break;
                 default:
                     log.warn("未处理的链回调操作类型, bizType={}, operateType={}", chainOperateBody.getBizType(), chainOperateBody.getOperateType());
@@ -108,6 +114,25 @@ public class ChainOperateResultListener extends StreamConsumer {
         request.setOperatorType(UserType.PLATFORM);
         var response = orderFacade.finish(request);
         if (!response.getSuccess()) {
+            throw new NFTException(NFT_UPDATE_FAILED);
+        }
+    }
+
+    private void handleAssetDestroyed(ChainOperateBody chainOperateBody) {
+        Long assetId = Long.parseLong(chainOperateBody.getBizId());
+        Asset asset = assetService.getById(assetId);
+        if (asset == null) {
+            throw new NFTException(NFT_QUERY_FAILED);
+        }
+        if (DESTROYED.equals(asset.getState())) {
+            return;
+        }
+        if (!DESTROYING.equals(asset.getState())) {
+            log.warn("资产销毁链回调状态不匹配, assetId={}, state={}", assetId, asset.getState());
+            throw new NFTException(NFT_UPDATE_FAILED);
+        }
+        asset.destroyed();
+        if (!assetService.updateById(asset)) {
             throw new NFTException(NFT_UPDATE_FAILED);
         }
     }

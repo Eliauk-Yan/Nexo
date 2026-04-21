@@ -66,7 +66,7 @@ const AuthLayout = () => {
       />
 
       <Stack.Screen
-        name="my-assets"
+        name="assets"
         options={{
           title: '我的数字资产',
           headerShown: true,

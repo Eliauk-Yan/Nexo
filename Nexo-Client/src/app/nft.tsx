@@ -1,5 +1,5 @@
-import { artworkApi, authApi, orderApi, tradeApi } from '@/api'
-import { ArtworkDetail } from '@/api/artwork'
+import { nftApi, authApi, orderApi, tradeApi } from '@/api'
+import { NFTDetail } from '@/api/nft'
 import { PaymentType } from '@/api/trade'
 import { ensureWeChatRegistered, getWeChatConfigError, isWeChatConfigured } from '@/utils/wechat'
 import { useSession } from '@/utils/ctx'
@@ -109,7 +109,7 @@ export default function NftDetail() {
   const [pendingOrderId, setPendingOrderId] = useState('')
   const payResult = useEvent(ExpoWeChat, 'onPayResult')
   const wechatConfigured = isWeChatConfigured()
-  const [artwork, setArtwork] = useState<ArtworkDetail>({
+  const [artwork, setArtwork] = useState<NFTDetail>({
     id: 0,
     name: '',
     cover: '',
@@ -146,10 +146,10 @@ export default function NftDetail() {
 
     setLoading(true)
     try {
-      const res = await artworkApi.getDetail(Number(id))
+      const res = await nftApi.getDetail(Number(id))
       const t = await authApi.getToken({ scene: 'artwork', key: id })
       setToken(t)
-      setArtwork(res as ArtworkDetail)
+      setArtwork(res as NFTDetail)
     } finally {
       setLoading(false)
     }

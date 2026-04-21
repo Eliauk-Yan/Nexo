@@ -32,6 +32,16 @@ public interface ChainService {
     ChainResponse<ChainOperationData> mint(ChainRequest request);
 
     /**
+     * 交易藏品
+     */
+    ChainResponse<ChainOperationData> transfer(ChainRequest request);
+
+    /**
+     * 销毁藏品
+     */
+    ChainResponse<ChainOperationData> destroy(ChainRequest request);
+
+    /**
      * 查询上链交易结果
      */
     ChainResponse<ChainResultData> queryChainResult(ChainQueryRequest request);

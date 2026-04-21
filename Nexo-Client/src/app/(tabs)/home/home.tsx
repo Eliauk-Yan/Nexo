@@ -1,7 +1,7 @@
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
 import Feather from '@expo/vector-icons/Feather'
-import { artworkApi } from '@/api'
-import { Artwork } from '@/api/artwork'
+import { nftApi } from '@/api'
+import { NFT } from '@/api/nft'
 import { Stack, useFocusEffect, useRouter } from 'expo-router'
 import {
   FlatList,
@@ -29,8 +29,8 @@ const InlineNFTCard = memo(function InlineNFTCard({
   priceBg,
   limitBg,
 }: {
-  artwork: Artwork
-  onPress?: (a: Artwork) => void
+  artwork: NFT
+  onPress?: (a: NFT) => void
   cardBg: string
   imageBg: string
   titleColor: string
@@ -91,7 +91,7 @@ const Home = () => {
   const priceBg = isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6'
   const limitBg = isDark ? 'rgba(255,255,255,0.08)' : '#EDEDED'
 
-  const [artworks, setArtworks] = useState<Artwork[]>([])
+  const [artworks, setArtworks] = useState<NFT[]>([])
   const [loading, setLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [keyword, setKeyword] = useState('')
@@ -104,7 +104,7 @@ const Home = () => {
         setLoading(true)
       }
 
-      const response = await artworkApi.list({
+      const response = await nftApi.list({
         currentPage: 1,
         pageSize: 10,
         keyword: searchKeyword,
@@ -146,7 +146,7 @@ const Home = () => {
     }
   }, [fetchTrending, keyword])
 
-  const renderItem = ({ item }: { item: Artwork }) => (
+  const renderItem = ({ item }: { item: NFT }) => (
     <View style={styles.itemContainer}>
       <InlineNFTCard
         artwork={item}
