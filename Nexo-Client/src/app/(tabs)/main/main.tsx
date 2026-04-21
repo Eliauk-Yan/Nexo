@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useRef, useState } from 'react'
+import React, { memo, useCallback, useState } from 'react'
 import Feather from '@expo/vector-icons/Feather'
 import { Image as RNImage } from 'expo-image'
 import { Stack, useFocusEffect, useRouter } from 'expo-router'
@@ -76,8 +76,6 @@ export default function MainScreen() {
   const [rankingUsers, setRankingUsers] = useState<InviteRankInfo[]>([])
   const [myRank, setMyRank] = useState<number | null>(null)
   const [latestArtworks, setLatestArtworks] = useState<NFT[]>([])
-  const hasLoadedRef = useRef(false)
-  const lastLoginStateRef = useRef(isLogin)
 
   const fetchRanking = useCallback(async () => {
     try {
@@ -109,14 +107,9 @@ export default function MainScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      const shouldReload = !hasLoadedRef.current || lastLoginStateRef.current !== isLogin
-      if (!shouldReload) return
-
-      hasLoadedRef.current = true
-      lastLoginStateRef.current = isLogin
       fetchRanking().catch(() => {})
       fetchLatestArtworks().catch(() => {})
-    }, [fetchLatestArtworks, fetchRanking, isLogin]),
+    }, [fetchLatestArtworks, fetchRanking]),
   )
 
   return (

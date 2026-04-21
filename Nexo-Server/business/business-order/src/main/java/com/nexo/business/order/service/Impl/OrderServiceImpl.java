@@ -155,9 +155,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
                 .lt(TradeOrder::getCreatedAt, timeoutLine)
                 .orderByAsc(TradeOrder::getId)
                 .last("limit " + pageSize);
-
         if (StringUtils.isNotBlank(buyerIdTailNumber)) {
-            wrapper.apply("right(buyer_id, 2) = {0}", buyerIdTailNumber);
+            wrapper.apply("right(concat('00', buyer_id), 2) = {0}", buyerIdTailNumber);
         }
         if (minId != null) {
             wrapper.ge(TradeOrder::getId, minId);

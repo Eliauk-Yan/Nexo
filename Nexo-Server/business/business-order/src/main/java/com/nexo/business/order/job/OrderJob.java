@@ -16,11 +16,11 @@ import com.xxl.job.core.handler.annotation.XxlJob;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ForkJoinPool;
@@ -66,12 +66,19 @@ public class OrderJob {
     /**
      * 支付模块接口
      */
+    @DubboReference(version = "1.0.0")
     private PayFacade payFacade;
 
     /**
      * 订单模块接口
      */
+    @DubboReference(version = "1.0.0")
     private OrderFacade orderFacade;
+
+    @XxlJob("testJob")
+    public void testJob() {
+        log.info("测试任务执行成功...");
+    }
 
     @XxlJob("orderTimeOutExecute")
     public void orderTimeOutExecute() {
@@ -82,14 +89,14 @@ public class OrderJob {
             int shardTotal = XxlJobHelper.getShardTotal();
             log.info("订单超时执行器 开始执行 , 当前分片索引：{} , 分片总数：{}", shardIndex, shardTotal);
             // 3. 筛选当前分片要执行的数据
-            List<String> buyerIdTailNumberList = new ArrayList<>();
-            for (int i = 0; i <= MAX_TAIL_NUMBER; i++) {
+            List<String> buyerIdTailList = new ArrayList<>();
+            for (int i = 0; i <= MAX_TAIL_NUMBER; i++) { // 00 - 99 平均分配给每个执行器
                 if (i % shardTotal == shardIndex) {
-                    buyerIdTailNumberList.add(StringUtils.leftPad(String.valueOf(i), 2, "0"));
+                    buyerIdTailList.add(StringUtils.leftPad(String.valueOf(i), 2, "0"));
                 }
             }
             // 4. 遍历当前分片要处理的数据尾号
-            buyerIdTailNumberList.forEach(buyerIdTailNumber -> {
+            buyerIdTailList.forEach(buyerIdTailNumber -> {
                 try {
                     // 4.1 批量查询超时订单
                     List<TradeOrder> tradeOrders = orderService.pageQueryTimeoutOrders(PAGE_SIZE, buyerIdTailNumber, null);
