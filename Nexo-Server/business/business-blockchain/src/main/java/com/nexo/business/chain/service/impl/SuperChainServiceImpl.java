@@ -83,15 +83,15 @@ public class SuperChainServiceImpl implements ChainService {
         JSONObject result = doPost("/digital-assets/user/register", body);
         // 5. 更新流水
         ChainOperationState state = result.getIntValue("code") == 200 ? ChainOperationState.SUCCESS : ChainOperationState.FAILED;
-        chainOperationLogService.updateLog(streamId, state, result.toJSONString(), result.getString("taskNo"));
+        ChainOperationStream newStream = chainOperationLogService.updateLog(streamId, state, result.toJSONString(), result.getString("taskNo"));
         // 6. 解析响应
         ChainResultData data = result.getObject("data", ChainResultData.class);
         ChainResponse response = new ChainResponse();
         response.setUserId(data.getUserId());
         response.setTxHash(data.getTxid());
-        response.setIdentifier(stream.getIdentifier());
-        response.setOutBizId(stream.getOutBizId());
-        response.setPlatform(stream.getChainType().getCode());
+        response.setIdentifier(newStream.getIdentifier());
+        response.setOutBizId(newStream.getOutBizId());
+        response.setPlatform(newStream.getChainType().getCode());
         response.setSuccess(true);
         response.setCode(String.valueOf(result.getIntValue("code")));
         response.setMessage(result.getString("msg"));

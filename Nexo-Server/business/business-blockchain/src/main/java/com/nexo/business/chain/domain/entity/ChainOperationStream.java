@@ -1,6 +1,5 @@
 package com.nexo.business.chain.domain.entity;
 
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.nexo.common.api.blockchain.constant.ChainOperateType;
 import com.nexo.common.api.blockchain.constant.ChainOperationBizType;
