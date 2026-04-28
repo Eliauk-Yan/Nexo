@@ -23,63 +23,97 @@ import java.time.LocalDateTime;
 public class ChainOperationStream extends BaseEntity {
 
     /**
-     * 链类型(代码)
+     * 链类型
      */
-    @TableField("chain_type")
     private ChainType chainType;
 
     /**
-     * 业务类型(代码)
+     * 业务类型
      */
-    @TableField("biz_type")
     private ChainOperationBizType bizType;
 
     /**
-     * 业务 ID
+     * 业务ID
      */
-    @TableField("biz_id")
     private String bizId;
 
     /**
-     * 操作类型(代码)
+     * 操作类型
      */
-    @TableField("operation_type")
     private ChainOperateType operationType;
 
     /**
-     * 状态(代码)
+     * 状态
      */
-    @TableField("state")
     private ChainOperationState state;
 
     /**
      * 操作发起时间
      */
-    @TableField("operate_time")
     private LocalDateTime operateTime;
 
     /**
      * 成功时间
      */
-    @TableField("succeed_time")
     private LocalDateTime succeedTime;
 
     /**
      * 外部业务 id
      */
-    @TableField("out_biz_id")
     private String outBizId;
+
+    /**
+     * 幂等号
+     */
+    private String identifier;
 
     /**
      * 入参
      */
-    @TableField(value = "param")
     private String param;
 
     /**
      * 返回结果
      */
-    @TableField(value = "result")
     private String result;
+
+    /**
+     * 初始化
+     */
+    public void init(ChainType chainType, String bizId, ChainOperationBizType bizType, ChainOperateType operateType, String param, String identifier) {
+        this.chainType = chainType;
+        this.bizType = bizType;
+        this.bizId = bizId;
+        this.operationType = operateType;
+        this.param = param;
+        this.identifier = identifier;
+        this.state = ChainOperationState.INIT;
+    }
+
+    /**
+     * 处理中
+     */
+    public void processing() {
+        this.operateTime = LocalDateTime.now();
+        this.state = ChainOperationState.PROCESSING;
+    }
+
+    /**
+     * 成功
+     */
+    public void success(String outBizId, String result) {
+        this.state = ChainOperationState.SUCCESS;
+        this.succeedTime = LocalDateTime.now();
+        this.outBizId = outBizId;
+        this.result = result;
+    }
+
+    /**
+     * 失败
+     */
+    public void failed(String result) {
+        this.state = ChainOperationState.FAILED;
+        this.result = result;
+    }
 }
 

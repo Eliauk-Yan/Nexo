@@ -114,6 +114,8 @@ export default function NftDetail() {
     id: 0,
     name: '',
     cover: '',
+    classify: '',
+    source: '',
     price: 0,
     quantity: 0,
     inventory: 0,
@@ -455,6 +457,18 @@ export default function NftDetail() {
               value={artwork.name || '未命名藏品'}
             />
             <InfoRow icon="circle.fill" iconColor={status.color} label="状态" value={status.text} />
+            <InfoRow
+              icon="square.grid.2x2.fill"
+              iconColor="#AF52DE"
+              label="分类"
+              value={artwork.classify || '未分类'}
+            />
+            <InfoRow
+              icon="person.crop.square.fill"
+              iconColor="#FF9500"
+              label="来源"
+              value={artwork.source || '未知来源'}
+            />
             <InfoRow
               icon="text.alignleft"
               iconColor="#0EA5E9"

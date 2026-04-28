@@ -13,24 +13,20 @@ import lombok.Setter;
 public class ChainResultData {
 
     /**
-     * ntf唯一编号
+     * 链上用户唯一ID
      */
-    private String nftId;
+    private String userId;
+
+    /**
+     * 链上资产唯一ID
+     */
+    private String assetId;
 
     /**
      * 交易哈希
      */
-    private String txHash;
+    private String txid;
 
-    /**
-     * 状态
-     */
-    private String state;
-
-    /**
-     * 藏品编号
-     */
-    private String serialNo;
 
 
 }

@@ -7,7 +7,7 @@ import lombok.Getter;
 @Getter
 public enum ChainType {
 
-    MOCK("MOCK", "模拟");
+    SUPER("SUPER", "百度超级链");
 
     private final String code;
 

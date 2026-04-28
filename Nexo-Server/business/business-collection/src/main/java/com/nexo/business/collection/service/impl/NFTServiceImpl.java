@@ -138,7 +138,7 @@ public class NFTServiceImpl extends ServiceImpl<NFTMapper, NFT> implements NFTSe
         // 1. 创建藏品
         NFT nft = new NFT();
         // 2. 状态流转
-        nft.init(request.getName(), request.getCover(), request.getPrice(), request.getQuantity(), request.getSaleTime(), request.getDescription());
+        nft.init(request.getName(), request.getCover(), request.getClassify(), request.getSource(), request.getPrice(), request.getQuantity(), request.getSaleTime(), request.getDescription());
         // 2. 保存藏品
         boolean insertArtworkRes = nftMapper.insert(nft) == 1;
         if (!insertArtworkRes) {
@@ -291,11 +291,15 @@ public class NFTServiceImpl extends ServiceImpl<NFTMapper, NFT> implements NFTSe
     }
 
     @Override
-    public PageResponse<NFT> pageQueryByState(String state, String keyword, int current, int size) {
+    public PageResponse<NFT> pageQueryByState(String state, String keyword, String classify, int current, int size) {
         // 1. 构建页面
         Page<NFT> page = new Page<>(current, size);
         // 2. 构造查询条件
-        LambdaQueryWrapper<NFT> condition = new LambdaQueryWrapper<NFT>().eq(StringUtils.isNotBlank(state), NFT::getState, state).like(keyword != null, NFT::getName, keyword).orderByDesc(NFT::getCreatedAt);
+        LambdaQueryWrapper<NFT> condition = new LambdaQueryWrapper<NFT>()
+                .eq(StringUtils.isNotBlank(state), NFT::getState, state)
+                .like(StringUtils.isNotBlank(keyword), NFT::getName, keyword)
+                .eq(StringUtils.isNotBlank(classify), NFT::getClassify, classify)
+                .orderByDesc(NFT::getCreatedAt);
         // 3. Mapper查询
         Page<NFT> nftPage = nftMapper.selectPage(page, condition);
         // 4. 返回响应

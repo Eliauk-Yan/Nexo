@@ -19,20 +19,26 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface NFTConvertor {
 
+    @Mapping(source = "saleableInventory", target = "inventory")
+    @Mapping(expression = "java(NFT.heat())", target = "heat")
     NFTVO toVO(NFT NFT);
 
     List<NFTVO> toVOs(List<NFT> NFTList);
 
+    @Mapping(expression = "java(NFT.heat())", target = "heat")
     NFTDTO toDTO(NFT NFT);
 
     List<NFTDTO> toDTOs(List<NFT> NFTS);
 
+    @Mapping(expression = "java(NFT.heat())", target = "heat")
     NFTInfo toInfo(NFT NFT);
 
+    @Mapping(target = "id", ignore = true)
     @Mapping(source = "createdAt", target = "createTime")
     @Mapping(source = "version", target = "updateVersion")
     NFTSnapshot toSnapshot(NFT NFT);
 
+    @Mapping(target = "id", ignore = true)
     @Mapping(source = "createdAt", target = "createTime")
     NFTStream toStream(NFT NFT);
 }

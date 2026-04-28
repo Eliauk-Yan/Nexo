@@ -28,6 +28,8 @@ const LatestArtworkCard = memo(function LatestArtworkCard({
   imageBg,
   textMain,
   textSub,
+  priceBg,
+  limitBg,
   onPress,
 }: {
   artwork: NFT
@@ -35,6 +37,8 @@ const LatestArtworkCard = memo(function LatestArtworkCard({
   imageBg: string
   textMain: string
   textSub: string
+  priceBg: string
+  limitBg: string
   onPress: (artwork: NFT) => void
 }) {
   return (
@@ -47,12 +51,34 @@ const LatestArtworkCard = memo(function LatestArtworkCard({
         <View style={[styles.artworkImageWrap, { backgroundColor: imageBg }]}>
           <RNImage source={{ uri: artwork.cover }} style={styles.artworkImage} contentFit="cover" />
         </View>
-        <Text style={[styles.artworkName, { color: textMain }]} numberOfLines={1}>
-          {artwork.name}
-        </Text>
-        <View style={styles.artworkMeta}>
-          <Text style={styles.artworkPrice}>¥{formatPrice(artwork.price)}</Text>
-          <Text style={[styles.artworkQuantity, { color: textSub }]}>限量 {artwork.quantity}</Text>
+        <View style={styles.artworkContent}>
+          <Text style={[styles.artworkName, { color: textMain }]} numberOfLines={1}>
+            {artwork.name}
+          </Text>
+
+          <View style={styles.artworkTagRow}>
+            <View style={styles.limitPillPrimary}>
+              <Text style={styles.limitPrimaryText}>限量</Text>
+            </View>
+            <View style={[styles.limitPill, { backgroundColor: limitBg }]}>
+              <Text style={[styles.limitText, { color: textSub }]}>{artwork.quantity}份</Text>
+            </View>
+            <View style={[styles.limitPill, { backgroundColor: limitBg }]}>
+              <Text style={[styles.limitText, { color: textSub }]}>{artwork.classify || '其他'}</Text>
+            </View>
+          </View>
+
+          <View style={styles.artworkFooter}>
+            <View style={styles.sourceRow}>
+              <Feather name="user" size={13} color={textSub} />
+              <Text numberOfLines={1} style={[styles.sourceText, { color: textSub }]}>
+                {artwork.source || '未知来源'}
+              </Text>
+            </View>
+            <View style={[styles.pricePill, { backgroundColor: priceBg }]}>
+              <Text style={styles.artworkPrice}>￥{formatPrice(artwork.price)}</Text>
+            </View>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -71,6 +97,8 @@ export default function MainScreen() {
   const imageBg = isDark ? 'rgba(255,255,255,0.08)' : '#EEEEEE'
   const textMain = isDark ? '#FFFFFF' : '#111111'
   const textSub = isDark ? 'rgba(255,255,255,0.62)' : 'rgba(0,0,0,0.5)'
+  const priceBg = isDark ? 'rgba(255,255,255,0.08)' : '#F3F4F6'
+  const limitBg = isDark ? 'rgba(255,255,255,0.08)' : '#EDEDED'
   const divider = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
 
   const [rankingUsers, setRankingUsers] = useState<InviteRankInfo[]>([])
@@ -128,7 +156,10 @@ export default function MainScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: textMain }]}>积分排行榜</Text>
+          <View style={styles.sectionHeading}>
+            <Feather name="award" size={20} color="#FF9500" />
+            <Text style={[styles.sectionTitle, { color: textMain }]}>积分排行榜</Text>
+          </View>
           <Text style={[styles.sectionSubtitle, { color: textSub }]}>用户积分排名</Text>
         </View>
 
@@ -207,7 +238,10 @@ export default function MainScreen() {
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: textMain }]}>最新藏品</Text>
+          <View style={styles.sectionHeading}>
+            <Feather name="grid" size={20} color="#5E5CE6" />
+            <Text style={[styles.sectionTitle, { color: textMain }]}>最新藏品</Text>
+          </View>
           <Text style={[styles.sectionSubtitle, { color: textSub }]}>平台最新上架的数字藏品</Text>
         </View>
 
@@ -221,6 +255,8 @@ export default function MainScreen() {
                 imageBg={imageBg}
                 textMain={textMain}
                 textSub={textSub}
+                priceBg={priceBg}
+                limitBg={limitBg}
                 onPress={(item) => router.push({ pathname: '/nft', params: { id: item.id } })}
               />
             ))}
@@ -248,9 +284,14 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 10,
   },
+  sectionHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   sectionTitle: {
-    fontSize: 22,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
   },
   sectionSubtitle: {
     fontSize: 13,
@@ -393,18 +434,60 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 8,
   },
-  artworkMeta: {
+  artworkContent: {
+    minHeight: 86,
+    justifyContent: 'space-between',
+  },
+  artworkTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  limitPillPrimary: {
+    backgroundColor: '#FFF8D8',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+  },
+  limitPill: {
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+  },
+  limitPrimaryText: {
+    color: '#4C4324',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  limitText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  artworkFooter: {
+    marginTop: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  sourceRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  sourceText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  pricePill: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
   artworkPrice: {
     color: '#007AFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  artworkQuantity: {
-    fontSize: 11,
+    fontSize: 12,
+    fontWeight: '800',
   },
   loadingWrap: {
     minHeight: 160,

@@ -6,48 +6,21 @@ import { showErrorAlert } from '@/utils/error'
 import { useSession } from '@/utils/ctx'
 import Feather from '@expo/vector-icons/Feather'
 import { useEvent } from 'expo'
-import {
-  BottomSheet,
-  Button,
-  Group,
-  Host,
-  HStack,
-  Image as SwiftImage,
-  List,
-  Picker,
-  RNHostView,
-  Section,
-  Spacer,
-  Text as SwiftUIText,
-  VStack,
-} from '@expo/ui/swift-ui'
-import {
-  buttonStyle,
-  controlSize,
-  font,
-  frame,
-  foregroundStyle,
-  interactiveDismissDisabled,
-  listStyle,
-  multilineTextAlignment,
-  padding,
-  pickerStyle,
-  presentationDetents,
-  presentationDragIndicator,
-  tag,
-  tint,
-} from '@expo/ui/swift-ui/modifiers'
 import ExpoWeChat from 'expo-wechat'
 import { Stack, useRouter } from 'expo-router'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Alert,
-  DynamicColorIOS,
   FlatList,
   Image,
+  Modal,
+  Pressable,
+  ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
+  useColorScheme,
 } from 'react-native'
 import Spinner from 'react-native-loading-spinner-overlay'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -60,70 +33,21 @@ const TABS: { id: string; label: string; state?: OrderState }[] = [
   { id: 'closed', label: '已关闭', state: 'CLOSED' },
 ]
 
-const ORDER_STATE_MAP: Record<string, { label: string; color: string; bgColor: string }> = {
-  CREATE: { label: '待付款', color: '#FFB800', bgColor: 'rgba(255,184,0,0.14)' },
-  CONFIRM: { label: '待付款', color: '#FFB800', bgColor: 'rgba(255,184,0,0.14)' },
-  PAID: { label: '已付款', color: colors.success, bgColor: 'rgba(52,199,89,0.14)' },
-  FINISH: { label: '已完成', color: colors.success, bgColor: 'rgba(52,199,89,0.14)' },
-  CLOSED: { label: '已关闭', color: 'rgba(142,142,147,0.95)', bgColor: 'rgba(142,142,147,0.12)' },
-}
-
-const ui = {
-  background: DynamicColorIOS({
-    light: '#F2F2F7',
-    dark: '#000000',
-  }),
-  card: DynamicColorIOS({
-    light: '#FFFFFF',
-    dark: 'rgba(255,255,255,0.06)',
-  }),
-  border: DynamicColorIOS({
-    light: 'rgba(60,60,67,0.10)',
-    dark: 'rgba(255,255,255,0.08)',
-  }),
-  textPrimary: DynamicColorIOS({
-    light: '#000000',
-    dark: '#FFFFFF',
-  }),
-  textSecondary: DynamicColorIOS({
-    light: 'rgba(60,60,67,0.72)',
-    dark: 'rgba(235,235,245,0.60)',
-  }),
-  textTertiary: DynamicColorIOS({
-    light: 'rgba(60,60,67,0.50)',
-    dark: 'rgba(235,235,245,0.40)',
-  }),
-  imageBg: DynamicColorIOS({
-    light: 'rgba(60,60,67,0.05)',
-    dark: 'rgba(255,255,255,0.08)',
-  }),
-  blue: DynamicColorIOS({
-    light: '#007AFF',
-    dark: '#0A84FF',
-  }),
+const ORDER_STATE_MAP: Record<string, { label: string; color: string; bgColor: string; borderColor: string }> = {
+  CREATE: { label: '待付款', color: '#FFB800', bgColor: 'rgba(255,184,0,0.14)', borderColor: 'rgba(255,184,0,0.28)' },
+  CONFIRM: { label: '待付款', color: '#FFB800', bgColor: 'rgba(255,184,0,0.14)', borderColor: 'rgba(255,184,0,0.28)' },
+  PAID: { label: '已付款', color: '#22C55E', bgColor: 'rgba(34,197,94,0.14)', borderColor: 'rgba(34,197,94,0.28)' },
+  FINISH: { label: '已完成', color: '#22C55E', bgColor: 'rgba(34,197,94,0.14)', borderColor: 'rgba(34,197,94,0.28)' },
+  CLOSED: { label: '已关闭', color: '#8E8E93', bgColor: 'rgba(142,142,147,0.12)', borderColor: 'rgba(142,142,147,0.24)' },
 }
 
 const formatPrice = (price?: number | null) => (price ?? 0).toFixed(2)
 
-const PaymentMethodIcon = ({
-  label,
-  backgroundColor,
-}: {
-  label: string
-  backgroundColor: string
-}) => {
-  return (
-    <RNHostView matchContents>
-      <View style={[styles.paymentMethodIcon, { backgroundColor }]}>
-        <Text style={styles.paymentMethodIconText}>{label}</Text>
-      </View>
-    </RNHostView>
-  )
-}
-
 const OrderPage = () => {
   const router = useRouter()
   const insets = useSafeAreaInsets()
+  const colorScheme = useColorScheme()
+  const isDark = colorScheme === 'dark'
   const { session, isLoading: isSessionLoading } = useSession()
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -136,6 +60,19 @@ const OrderPage = () => {
   const [selectedOrder, setSelectedOrder] = useState<OrderVO | null>(null)
   const payResult = useEvent(ExpoWeChat, 'onPayResult')
   const wechatConfigured = isWeChatConfigured()
+
+  const ui = {
+    background: isDark ? '#000000' : '#F2F2F7',
+    card: isDark ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+    border: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(60,60,67,0.10)',
+    textPrimary: isDark ? '#FFFFFF' : '#000000',
+    textSecondary: isDark ? 'rgba(235,235,245,0.60)' : 'rgba(60,60,67,0.72)',
+    textTertiary: isDark ? 'rgba(235,235,245,0.40)' : 'rgba(60,60,67,0.50)',
+    imageBg: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(60,60,67,0.05)',
+    blue: isDark ? '#0A84FF' : '#007AFF',
+    tabBg: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(118,118,128,0.12)',
+    tabActive: isDark ? 'rgba(255,255,255,0.18)' : '#FFFFFF',
+  }
 
   const paymentMethods = [
     {
@@ -336,8 +273,6 @@ const OrderPage = () => {
     }
   }, [])
 
-
-
   const handleCancelOrder = (order: OrderVO) => {
     Alert.alert('取消订单', '确定要取消这笔订单吗？', [
       { text: '暂不取消', style: 'cancel' },
@@ -399,8 +334,9 @@ const OrderPage = () => {
   const renderOrderCard = ({ item }: { item: OrderVO }) => {
     const stateInfo = ORDER_STATE_MAP[item.orderState] || {
       label: item.orderState,
-      color: ui.textSecondary as unknown as string,
+      color: '#8E8E93',
       bgColor: 'rgba(142,142,147,0.10)',
+      borderColor: 'rgba(142,142,147,0.24)',
     }
     const canPay = item.orderState === 'CREATE' || item.orderState === 'CONFIRM'
     const canCancel = item.orderState === 'CONFIRM'
@@ -413,7 +349,7 @@ const OrderPage = () => {
             订单号：{item.orderId}
           </Text>
 
-          <View style={[styles.stateBadge, { backgroundColor: stateInfo.bgColor }]}>
+          <View style={[styles.stateBadge, { backgroundColor: stateInfo.bgColor, borderColor: stateInfo.borderColor }]}>
             <Text style={[styles.stateText, { color: stateInfo.color }]}>{stateInfo.label}</Text>
           </View>
         </View>
@@ -474,32 +410,56 @@ const OrderPage = () => {
 
         {(canPay || canCancel) && (
           <View style={styles.actionWrapper}>
-            <Host matchContents>
-              <HStack spacing={12}>
-                {canCancel ? (
-                  <Button
-                    label="取消订单"
-                    modifiers={[buttonStyle('glassProminent'), controlSize('large'), tint('#FF3B30')]}
-                    onPress={() => handleCancelOrder(item)}
-                  />
-                ) : null}
-                <Spacer />
-                {canPay ? (
-                  <Button
-                    label={isPurchasing ? '处理中...' : '去付款'}
-                    modifiers={[buttonStyle('glassProminent'), controlSize('large')]}
-                    onPress={() => {
-                      void handlePayOrder(item)
-                    }}
-                  />
-                ) : null}
-              </HStack>
-            </Host>
+            {canCancel && (
+              <TouchableOpacity
+                activeOpacity={0.82}
+                style={[styles.cancelButton, { borderColor: 'rgba(255,59,48,0.3)' }]}
+                onPress={() => handleCancelOrder(item)}
+              >
+                <Text style={styles.cancelButtonText}>取消订单</Text>
+              </TouchableOpacity>
+            )}
+            {canPay && (
+              <TouchableOpacity
+                activeOpacity={0.82}
+                style={styles.payButton}
+                onPress={() => { void handlePayOrder(item) }}
+                disabled={isPurchasing}
+              >
+                <Text style={styles.payButtonText}>{isPurchasing ? '处理中...' : '去付款'}</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
       </View>
     )
   }
+
+  const renderTabBar = () => (
+    <View style={styles.tabBarWrap}>
+      {TABS.map((tab) => {
+        const active = activeTab === tab.id
+        return (
+          <TouchableOpacity
+            key={tab.id}
+            activeOpacity={0.82}
+            style={[
+              styles.tabChip,
+              {
+                backgroundColor: active ? '#0A84FF' : ui.tabBg,
+                borderColor: active ? '#0A84FF' : ui.border,
+              },
+            ]}
+            onPress={() => setActiveTab(tab.id)}
+          >
+            <Text style={[styles.tabChipText, { color: active ? '#FFFFFF' : ui.textSecondary }]}>
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        )
+      })}
+    </View>
+  )
 
   if (isSessionLoading || !session) {
     return <View style={[styles.loadingContainer, { backgroundColor: ui.background }]} />
@@ -536,112 +496,88 @@ const OrderPage = () => {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View style={styles.pickerWrapper}>
-            <Host matchContents>
-              <Picker
-                label="订单状态"
-                selection={activeTab}
-                onSelectionChange={(selection) => setActiveTab(selection as string)}
-                modifiers={[pickerStyle('segmented')]}
-              >
-                {TABS.map((tab) => (
-                  <SwiftUIText key={tab.id} modifiers={[tag(tab.id)]}>
-                    {tab.label}
-                  </SwiftUIText>
-                ))}
-              </Picker>
-            </Host>
+            {renderTabBar()}
           </View>
         }
         ListEmptyComponent={renderEmpty}
-
       />
 
-      {paymentSheetVisible ? (
-        <Host style={styles.sheetHost}>
-          <BottomSheet
-            isPresented={paymentSheetVisible}
-            onIsPresentedChange={(isPresented) => {
+      {/* Payment Bottom Sheet */}
+      <Modal
+        visible={paymentSheetVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => {
+          if (!purchasingOrderId) {
+            setPaymentSheetVisible(false)
+          }
+        }}
+      >
+        <View style={styles.modalBackdrop}>
+          <Pressable
+            style={styles.modalDismissArea}
+            onPress={() => {
               if (!purchasingOrderId) {
-                setPaymentSheetVisible(isPresented)
+                setPaymentSheetVisible(false)
               }
             }}
-          >
-            <Group
-              modifiers={[
-                presentationDetents([{ height: 360 }]),
-                presentationDragIndicator('visible'),
-                interactiveDismissDisabled(Boolean(purchasingOrderId)),
-              ]}
-            >
-              <VStack
-                spacing={12}
-                alignment="center"
-                modifiers={[padding({ top: 24, horizontal: 20, bottom: 8 }), frame({ maxWidth: 9999 })]}
-              >
-                <SwiftUIText
-                  modifiers={[
-                    font({ size: 40, weight: 'bold' }),
-                    foregroundStyle('#111111'),
-                    multilineTextAlignment('center'),
-                  ]}
-                >
-                  ￥{selectedOrder ? formatPrice(selectedOrder.totalPrice) : '0.00'}
-                </SwiftUIText>
-                <SwiftUIText
-                  modifiers={[
-                    font({ size: 12, weight: 'regular' }),
-                    foregroundStyle('#8E8E93'),
-                    multilineTextAlignment('center'),
-                  ]}
-                >
-                  订单号：{selectedOrder?.orderId || '-'}
-                </SwiftUIText>
-              </VStack>
+          />
+          <View style={[styles.paymentSheet, { backgroundColor: ui.background }]}>
+            <View style={styles.sheetHandle} />
 
-              <List modifiers={[listStyle('insetGrouped')]}>
-                <Section title="支付方式">
-                  {paymentMethods.map((method) => (
-                    <Button
-                      key={method.type}
-                      modifiers={[buttonStyle('plain')]}
-                      onPress={() => {
-                        setSelectedPaymentType(method.type)
-                      }}
+            {/* Amount */}
+            <View style={styles.paymentAmountSection}>
+              <Text style={[styles.paymentAmount, { color: ui.textPrimary }]}>
+                ￥{selectedOrder ? formatPrice(selectedOrder.totalPrice) : '0.00'}
+              </Text>
+              <Text style={[styles.paymentOrderId, { color: ui.textSecondary }]}>
+                订单号：{selectedOrder?.orderId || '-'}
+              </Text>
+            </View>
+
+            {/* Payment Methods */}
+            <View style={styles.paymentMethodSection}>
+              <Text style={[styles.paymentMethodTitle, { color: ui.textSecondary }]}>支付方式</Text>
+              <View style={[styles.paymentMethodList, { backgroundColor: ui.card, borderColor: ui.border }]}>
+                {paymentMethods.map((method, index) => (
+                  <React.Fragment key={method.type}>
+                    {index > 0 && <View style={[styles.methodDivider, { backgroundColor: ui.border }]} />}
+                    <TouchableOpacity
+                      activeOpacity={0.78}
+                      style={styles.paymentMethodRow}
+                      onPress={() => setSelectedPaymentType(method.type)}
                     >
-                      <HStack spacing={12}>
-                        <HStack spacing={10}>
-                          <PaymentMethodIcon label={method.iconLabel} backgroundColor={method.iconColor} />
-                          <SwiftUIText modifiers={[foregroundStyle('#111111')]}>{method.title}</SwiftUIText>
-                        </HStack>
-                        <Spacer />
-                        <SwiftImage
-                          systemName={
-                            selectedPaymentType === method.type
-                              ? 'checkmark.circle.fill'
-                              : 'circle'
-                          }
-                          size={18}
+                      <View style={[styles.paymentMethodIcon, { backgroundColor: method.iconColor }]}>
+                        <Text style={styles.paymentMethodIconText}>{method.iconLabel}</Text>
+                      </View>
+                      <Text style={[styles.paymentMethodLabel, { color: ui.textPrimary }]}>{method.title}</Text>
+                      <View style={styles.paymentMethodCheck}>
+                        <Feather
+                          name={selectedPaymentType === method.type ? 'check-circle' : 'circle'}
+                          size={20}
                           color={selectedPaymentType === method.type ? '#007AFF' : '#C7C7CC'}
                         />
-                      </HStack>
-                    </Button>
-                  ))}
-                </Section>
-              </List>
+                      </View>
+                    </TouchableOpacity>
+                  </React.Fragment>
+                ))}
+              </View>
+            </View>
 
-              <VStack modifiers={[padding({ horizontal: 20, top: 8, bottom: 20 })]}>
-                <Button
-                  label={purchasingOrderId ? '支付处理中...' : '确认支付'}
-                  modifiers={[buttonStyle('borderedProminent'), controlSize('extraLarge')]}
-                  onPress={() => {
-                    void handleConfirmPayment()
-                  }}
-                />
-              </VStack>
-            </Group>
-          </BottomSheet>
-        </Host>
-      ) : null}
+            {/* Confirm Button */}
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={[styles.confirmPayButton, purchasingOrderId ? styles.confirmPayButtonDisabled : null]}
+              disabled={!!purchasingOrderId}
+              onPress={() => { void handleConfirmPayment() }}
+            >
+              <Text style={styles.confirmPayButtonText}>
+                {purchasingOrderId ? '支付处理中...' : '确认支付'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   )
 }
@@ -658,8 +594,27 @@ const styles = StyleSheet.create({
   },
   pickerWrapper: {
     marginTop: 16,
-    marginHorizontal: spacing.md,
     marginBottom: spacing.sm,
+  },
+  tabBarWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  tabChip: {
+    height: 32,
+    flexGrow: 1,
+    flexBasis: 0,
+    minWidth: 58,
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabChipText: {
+    fontSize: 13,
+    fontWeight: '800',
   },
   card: {
     width: '100%',
@@ -687,10 +642,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 999,
+    borderWidth: 1,
   },
   stateText: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '700',
   },
   divider: {
     height: 1,
@@ -751,6 +707,36 @@ const styles = StyleSheet.create({
   },
   actionWrapper: {
     marginTop: 16,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  cancelButton: {
+    height: 40,
+    paddingHorizontal: 18,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,59,48,0.08)',
+  },
+  cancelButtonText: {
+    color: '#FF3B30',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  payButton: {
+    height: 40,
+    paddingHorizontal: 22,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0A84FF',
+  },
+  payButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
   },
   placeholderText: {
     fontSize: typography.fontSize.xs,
@@ -764,20 +750,102 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.md,
     marginTop: 12,
   },
-  sheetHost: {
-    ...StyleSheet.absoluteFillObject,
+  // Payment Sheet
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.38)',
+  },
+  modalDismissArea: {
+    flex: 1,
+  },
+  paymentSheet: {
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingTop: 10,
+    paddingBottom: 34,
+    paddingHorizontal: 20,
+  },
+  sheetHandle: {
+    width: 42,
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: 'rgba(142,142,147,0.42)',
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  paymentAmountSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  paymentAmount: {
+    fontSize: 40,
+    fontWeight: '800',
+  },
+  paymentOrderId: {
+    fontSize: 12,
+    marginTop: 6,
+  },
+  paymentMethodSection: {
+    marginBottom: 20,
+  },
+  paymentMethodTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 8,
+    marginLeft: 4,
+    textTransform: 'uppercase',
+  },
+  paymentMethodList: {
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  paymentMethodRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  methodDivider: {
+    height: 1,
+    marginHorizontal: 16,
   },
   paymentMethodIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
   paymentMethodIconText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
+  },
+  paymentMethodLabel: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+    marginLeft: 12,
+  },
+  paymentMethodCheck: {
+    marginLeft: 8,
+  },
+  confirmPayButton: {
+    height: 52,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0A84FF',
+  },
+  confirmPayButtonDisabled: {
+    opacity: 0.6,
+  },
+  confirmPayButtonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '800',
   },
 })
 

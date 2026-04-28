@@ -19,7 +19,7 @@ public interface NFTService extends IService<NFT> {
     /**
      * 根据状态和关键字分页查询藏品
      */
-    PageResponse<NFT> pageQueryByState(String state, String keyword, int current, int size);
+    PageResponse<NFT> pageQueryByState(String state, String keyword, String classify, int current, int size);
 
     /**
      * 创建藏品

@@ -22,6 +22,10 @@ public class NFTVO {
 
     private String cover;
 
+    private String classify;
+
+    private String source;
+
     private BigDecimal price;
 
     private Long quantity;
@@ -31,6 +35,8 @@ public class NFTVO {
     private Long saleableInventory;
 
     private Long frozenInventory;
+
+    private BigDecimal heat;
 
     private NFTState state;
 

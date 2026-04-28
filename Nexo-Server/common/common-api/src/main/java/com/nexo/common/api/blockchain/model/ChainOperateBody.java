@@ -20,6 +20,7 @@ public class ChainOperateBody {
      * 业务id
      */
     private String bizId;
+
     /**
      * 业务类型
      */
@@ -29,10 +30,11 @@ public class ChainOperateBody {
      * 操作类型
      */
     private ChainOperateType operateType;
+
     /**
-     * 操作信息id
+     * 操作流水id
      */
-    private Long operateInfoId;
+    private Long streamId;
 
     /**
      * 链类型
@@ -40,7 +42,7 @@ public class ChainOperateBody {
     private ChainType chainType;
 
     /**
-     * 具体业务数据
+     * 业务响应数据
      */
     private ChainResultData chainResultData;
 

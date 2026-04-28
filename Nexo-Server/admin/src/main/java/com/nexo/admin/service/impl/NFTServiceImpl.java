@@ -53,6 +53,7 @@ public class NFTServiceImpl implements NFTService {
         request.setCurrent(dto.getCurrent());
         request.setSize(dto.getSize());
         request.setKeyword(dto.getName());
+        request.setClassify(dto.getClassify());
         request.setState(dto.getState());
         // 2. 调用藏品服务进行查询
         PageResponse<NFTDTO> response = nftFacade.queryPage(request);
@@ -87,10 +88,12 @@ public class NFTServiceImpl implements NFTService {
         NFTCreateRequest request = new NFTCreateRequest();
         request.setName(dto.getName());
         request.setCover(dto.getCover());
+        request.setClassify(dto.getClassify());
+        request.setSource(dto.getSource());
         request.setPrice(dto.getPrice());
         request.setQuantity(dto.getQuantity());
         request.setDescription(dto.getDescription());
-        request.setIdentifier(UUID.randomUUID().toString());
+        request.setIdentifier(dto.getSource() + "_" + dto.getClassify() + "_" + dto.getName());
         request.setSaleTime(dto.getSaleTime());
         // 2. 调用藏品服务创建藏品
         NFTResponse<Boolean> response = nftFacade.addNFT(request);

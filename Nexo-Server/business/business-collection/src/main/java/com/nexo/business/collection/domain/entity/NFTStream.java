@@ -25,6 +25,10 @@ public class NFTStream extends BaseEntity {
 
     private String classId;
 
+    private String classify;
+
+    private String source;
+
     private Long nftId;
 
     private BigDecimal price;

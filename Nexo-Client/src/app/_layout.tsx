@@ -80,6 +80,14 @@ const AuthLayout = () => {
           headerShown: true,
         }}
       />
+
+      <Stack.Screen
+        name="rank"
+        options={{
+          title: '藏品热榜',
+          headerShown: true,
+        }}
+      />
     </Stack>
   )
 }

@@ -8,7 +8,7 @@ import java.io.Serial;
 
 @Getter
 @Setter
-public class AssetTransferRequest extends AssetBaseRequest{
+public class AssetTransferRequest extends AssetBaseRequest {
 
     @Serial
     private static final long serialVersionUID = 1L;

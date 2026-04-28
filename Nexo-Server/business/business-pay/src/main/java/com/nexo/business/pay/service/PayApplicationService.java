@@ -2,7 +2,7 @@ package com.nexo.business.pay.service;
 
 import com.nexo.business.pay.domain.entity.PayOrder;
 import com.nexo.common.api.nft.NFTFacade;
-import com.nexo.common.api.nft.request.AssetAllocateRequest;
+import com.nexo.common.api.nft.request.AssetCreateRequest;
 import com.nexo.common.api.order.constant.TradeOrderState;
 import com.nexo.common.api.order.OrderFacade;
 import com.nexo.common.api.order.request.OrderPayRequest;
@@ -83,7 +83,7 @@ public class PayApplicationService {
 
         // 5. 支付成功后为藏品订单分发资产并触发异步铸造
         if (order.getNftType() == NFTType.NFT && order.getOrderState() != TradeOrderState.CLOSED) {
-            AssetAllocateRequest allocateRequest = new AssetAllocateRequest();
+            AssetCreateRequest allocateRequest = new AssetCreateRequest();
             allocateRequest.setBusinessNo(order.getOrderId());
             allocateRequest.setBusinessType(payOrder.getBizType());
             allocateRequest.setBuyerId(Long.valueOf(order.getBuyerId()));

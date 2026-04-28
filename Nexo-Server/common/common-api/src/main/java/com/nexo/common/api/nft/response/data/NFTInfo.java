@@ -36,6 +36,16 @@ public class NFTInfo implements Serializable {
     private String cover;
 
     /**
+     * NFT 分类
+     */
+    private String classify;
+
+    /**
+     * NFT 来源
+     */
+    private String source;
+
+    /**
      * NFT 价格
      */
     private BigDecimal price;
@@ -54,6 +64,11 @@ public class NFTInfo implements Serializable {
      * NFT 库存
      */
     private Long inventory;
+
+    /**
+     * NFT 热度
+     */
+    private BigDecimal heat;
 
     /**
      * NFT 发售时间

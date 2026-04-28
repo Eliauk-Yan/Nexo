@@ -24,6 +24,12 @@ public class NFTCreateParam {
     @NotNull(message = "藏品封面不能为空")
     private String cover;
 
+    @NotNull(message = "藏品分类不能为空")
+    private String classify;
+
+    @NotNull(message = "藏品来源不能为空")
+    private String source;
+
     private String description;
 
     @NotNull(message = "藏品价格不能为空")

@@ -26,6 +26,10 @@ public class NFTSnapshot extends BaseEntity {
 
     private String classId;
 
+    private String classify;
+
+    private String source;
+
     private BigDecimal price;
 
     private Long quantity;

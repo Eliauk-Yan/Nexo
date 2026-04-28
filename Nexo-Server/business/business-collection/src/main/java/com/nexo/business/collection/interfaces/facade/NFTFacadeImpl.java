@@ -104,7 +104,7 @@ public class NFTFacadeImpl implements NFTFacade {
 
 
     @Override
-    public Boolean allocateAsset(AssetAllocateRequest request) {
+    public Boolean allocateAsset(AssetCreateRequest request) {
         // 1. 幂等判断
         long count = assetService.count(new LambdaQueryWrapper<Asset>()
                 .eq(Asset::getBusinessNo, request.getBusinessNo())
@@ -145,11 +145,7 @@ public class NFTFacadeImpl implements NFTFacade {
             ChainRequest chainRequest = new ChainRequest();
             chainRequest.setIdentifier(request.getIdentifier());
             chainRequest.setClassId(request.getArtworkId().toString());
-            chainRequest.setClassName(nft.getName());
-            chainRequest.setSerialNo(asset.getSerialNumber());
-            chainRequest.setRecipient(buyer.getAddress());
-            chainRequest.setBizType(ChainOperationBizType.ASSET.getCode());
-            chainRequest.setBizId(asset.getId().toString());
+            chainRequest.setTo(buyer.getAddress());
             ChainResponse<ChainOperationData> chainResponse = chainFacade.mint(chainRequest);
             if (chainResponse.getSuccess() && chainResponse.getData() != null) {
                 log.info("资产铸造请求已提交, assetId={}", asset.getId());
@@ -167,7 +163,7 @@ public class NFTFacadeImpl implements NFTFacade {
     @Override
     public PageResponse<NFTDTO> queryPage(NFTPageQueryRequest request) {
         // 1. 查询藏品
-        PageResponse<NFT> queryResult = nftService.pageQueryByState(request.getState(), request.getKeyword(), request.getCurrent(), request.getSize());
+        PageResponse<NFT> queryResult = nftService.pageQueryByState(request.getState(), request.getKeyword(), request.getClassify(), request.getCurrent(), request.getSize());
         // 2. 构�?
         PageResponse<NFTDTO> response = new PageResponse<>();
         if (!queryResult.getSuccess()) {
@@ -189,10 +185,15 @@ public class NFTFacadeImpl implements NFTFacade {
         // 2. 藏品上链
         ChainRequest chainRequest = new ChainRequest();
         chainRequest.setIdentifier(request.getIdentifier());
-        chainRequest.setClassName(request.getName());
-        chainRequest.setBizType(ChainOperationBizType.NFT.getCode());
         chainRequest.setBizId(nft.getId().toString());
-        ChainResponse<ChainOperationData> chainResponse = chainFacade.onChain(chainRequest);
+        chainRequest.setBizType(ChainOperationBizType.NFT);
+        chainRequest.setClassName(request.getName());
+        chainRequest.setCategory(request.getClassify());
+        chainRequest.setDescription(request.getDescription());
+        chainRequest.setMaxSupply(request.getQuantity());
+        chainRequest.setCreator(request.getSource());
+        chainRequest.setUri(request.getCover());
+        ChainResponse chainResponse = chainFacade.onChain(chainRequest);
         // 3. 构造并返回结果
         NFTResponse<Boolean> response = new NFTResponse<>();
         if (!chainResponse.getSuccess()) {
@@ -201,7 +202,7 @@ public class NFTFacadeImpl implements NFTFacade {
             return response;
         }
         response.setSuccess(true);
-        response.setData(false);
+        response.setData(true);
         return response;
     }
 

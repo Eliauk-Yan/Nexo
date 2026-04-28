@@ -23,7 +23,6 @@ import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
 
 import java.time.LocalDateTime;
 import java.util.function.Consumer;
@@ -58,7 +57,19 @@ public class ChainOperateResultListener extends StreamConsumer {
             switch (chainOperateBody.getOperateType()) {
                 case NFT_ON_CHAIN:
                     // 藏品上链
-                    handleNftActivated(chainOperateBody, chainResultData);
+                    // 1. 根据id查找藏品
+                    NFT nft = NFTService.getById(chainOperateBody.getBizId());
+                    if (nft == null) {
+                        log.error("链回调未找到对应NFT或资产记录, bizId={}, operateType={}, bizType={}", chainOperateBody.getBizId(), chainOperateBody.getOperateType(), chainOperateBody.getBizType());
+                        return;
+                    }
+                    // 2. 初始化库存
+                    initInventory(nft.getId().toString(), nft.getQuantity(), nft.getIdentifier());
+                    // 3. 状态转移
+                    nft.success();
+                    if (!NFTService.updateById(nft)) {
+                        throw new NFTException(NFT_UPDATE_FAILED);
+                    }
                     break;
                 case NFT_MINT:
                     // 藏品铸造
@@ -78,22 +89,6 @@ public class ChainOperateResultListener extends StreamConsumer {
         };
     }
 
-    private void handleNftActivated(ChainOperateBody chainOperateBody, ChainResultData chainResultData) {
-        // 1. 根据id查找藏品
-        NFT nft = NFTService.getById(chainOperateBody.getBizId());
-        if (nft == null) {
-            log.error("链回调未找到对应NFT或资产记录, bizId={}, operateType={}, bizType={}", chainOperateBody.getBizId(), chainOperateBody.getOperateType(), chainOperateBody.getBizType());
-            return;
-        }
-        // 2. 初始化库存
-        initInventory(nft.getId().toString(), nft.getQuantity(), nft.getIdentifier());
-        // 3. 状态机转移状态
-        nft.success();
-        if (!NFTService.updateById(nft)) {
-            throw new NFTException(NFT_UPDATE_FAILED);
-        }
-    }
-
     private void handleAssetActivated(ChainOperateBody chainOperateBody, ChainResultData chainResultData) {
         // 1. 根据资产ID查找资产
         Long assetId = Long.parseLong(chainOperateBody.getBizId());
@@ -102,7 +97,7 @@ public class ChainOperateResultListener extends StreamConsumer {
             throw new NFTException(NFT_QUERY_FAILED);
         }
         // 2. 状态激活
-        asset.active(chainResultData.getTxHash(), chainResultData.getNftId());
+        asset.active(chainResultData.getTxid(), chainResultData.getAssetId());
         boolean activated = assetService.updateById(asset);
         if (!activated) {
             throw new NFTException(NFT_UPDATE_FAILED);
@@ -147,7 +142,7 @@ public class ChainOperateResultListener extends StreamConsumer {
         if (newAsset == null || !newAsset.getState().equals(AssetState.INIT)) {
             throw new NFTException(ASSET_QUERY_FAILED);
         }
-        newAsset.active(chainResultData.getNftId(), chainResultData.getTxHash());
+        newAsset.active(chainResultData.getAssetId(), chainResultData.getTxid());
         boolean result = assetService.updateById(newAsset);
         if (!result) {
             throw new NFTException(NFT_UPDATE_FAILED);

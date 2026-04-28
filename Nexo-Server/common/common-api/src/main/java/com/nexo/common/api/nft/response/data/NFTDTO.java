@@ -29,6 +29,10 @@ public class NFTDTO implements Serializable {
 
     private String cover;
 
+    private String classify;
+
+    private String source;
+
     private BigDecimal price;
 
     private String description;
@@ -38,6 +42,8 @@ public class NFTDTO implements Serializable {
     private Long saleableInventory;
 
     private Long frozenInventory;
+
+    private BigDecimal heat;
 
     private LocalDateTime saleTime;
 

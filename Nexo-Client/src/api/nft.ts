@@ -1,12 +1,17 @@
 import request, { get } from '@/utils/request'
 
+export type NFTClassify = '艺术类' | '文博类' | '景区类'
+
 export interface NFT {
   id: number
   name: string
   cover: string
+  classify?: NFTClassify | string | null
+  source?: string | null
   price: number
   quantity: number
   inventory: number | null
+  heat?: number | string | null
   saleTime: string | null
   bookStartTime: string | null
   bookEndTime: string | null
@@ -19,9 +24,12 @@ export interface NFTDetail {
   id: number
   name: string
   cover: string
+  classify?: NFTClassify | string | null
+  source?: string | null
   price: number
   quantity: number
   inventory: number | null
+  heat?: number | string | null
   saleTime: string | null
   description: string | null
   productState: 'NOT_FOR_SALE' | 'SELLING' | 'SOLD_OUT' | 'COMING_SOON' | 'WAIT_FOR_SALE'
@@ -31,6 +39,7 @@ export interface QueryNFTRequest {
   currentPage: number
   pageSize: number
   keyword?: string
+  classify?: NFTClassify | string
 }
 
 export type AssetState = 'INIT' | 'ACTIVE' | 'DESTROYING' | 'DESTROYED'
@@ -69,6 +78,7 @@ export const nftApi = {
   list: (param: QueryNFTRequest) => {
     return get<NFT[]>('/artwork/list', {
       keyword: param.keyword,
+      classify: param.classify,
       currentPage: param.currentPage,
       pageSize: param.pageSize,
     })

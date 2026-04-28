@@ -23,7 +23,6 @@ import com.nexo.business.user.domain.entity.UserAuth;
 import com.nexo.common.api.blockchain.ChainFacade;
 import com.nexo.common.api.blockchain.request.ChainRequest;
 import com.nexo.common.api.blockchain.response.ChainResponse;
-import com.nexo.common.api.blockchain.response.data.ChainCreateData;
 import com.nexo.common.api.user.constant.UserState;
 import com.nexo.common.api.user.response.data.InviteRankInfo;
 import com.nexo.common.api.user.response.data.UserInfo;
@@ -34,6 +33,7 @@ import com.nexo.common.lock.DistributeLock;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.redisson.api.RLock;
@@ -274,8 +274,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (user == null) {
             throw new UserException(UserErrorCode.USER_NOT_EXIST);
         }
-        user.setRealName(dto.getRealName());
-        user.setIdCard(dto.getIdCardNo());
+        user.setRealName(dto.getRealName()); // 加密
+        user.setIdCard(dto.getIdCardNo()); // 加密
         // 3. 保存实名信息
         Boolean realAuthRes = userCacheService.updateById(user);
         if (!realAuthRes) {
@@ -283,19 +283,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         // 4. 构造创建链账户请求
         ChainRequest chainRequest = new ChainRequest();
-        chainRequest.setUserId(String.valueOf(userId));
-        String identifier = CommonConstant.APP_NAME + CommonConstant.SEPARATOR + userId;
+        chainRequest.setUserId(String.valueOf(userId)); // 用户ID
+        String pwd = RandomUtil.randomString(32);
+        chainRequest.setPwd(pwd); // 生成链账户密码
+        String identifier = CommonConstant.APP_NAME + CommonConstant.SEPARATOR + userId; // 生成幂等号
         chainRequest.setIdentifier(identifier);
-        ChainResponse<ChainCreateData> chainAccount = chainFacade.createChainAccount(chainRequest);
-        if (chainAccount.getSuccess()) {
+        ChainResponse response = chainFacade.createChainAccount(chainRequest);
+        if (response.getSuccess()) {
             // 5. 保存链账户信息
             User userForChain = userMapper.selectById(userId);
             if (userForChain == null) {
                 throw new UserException(UserErrorCode.USER_NOT_EXIST);
             }
-            ChainCreateData responseData = chainAccount.getData();
-            userForChain.setAddress(responseData.getAccount());
-            userForChain.setPlatform(responseData.getPlatform());
+            userForChain.setAddress(response.getUserId());
+            userForChain.setPlatform(response.getPlatform());
+            userForChain.setPassword(pwd);
             Boolean accountRes = userCacheService.updateById(userForChain);
             if (!accountRes) {
                 throw new UserException(UserErrorCode.USER_CREATE_CHAIN_FAIL);
@@ -312,7 +314,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             UserInfo userInfo = StpUtil.getSessionByLoginId(userId).getModel("userInfo", UserInfo.class);
             userInfo.setState(UserState.ACTIVE);
             userInfo.setCertification(true);
-            userInfo.setAddress(responseData.getAccount());
+            userInfo.setAddress(response.getUserId());
             StpUtil.getSession().set("userInfo", userInfo);
         } else {
             throw new UserException(UserErrorCode.USER_CREATE_CHAIN_FAIL);

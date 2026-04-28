@@ -15,6 +15,8 @@ public class NFTPageQueryRequest extends PageRequest {
 
     private String keyword;
 
+    private String classify;
+
     private String state;
 
 }

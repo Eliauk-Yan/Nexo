@@ -22,3 +22,11 @@ spring:
       - classpath:/config.yml
       - classpath:/cache.yml
       - classpath:/stream.yml
+
+nexo:
+  chain:
+    super:
+      host: https://jmdigital.market.alicloudapi.com
+      app-code: 65b1e4df85b5405d92fb427d6e44d452
+      admin-pwd: B@n@n@_La15_YSJ
+      admin-owner: 2

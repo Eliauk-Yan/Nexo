@@ -20,6 +20,62 @@ public class ChainResponse<T> extends BaseResponse {
 
     private T data;
 
+    /**
+     * 链账户名称
+     */
+    private String name;
+
+    /**
+     * ntf唯一编号
+     */
+    private String nftId;
+
+    /**
+     * 状态
+     */
+    private String state;
+
+
+    /**
+     * 藏品编号
+     */
+    private String serialNo;
+
+    /**
+     * 用户链上ID
+     */
+    private String userId;
+
+    /**
+     * 交易哈希
+     */
+    private String txHash;
+
+    /**
+     * 幂等号
+     */
+    private String identifier;
+
+    /**
+     * 外部业务ID
+     */
+    private String outBizId;
+
+    /**
+     * 平台名称
+     */
+    private String platform;
+
+
+    public static ChainResponse success(String identifier) {
+        ChainResponse response = new ChainResponse();
+        response.setSuccess(true);
+        response.setMessage("成功");
+        response.setCode("200");
+        response.setIdentifier(identifier);
+        return response;
+    }
+
     public static <T> ChainResponse<T> success(T data) {
         ChainResponse<T> response = new ChainResponse<>();
         response.setSuccess(true);

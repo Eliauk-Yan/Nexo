@@ -2,12 +2,10 @@ package com.nexo.business.collection.service.impl;
 
 import cn.dev33.satoken.stp.StpUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nexo.business.collection.domain.entity.Asset;
 import com.nexo.business.collection.domain.entity.AssetStream;
-import com.nexo.business.collection.domain.entity.NFT;
 import com.nexo.business.collection.domain.exception.NFTException;
 import com.nexo.business.collection.interfaces.vo.AssetVO;
 import com.nexo.business.collection.mapper.mybatis.AssetMapper;
@@ -25,10 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.nexo.business.collection.domain.exception.NFTErrorCode.*;
 
@@ -74,7 +68,7 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
         // 3. 创建资产流水
         AssetStream assetStream = new AssetStream();
         assetStream.setAssetId(asset.getId());
-        assetStream.setIdentifier(request.getIdentify());
+        assetStream.setIdentifier(request.getIdentifier());
         assetStream.setOperator(request.getOperator());
         assetStream.setStreamType(AssetEvent.DESTROY.getCode());
         boolean result = this.updateById(asset);
@@ -112,7 +106,7 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
         assetStream.setAssetId(oldAsset.getId());
         assetStream.setOperator(assetTransferRequest.getOperator());
         assetStream.setStreamType(AssetEvent.TRANSFER.getCode() + "_OUT");
-        assetStream.setIdentifier(assetTransferRequest.getIdentify());
+        assetStream.setIdentifier(assetTransferRequest.getIdentifier());
         boolean assetStreamSaveRes = assetStreamMapper.insert(assetStream) == 1;
         if (!assetStreamSaveRes) {
             throw new NFTException(ASSET_STREAM_SAVE_FAILED);
@@ -138,7 +132,7 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
         saveAssetStream.setAssetId(newAsset.getId());
         saveAssetStream.setOperator(assetTransferRequest.getOperator());
         saveAssetStream.setStreamType(AssetEvent.TRANSFER.getCode() + "_IN");
-        saveAssetStream.setIdentifier(assetTransferRequest.getIdentify());
+        saveAssetStream.setIdentifier(assetTransferRequest.getIdentifier());
         boolean saveAssetStreamRes = assetStreamMapper.insert(saveAssetStream) == 1;
         if (!saveAssetStreamRes) {
             throw new NFTException(ASSET_STREAM_SAVE_FAILED);

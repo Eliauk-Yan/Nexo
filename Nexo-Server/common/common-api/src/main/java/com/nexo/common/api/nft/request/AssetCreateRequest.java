@@ -1,10 +1,14 @@
 package com.nexo.common.api.nft.request;
 
+import com.nexo.common.api.nft.constant.AssetEvent;
 import com.nexo.common.base.request.BaseRequest;
 import com.nexo.common.api.nft.constant.NFTType;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.io.Serial;
 import java.math.BigDecimal;
 
 /**
@@ -12,9 +16,12 @@ import java.math.BigDecimal;
  * @description 资产分发请求类
  * @date 2026/03/08
  */
-@EqualsAndHashCode(callSuper = true)
-@Data
-public class AssetAllocateRequest extends BaseRequest {
+@Getter
+@Setter
+public class AssetCreateRequest extends AssetBaseRequest {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     /**
      * 所属业务订单号
@@ -46,8 +53,9 @@ public class AssetAllocateRequest extends BaseRequest {
      */
     private BigDecimal purchasePrice;
 
-    /**
-     * 唯一幂等校验号
-     */
-    private String identifier;
+
+    @Override
+    public AssetEvent getEventType() {
+        return AssetEvent.CREATE;
+    }
 }

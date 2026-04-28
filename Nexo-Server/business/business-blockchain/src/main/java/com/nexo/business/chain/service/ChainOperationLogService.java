@@ -15,12 +15,12 @@ public interface ChainOperationLogService extends IService<ChainOperationStream>
     ChainOperationStream queryLog(String bizId, ChainOperationBizType bizType, String identifier);
 
     /**
-     * 插入操作日志
+     * 插入链操作流水
      */
-    Long insertLog(ChainType chainType, String bizId, ChainOperationBizType bizType, ChainOperateType operateType, String param, String operationId);
+    Long insertLog(ChainType chainType, String bizId, ChainOperationBizType bizType, ChainOperateType operateType, String param, String identifier);
 
     /**
      * 更新操作日志
      */
-    boolean updateLog(Long chainOperationLogId, ChainOperationState state, String result);
+    ChainOperationStream updateLog(Long chainOperationLogId, ChainOperationState state, String result, String outBizId);
 }

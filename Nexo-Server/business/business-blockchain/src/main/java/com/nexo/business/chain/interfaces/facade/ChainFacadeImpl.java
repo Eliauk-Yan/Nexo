@@ -1,65 +1,46 @@
 package com.nexo.business.chain.interfaces.facade;
 
-import com.nexo.common.api.blockchain.constant.ChainType;
 import com.nexo.business.chain.service.ChainService;
-import com.nexo.business.chain.service.factory.ChainServiceFactory;
 import com.nexo.common.api.blockchain.ChainFacade;
 import com.nexo.common.api.blockchain.request.ChainRequest;
 import com.nexo.common.api.blockchain.response.ChainResponse;
-import com.nexo.common.api.blockchain.response.data.ChainCreateData;
 import com.nexo.common.api.blockchain.response.data.ChainOperationData;
-import com.nexo.common.base.constant.ProfileConstant;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;
-import org.springframework.beans.factory.annotation.Value;
 
 /**
  * @classname BlockchainFacadeImpl
  * @description 
  * @date 2025/12/25 11:21
  */
-@RequiredArgsConstructor
 @DubboService(version = "1.0.0")
+@RequiredArgsConstructor
 public class ChainFacadeImpl implements ChainFacade {
 
-    private final ChainServiceFactory chainServiceFactory;
-
-    @Value("${spring.profiles.active}")
-    private String profile;
-
-    @Value("${nexo.chain.type:MOCK}")
-    private String chainType;
+    private final ChainService chainService;
 
     @Override
-    public ChainResponse<ChainCreateData> createChainAccount(ChainRequest request) {
-        return getChainService().createChainAccount(request);
+    public ChainResponse createChainAccount(ChainRequest request) {
+        return chainService.createChainAccount(request);
     }
 
     @Override
-    public ChainResponse<ChainOperationData> onChain(ChainRequest request) {
-        return getChainService().onChain(request);
+    public ChainResponse onChain(ChainRequest request) {
+        return chainService.onChain(request);
     }
 
     @Override
     public ChainResponse<ChainOperationData> mint(ChainRequest request) {
-        return getChainService().mint(request);
+        return chainService.mint(request);
     }
 
     @Override
     public ChainResponse<ChainOperationData> transfer(ChainRequest request) {
-        return getChainService().transfer(request);
+        return chainService.transfer(request);
     }
 
     @Override
     public ChainResponse<ChainOperationData> destroy(ChainRequest request) {
-        return getChainService().destroy(request);
-    }
-
-
-    private ChainService getChainService() {
-        if (ProfileConstant.DEV.equals(profile)) {
-            return chainServiceFactory.get(ChainType.MOCK);
-        }
-        return chainServiceFactory.get(ChainType.valueOf(chainType));
+        return chainService.destroy(request);
     }
 }

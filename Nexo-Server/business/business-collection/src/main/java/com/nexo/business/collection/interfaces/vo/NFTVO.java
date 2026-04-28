@@ -18,11 +18,17 @@ public class NFTVO {
 
     private String cover;
 
+    private String classify;
+
+    private String source;
+
     private BigDecimal price;
 
     private Long quantity;
 
     private Long inventory;
+
+    private BigDecimal heat;
 
     private String description;
 

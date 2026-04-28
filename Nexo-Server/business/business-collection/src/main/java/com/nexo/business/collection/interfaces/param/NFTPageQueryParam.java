@@ -12,6 +12,8 @@ public class NFTPageQueryParam {
 
     private String keyword;
 
+    private String classify;
+
     private int pageSize;
 
     private int currentPage;

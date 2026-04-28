@@ -18,6 +18,8 @@ public class NFTQueryParam {
 
     private String name;
 
+    private String classify;
+
     private String state;
 
 }

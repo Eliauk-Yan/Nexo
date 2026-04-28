@@ -20,6 +20,10 @@ public class NFTCreateRequest extends NFTBaseRequest {
 
     private String cover;
 
+    private String classify;
+
+    private String source;
+
     private BigDecimal price;
 
     private Long quantity;

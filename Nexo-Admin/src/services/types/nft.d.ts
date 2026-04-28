@@ -4,12 +4,15 @@ declare namespace API {
         name: string;
         cover: string;
         class_id: string;
+        classify?: string;
+        source?: string;
         price: number;
         quantity: number; // Total quantity issued
         description: string;
         saleable_inventory: number;
         occupied_inventory: number;
         frozen_inventory: number;
+        heat?: number;
         identifier: string; // Unique identifier/Token ID
         state: 'pending' | 'success' | 'archived'; // pending: 待上链/待发布, success: 已发布, archived: 已归档
         sale_time: string;
@@ -26,6 +29,7 @@ declare namespace API {
         current?: number;
         size?: number;
         name?: string;
+        classify?: string;
         identifier?: string;
         state?: string;
     };

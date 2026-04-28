@@ -12,7 +12,7 @@ public interface NFTFacade {
     /**
      * 购买成功后分发资产并上链
      */
-    Boolean allocateAsset(AssetAllocateRequest request);
+    Boolean allocateAsset(AssetCreateRequest request);
 
     /**
      * 获取藏品分页

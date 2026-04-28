@@ -11,6 +11,7 @@ import {
   ModalForm,
   ProFormDateTimePicker,
   ProFormDigit,
+  ProFormSelect,
   ProFormText,
   ProFormTextArea,
   ProFormUploadButton,
@@ -20,11 +21,25 @@ import { Button, Image, Space, Tag, message, Modal, Typography, Popconfirm } fro
 import { useRef, useState } from 'react';
 import { getNFTList, addNFT, removeNFT, updateNFT, updateNFTInventory, updateNFTPrice } from '@/services/api/nft';
 
+const classifyOptions = [
+  { label: '艺术类', value: '艺术类' },
+  { label: '文博类', value: '文博类' },
+  { label: '景区类', value: '景区类' },
+];
+
+const classifyValueEnum = {
+  艺术类: { text: '艺术类' },
+  文博类: { text: '文博类' },
+  景区类: { text: '景区类' },
+};
+
 export type Artwork = {
   id: number;
   name: string;
   cover: string;
   class_id: string;
+  classify: string;
+  source: string;
   price: number;
   quantity: number; // Total quantity issued
   description: string;
@@ -76,6 +91,18 @@ export default () => {
       title: '藏品名称',
       dataIndex: 'name',
       copyable: true,
+      ellipsis: true,
+    },
+    {
+      title: '分类',
+      dataIndex: 'classify',
+      valueType: 'select',
+      valueEnum: classifyValueEnum,
+      render: (_, record) => (record.classify ? <Tag color="blue">{record.classify}</Tag> : <Tag>未分类</Tag>),
+    },
+    {
+      title: '来源',
+      dataIndex: 'source',
       ellipsis: true,
     },
 
@@ -203,6 +230,7 @@ export default () => {
             current: params.current,
             size: params.pageSize,
             name: params.name,
+            classify: params.classify,
             state: params.state,
           };
           const msg = await getNFTList(APIParams);
@@ -309,6 +337,21 @@ export default () => {
           name="description"
           label="藏品描述"
           placeholder="请输入藏品描述"
+        />
+
+        <ProFormSelect
+          name="classify"
+          label="藏品分类"
+          placeholder="请选择藏品分类"
+          options={classifyOptions}
+          rules={[{ required: true, message: '藏品分类不能为空' }]}
+        />
+
+        <ProFormText
+          name="source"
+          label="藏品来源"
+          placeholder="请输入藏品来源，如某某博物馆、某某景区"
+          rules={[{ required: true, message: '藏品来源不能为空' }]}
         />
 
         <Space>
