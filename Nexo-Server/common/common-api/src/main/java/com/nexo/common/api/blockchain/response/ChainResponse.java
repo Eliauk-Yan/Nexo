@@ -76,6 +76,14 @@ public class ChainResponse<T> extends BaseResponse {
         return response;
     }
 
+    public static ChainResponse failed(String msg, String code) {
+        ChainResponse response = new ChainResponse();
+        response.setSuccess(false);
+        response.setMessage(msg);
+        response.setCode(code);
+        return response;
+    }
+
     public static <T> ChainResponse<T> success(T data) {
         ChainResponse<T> response = new ChainResponse<>();
         response.setSuccess(true);

@@ -110,7 +110,7 @@ public class SuperChainServiceImpl implements ChainService {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("name", request.getClassName());
         body.put("creator", request.getCreator());
-        body.put("owner", request);
+        body.put("owner", adminOwner);
         body.put("category", request.getCategory());
         body.put("description", request.getDescription());
         body.put("maxSupply", request.getMaxSupply());
@@ -126,8 +126,9 @@ public class SuperChainServiceImpl implements ChainService {
         // 7. 发送MQ消息
         if (state == ChainOperationState.SUCCESS) {
             sendMsg(newStream, data);
+            return ChainResponse.success(request.getIdentifier());
         }
-        return ChainResponse.success(request.getIdentifier());
+        return ChainResponse.failed(result.getString("msg"), String.valueOf(result.getIntValue("code")));
     }
 
     @Override

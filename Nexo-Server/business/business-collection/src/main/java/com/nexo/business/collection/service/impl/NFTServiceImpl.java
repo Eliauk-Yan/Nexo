@@ -135,23 +135,28 @@ public class NFTServiceImpl extends ServiceImpl<NFTMapper, NFT> implements NFTSe
     @Transactional(rollbackFor = Exception.class)
     @Override
     public NFT create(NFTCreateRequest request) {
-        // 1. 创建藏品
+        // 1. 幂等判断
+        NFT existNft = this.getOne(new LambdaQueryWrapper<NFT>().eq(NFT::getIdentifier, request.getIdentifier()));
+        if (existNft != null) {
+            return existNft;
+        }
+        // 2. 创建藏品
         NFT nft = new NFT();
-        // 2. 状态流转
-        nft.init(request.getName(), request.getCover(), request.getClassify(), request.getSource(), request.getPrice(), request.getQuantity(), request.getSaleTime(), request.getDescription());
-        // 2. 保存藏品
+        // 3. 状态流转
+        nft.init(request.getName(), request.getCover(), request.getClassify(), request.getSource(), request.getPrice(), request.getQuantity(), request.getSaleTime(), request.getDescription(), request.getIdentifier());
+        // 4. 保存藏品
         boolean insertArtworkRes = nftMapper.insert(nft) == 1;
         if (!insertArtworkRes) {
             throw new NFTException(NFT_CREATE_FAILED);
         }
-        // 3. 保存藏品快照
+        // 5. 保存藏品快照
         NFTSnapshot snapshot = NFTConvertor.toSnapshot(nft);
         snapshot.setNftId(nft.getId());
         boolean insertSnapshotRes = nftSnapshotMapper.insert(snapshot) == 1;
         if (!insertSnapshotRes) {
             throw new NFTException(NFT_CREATE_FAILED);
         }
-        // 4. 保存藏品操作流水
+        // 6. 保存藏品操作流水
         NFTStream stream = NFTConvertor.toStream(nft);
         stream.setStreamType(request.getEventType().getCode());
         stream.setNftId(nft.getId());

@@ -66,7 +66,7 @@ public class ChainOperateResultListener extends StreamConsumer {
                     // 2. 初始化库存
                     initInventory(nft.getId().toString(), nft.getQuantity(), nft.getIdentifier());
                     // 3. 状态转移
-                    nft.success();
+                    nft.success(chainResultData.getAssetId());
                     if (!NFTService.updateById(nft)) {
                         throw new NFTException(NFT_UPDATE_FAILED);
                     }

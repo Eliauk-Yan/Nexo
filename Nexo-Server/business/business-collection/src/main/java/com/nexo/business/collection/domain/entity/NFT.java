@@ -52,7 +52,7 @@ public class NFT extends BaseEntity {
 
     // 状态机方法
     // 初始化
-    public void init(String name, String cover, String classify, String source, BigDecimal price, Long quantity, LocalDateTime saleTime, String description) {
+    public void init(String name, String cover, String classify, String source, BigDecimal price, Long quantity, LocalDateTime saleTime, String description, String identifier) {
         this.name = name;
         this.cover = cover;
         this.classify = classify;
@@ -61,14 +61,16 @@ public class NFT extends BaseEntity {
         this.quantity = quantity;
         this.saleTime = saleTime;
         this.description = description;
+        this.identifier = identifier;
         this.setSaleableInventory(quantity);
         this.setFrozenInventory(0L);
         this.setState(NFTState.PENDING);
     }
 
     // 成功
-    public void success() {
+    public void success(String classId) {
         this.state = NFTState.SUCCESS;
+        this.classId = classId;
         this.syncChainTime = LocalDateTime.now();
     }
 
