@@ -113,7 +113,7 @@ public class SuperChainServiceImpl implements ChainService {
         body.put("owner", adminOwner);
         body.put("category", request.getCategory());
         body.put("description", request.getDescription());
-        body.put("maxSupply", request.getMaxSupply());
+        body.put("maxSupply", Integer.MAX_VALUE);
         // 3. 插入流水
         Long streamId = chainOperationLogService.insertLog(ChainType.SUPER, request.getBizId(), request.getBizType(), ChainOperateType.NFT_ON_CHAIN, JSON.toJSONString(body), request.getIdentifier());
         // 4. 发起请求

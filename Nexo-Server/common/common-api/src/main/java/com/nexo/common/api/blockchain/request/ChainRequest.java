@@ -91,11 +91,6 @@ public class ChainRequest extends BaseRequest {
      */
     private String description;
 
-    /**
-     * 最大供应量
-     */
-    private Long maxSupply;
-
     // 资产uri设置
 
     /**

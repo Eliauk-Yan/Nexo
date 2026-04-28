@@ -190,7 +190,6 @@ public class NFTFacadeImpl implements NFTFacade {
         chainRequest.setClassName(request.getName());
         chainRequest.setCategory(request.getClassify());
         chainRequest.setDescription(request.getDescription());
-        chainRequest.setMaxSupply(request.getQuantity());
         chainRequest.setCreator(request.getSource());
         chainRequest.setUri(request.getCover());
         ChainResponse chainResponse = chainFacade.onChain(chainRequest);
