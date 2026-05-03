@@ -71,27 +71,6 @@ const AuthLayout = () => {
       />
 
       <Stack.Screen
-        name="order"
-        options={{
-          title: '订单',
-          headerShown: true,
-        }}
-      />
-
-      <Stack.Screen
-        name="assets"
-        options={{
-          title: '数字资产',
-          headerBackTitle: '我的',
-          headerTransparent: true,
-          headerBackTitleStyle: {
-            fontSize: 16,
-            fontFamily: 'RobotoSlab_400Regular',
-          },
-        }}
-      />
-
-      <Stack.Screen
         name="nft"
         options={{
           title: '藏品详情',
@@ -104,6 +83,45 @@ const AuthLayout = () => {
         options={{
           title: '藏品热榜',
           headerShown: true,
+        }}
+      />
+
+      <Stack.Screen
+        name="assets"
+        options={{
+          title: '我的资产',
+          headerBackTitle: '我的',
+          headerTransparent: true,
+          headerBackTitleStyle: {
+            fontSize: 16,
+            fontFamily: 'RobotoSlab_400Regular',
+          },
+        }}
+      />
+
+      <Stack.Screen
+        name="order"
+        options={{
+          title: '我的订单',
+          headerBackTitle: '我的',
+          headerTransparent: true,
+          headerBackTitleStyle: {
+            fontSize: 16,
+            fontFamily: 'RobotoSlab_400Regular',
+          },
+        }}
+      />
+
+      <Stack.Screen
+        name="transfer"
+        options={{
+          title: '资产转赠',
+          headerBackTitle: '我的',
+          headerTransparent: true,
+          headerBackTitleStyle: {
+            fontSize: 16,
+            fontFamily: 'RobotoSlab_400Regular',
+          },
         }}
       />
     </Stack>

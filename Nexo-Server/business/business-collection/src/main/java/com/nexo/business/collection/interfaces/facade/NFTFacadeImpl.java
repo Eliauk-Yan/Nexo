@@ -25,7 +25,6 @@ import com.nexo.common.api.blockchain.ChainFacade;
 import com.nexo.common.api.blockchain.constant.ChainOperationBizType;
 import com.nexo.common.api.blockchain.request.ChainRequest;
 import com.nexo.common.api.blockchain.response.ChainResponse;
-import com.nexo.common.api.blockchain.response.data.ChainOperationData;
 import com.nexo.common.api.inventory.InventoryFacade;
 import com.nexo.common.api.inventory.request.InventoryRequest;
 import com.nexo.common.api.nft.response.data.NFTInfo;
@@ -104,7 +103,7 @@ public class NFTFacadeImpl implements NFTFacade {
 
 
     @Override
-    public Boolean allocateAsset(AssetCreateRequest request) {
+    public Boolean mintAsset(AssetCreateRequest request) {
         // 1. 幂等判断
         long count = assetService.count(new LambdaQueryWrapper<Asset>()
                 .eq(Asset::getBusinessNo, request.getBusinessNo())
@@ -146,8 +145,8 @@ public class NFTFacadeImpl implements NFTFacade {
             chainRequest.setBizId(asset.getId().toString());
             chainRequest.setClassId(nft.getClassId());
             chainRequest.setTo(buyer.getAddress());
-            ChainResponse<ChainOperationData> chainResponse = chainFacade.mint(chainRequest);
-            if (chainResponse.getSuccess() && chainResponse.getData() != null) {
+            ChainResponse chainResponse = chainFacade.mint(chainRequest);
+            if (chainResponse.getSuccess()) {
                 log.info("资产铸造请求已提交, assetId={}", asset.getId());
             } else {
                 log.error("资产铸造请求提交失败, assetId={}, message={}", asset.getId(), chainResponse.getMessage());

@@ -1,10 +1,6 @@
 import React, { useCallback, useState } from 'react'
 import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
-import {
-  Alert,
-  StyleSheet,
-  View,
-} from 'react-native'
+import { Alert, StyleSheet, View } from 'react-native'
 import * as Haptics from 'expo-haptics'
 
 import {
@@ -165,14 +161,9 @@ export default function TransferScreen() {
 
   // ── 渲染 ────────────────────────────────────────────
   return (
-      <View style={styles.container}>
-        <Stack.Screen options={{ headerTitle: '资产转赠', headerTransparent: true }} />
-        <Stack.Toolbar placement="left">
-          <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.back()} />
-        </Stack.Toolbar>
-
-          <Host style={styles.host}>
-            <List modifiers={[listStyle('insetGrouped')]}>
+    <View style={styles.container}>
+      <Host style={styles.host}>
+        <List modifiers={[listStyle('insetGrouped')]}>
           {/* ── 页面标题 ─────────────────────────────── */}
           <Section modifiers={[listRowBackground('clear')]}>
             <VStack alignment="leading" spacing={8}>
@@ -204,10 +195,10 @@ export default function TransferScreen() {
                 spacing={2}
                 modifiers={[onTapGesture(() => setIsAssetSheetPresented(true))]}
               >
-                <Text modifiers={[font({ size: 16, weight: 'medium' }), foregroundStyle('primary')]}>
-                  {loading
-                    ? '加载资产中...'
-                    : selectedAsset?.artworkName || '请选择资产'}
+                <Text
+                  modifiers={[font({ size: 16, weight: 'medium' }), foregroundStyle('primary')]}
+                >
+                  {loading ? '加载资产中...' : selectedAsset?.artworkName || '请选择资产'}
                 </Text>
                 <Text modifiers={[font({ size: 12 }), foregroundStyle('secondary')]}>
                   {selectedAsset
@@ -221,11 +212,7 @@ export default function TransferScreen() {
               <Button
                 label="选择资产"
                 onPress={() => setIsAssetSheetPresented(true)}
-                modifiers={[
-                  buttonStyle('glassProminent'),
-                  controlSize('regular'),
-                  tint('#0A84FF'),
-                ]}
+                modifiers={[buttonStyle('glassProminent'), controlSize('regular'), tint('#0A84FF')]}
               />
             </HStack>
           </Section>
@@ -246,11 +233,7 @@ export default function TransferScreen() {
               <Button
                 label={searching ? '查询中...' : '查询用户'}
                 onPress={handleSearchReceiver}
-                modifiers={[
-                  buttonStyle('glassProminent'),
-                  controlSize('regular'),
-                  tint('#0A84FF'),
-                ]}
+                modifiers={[buttonStyle('glassProminent'), controlSize('regular'), tint('#0A84FF')]}
               />
             </HStack>
           </Section>
@@ -271,18 +254,14 @@ export default function TransferScreen() {
                 <Image systemName="phone.fill" size={16} color="#22C55E" />
                 <Text modifiers={[foregroundStyle('primary')]}>手机号</Text>
                 <Spacer />
-                <Text modifiers={[foregroundStyle('secondary')]}>
-                  {phone.trim()}
-                </Text>
+                <Text modifiers={[foregroundStyle('secondary')]}>{phone.trim()}</Text>
               </HStack>
 
               <HStack spacing={12}>
                 <Image systemName="number" size={16} color="#FF9500" />
                 <Text modifiers={[foregroundStyle('primary')]}>用户ID</Text>
                 <Spacer />
-                <Text modifiers={[foregroundStyle('secondary')]}>
-                  {receiver.id}
-                </Text>
+                <Text modifiers={[foregroundStyle('secondary')]}>{receiver.id}</Text>
               </HStack>
             </Section>
           )}
@@ -355,102 +334,100 @@ export default function TransferScreen() {
               </Text>
             </VStack>
           </Section>
-            </List>
+        </List>
 
-            <BottomSheet
-              isPresented={isAssetSheetPresented}
-              onIsPresentedChange={setIsAssetSheetPresented}
-            >
-              <Group
-                modifiers={[
-                  presentationDetents([{ height: 520 }]),
-                  presentationDragIndicator('visible'),
-                ]}
-              >
-                <List modifiers={[listStyle('insetGrouped')]}>
-                  <Section modifiers={[listRowBackground('clear')]}>
-                    <VStack alignment="leading" spacing={6}>
-                      <Text
-                        modifiers={[
-                          font({ size: 24, weight: 'bold' }),
-                          foregroundStyle('primary'),
-                        ]}
-                      >
-                        选择资产
-                      </Text>
-                      <Text modifiers={[font({ size: 14 }), foregroundStyle('secondary')]}>
-                        仅显示当前可转赠的已持有资产
-                      </Text>
-                    </VStack>
-                  </Section>
+        <BottomSheet
+          isPresented={isAssetSheetPresented}
+          onIsPresentedChange={setIsAssetSheetPresented}
+        >
+          <Group
+            modifiers={[
+              presentationDetents([{ height: 520 }]),
+              presentationDragIndicator('visible'),
+            ]}
+          >
+            <List modifiers={[listStyle('insetGrouped')]}>
+              <Section modifiers={[listRowBackground('clear')]}>
+                <VStack alignment="leading" spacing={6}>
+                  <Text
+                    modifiers={[font({ size: 24, weight: 'bold' }), foregroundStyle('primary')]}
+                  >
+                    选择资产
+                  </Text>
+                  <Text modifiers={[font({ size: 14 }), foregroundStyle('secondary')]}>
+                    仅显示当前可转赠的已持有资产
+                  </Text>
+                </VStack>
+              </Section>
 
-                  <Section title="可转赠资产">
-                    {assets.length === 0 ? (
-                      <HStack spacing={10} modifiers={[padding({ vertical: 18 })]}>
-                        <Image systemName="tray" size={18} color="#8E8E93" />
-                        <Text modifiers={[font({ size: 16, weight: 'medium' }), foregroundStyle('secondary')]}>
-                          暂无可转赠资产
-                        </Text>
-                      </HStack>
-                    ) : (
-                      <ScrollView>
-                        <VStack spacing={0}>
-                          {assets.map((asset) => (
-                            <HStack
-                              key={String(asset.id)}
-                              spacing={12}
+              <Section title="可转赠资产">
+                {assets.length === 0 ? (
+                  <HStack spacing={10} modifiers={[padding({ vertical: 18 })]}>
+                    <Image systemName="tray" size={18} color="#8E8E93" />
+                    <Text
+                      modifiers={[
+                        font({ size: 16, weight: 'medium' }),
+                        foregroundStyle('secondary'),
+                      ]}
+                    >
+                      暂无可转赠资产
+                    </Text>
+                  </HStack>
+                ) : (
+                  <ScrollView>
+                    <VStack spacing={0}>
+                      {assets.map((asset) => (
+                        <HStack
+                          key={String(asset.id)}
+                          spacing={12}
+                          modifiers={[
+                            padding({ vertical: 10 }),
+                            onTapGesture(() => {
+                              setSelectedAsset(asset)
+                              setIsAssetSheetPresented(false)
+                            }),
+                          ]}
+                        >
+                          <Image
+                            systemName={
+                              selectedAsset?.id === asset.id ? 'checkmark.circle.fill' : 'circle'
+                            }
+                            size={22}
+                            color={selectedAsset?.id === asset.id ? '#0A84FF' : '#C7C7CC'}
+                          />
+                          <VStack alignment="leading" spacing={2}>
+                            <Text
                               modifiers={[
-                                padding({ vertical: 10 }),
-                                onTapGesture(() => {
-                                  setSelectedAsset(asset)
-                                  setIsAssetSheetPresented(false)
-                                }),
+                                font({ size: 16, weight: 'medium' }),
+                                foregroundStyle('primary'),
                               ]}
                             >
-                              <Image
-                                systemName={
-                                  selectedAsset?.id === asset.id
-                                    ? 'checkmark.circle.fill'
-                                    : 'circle'
-                                }
-                                size={22}
-                                color={selectedAsset?.id === asset.id ? '#0A84FF' : '#C7C7CC'}
-                              />
-                              <VStack alignment="leading" spacing={2}>
-                                <Text
-                                  modifiers={[
-                                    font({ size: 16, weight: 'medium' }),
-                                    foregroundStyle('primary'),
-                                  ]}
-                                >
-                                  {asset.artworkName}
-                                </Text>
-                                <Text
-                                  modifiers={[font({ size: 12 }), foregroundStyle('secondary')]}
-                                >
-                                  #{asset.serialNumber?.substring(0, 14)}...
-                                </Text>
-                              </VStack>
-                              <Spacer />
-                              <Text
-                                modifiers={[
-                                  font({ size: 14, weight: 'medium' }),
-                                  foregroundStyle('secondary'),
-                                ]}
-                              >
-                                ¥{asset.purchasePrice}
-                              </Text>
-                            </HStack>
-                          ))}
-                        </VStack>
-                      </ScrollView>
-                    )}
-                  </Section>
-                </List>
-              </Group>
-            </BottomSheet>
-          </Host>
-      </View>
+                              {asset.artworkName}
+                            </Text>
+                            <Text modifiers={[font({ size: 12 }), foregroundStyle('secondary')]}>
+                              #{asset.serialNumber?.substring(0, 14)}...
+                            </Text>
+                          </VStack>
+                          <Spacer />
+                          <Text
+                            modifiers={[
+                              font({ size: 14, weight: 'medium' }),
+                              foregroundStyle('secondary'),
+                            ]}
+                          >
+                            ¥{asset.purchasePrice}
+                          </Text>
+                        </HStack>
+                      ))}
+                    </VStack>
+                  </ScrollView>
+                )}
+              </Section>
+            </List>
+          </Group>
+        </BottomSheet>
+      </Host>
+    </View>
   )
 }
 

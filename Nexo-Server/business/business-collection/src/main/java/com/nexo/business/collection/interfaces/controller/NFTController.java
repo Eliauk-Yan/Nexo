@@ -13,10 +13,8 @@ import com.nexo.business.collection.interfaces.vo.AssetVO;
 import com.nexo.business.collection.service.impl.AssetCacheService;
 import com.nexo.common.api.blockchain.ChainFacade;
 import com.nexo.common.api.blockchain.constant.ChainOperateType;
-import com.nexo.common.api.blockchain.constant.ChainOperationBizType;
 import com.nexo.common.api.blockchain.request.ChainRequest;
 import com.nexo.common.api.blockchain.response.ChainResponse;
-import com.nexo.common.api.blockchain.response.data.ChainOperationData;
 import com.nexo.common.api.nft.constant.AssetState;
 import com.nexo.common.api.nft.request.AssetDestroyRequest;
 import com.nexo.common.api.nft.request.AssetTransferRequest;
@@ -144,9 +142,9 @@ public class NFTController {
             chainRequest.setIdentifier(param.getAssetId() + SEPARATOR + param.getRecipeId() + SEPARATOR + ChainOperateType.NFT_TRANSFER.getCode());
             UserInfo currentUser = StpUtil.getSession().getModel("userInfo", UserInfo.class);
             chainRequest.setOwner(currentUser.getAddress());
-            chainRequest.setNtfId(String.valueOf(asset.getNftIdentifier()));
+            chainRequest.setClassId(String.valueOf(asset.getNftIdentifier()));
             chainRequest.setTo(reciveUserInfo.getAddress());
-            ChainResponse<ChainOperationData> response = chainFacade.transfer(chainRequest);
+            ChainResponse response = chainFacade.transfer(chainRequest);
             return Result.success(response.getSuccess());
         }
         return Result.success(false);

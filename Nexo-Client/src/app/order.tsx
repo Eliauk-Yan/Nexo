@@ -198,14 +198,17 @@ const OrderPage = () => {
 
           iapPurchase = await purchaseNftProduct(order.productId, order.orderId)
 
-          await tradeApi.pay({
-            orderId: order.orderId,
-            iapProductId: iapPurchase.productId,
-            iapTransactionId: getPurchaseTransactionId(iapPurchase.purchase),
-            iapPurchaseToken: getPurchaseToken(iapPurchase.purchase),
-          }, {
-            suppressErrorAlert: true,
-          })
+          await tradeApi.pay(
+            {
+              orderId: order.orderId,
+              iapProductId: iapPurchase.productId,
+              iapTransactionId: getPurchaseTransactionId(iapPurchase.purchase),
+              iapPurchaseToken: getPurchaseToken(iapPurchase.purchase),
+            },
+            {
+              suppressErrorAlert: true,
+            },
+          )
 
           await finishNftPurchase(iapPurchase.purchase)
           return 'IAP'
@@ -434,17 +437,6 @@ const OrderPage = () => {
   return (
     <View style={[styles.screen, { backgroundColor: ui.background }]}>
       <Spinner visible={loading || !!purchasingOrderId} animation="fade" />
-      <Stack.Screen
-        options={{
-          title: '我的订单',
-          headerTransparent: true,
-        }}
-      />
-
-      <Stack.Toolbar placement="left">
-        <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.back()} />
-      </Stack.Toolbar>
-
       <FlatList
         data={orders}
         renderItem={renderOrderCard}

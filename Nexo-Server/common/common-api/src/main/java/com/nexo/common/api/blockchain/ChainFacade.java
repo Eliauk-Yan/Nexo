@@ -3,7 +3,7 @@ package com.nexo.common.api.blockchain;
 
 import com.nexo.common.api.blockchain.request.ChainRequest;
 import com.nexo.common.api.blockchain.response.ChainResponse;
-import com.nexo.common.api.blockchain.response.data.ChainOperationData;
+
 
 public interface ChainFacade {
 
@@ -20,11 +20,11 @@ public interface ChainFacade {
     /**
      * 铸造藏品
      */
-    ChainResponse<ChainOperationData> mint(ChainRequest request);
+    ChainResponse mint(ChainRequest request);
 
     /**
-     * 资产交易
+     * 资产转赠
      */
-    ChainResponse<ChainOperationData> transfer(ChainRequest request);
+    ChainResponse transfer(ChainRequest request);
 
 }

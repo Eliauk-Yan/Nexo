@@ -22,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -64,12 +63,8 @@ public class PayFacadeImpl implements PayFacade {
             // 步骤4：把业务支付单转换成渠道侧需要的下单参数
             IapPayRequest iapPayRequest = new IapPayRequest();
             iapPayRequest.setOutTradeNo(payOrder.getPayOrderId()); // 订单号
-            iapPayRequest.setTotalFee(request.getOrderAmount().multiply(new BigDecimal(100)).longValue()); //  金额 元转分
-            iapPayRequest.setDescription(request.getMemo()); // 备注
-            iapPayRequest.setAttach(request.getBizNo()); // 附加信息
             iapPayRequest.setProductId(request.getIapProductId());
             iapPayRequest.setTransactionId(request.getIapTransactionId());
-            iapPayRequest.setPurchaseToken(request.getIapPurchaseToken());
 
             // 步骤5：调用 IAP 支付服务确认 Apple 内购交易
             IapPayResponse iapPayResponse = appStoreServerApiService.pay(iapPayRequest);

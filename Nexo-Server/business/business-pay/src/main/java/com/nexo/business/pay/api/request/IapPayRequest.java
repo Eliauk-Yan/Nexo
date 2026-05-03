@@ -22,21 +22,6 @@ public class IapPayRequest implements Serializable {
     private String outTradeNo;
 
     /**
-     * 金额（单位：分）
-     */
-    private Long totalFee;
-
-    /**
-     * 订单描述
-     */
-    private String description;
-
-    /**
-     * 附加信息
-     */
-    private String attach;
-
-    /**
      * 应用内购买商品ID
      */
     private String productId;
@@ -45,9 +30,4 @@ public class IapPayRequest implements Serializable {
      * 应用内购买交易ID
      */
     private String transactionId;
-
-    /**
-     * 应用内购买凭证或购买令牌
-     */
-    private String purchaseToken;
 }

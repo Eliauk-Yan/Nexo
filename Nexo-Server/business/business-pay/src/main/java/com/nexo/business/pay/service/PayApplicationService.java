@@ -50,7 +50,6 @@ public class PayApplicationService {
             log.info("支付单已支付, payOrderId={}", payOrderId);
             return true;
         }
-
         // 3. 先查询订单详情，为后续订单推进和藏品分发做准备
         OrderResponse<OrderDTO> getOrderResponse = orderFacade.getOrder(payOrder.getBizNo(), null);
         if (getOrderResponse == null || !Boolean.TRUE.equals(getOrderResponse.getSuccess()) || getOrderResponse.getData() == null) {
@@ -83,15 +82,15 @@ public class PayApplicationService {
 
         // 5. 支付成功后为藏品订单分发资产并触发异步铸造
         if (order.getNftType() == NFTType.NFT && order.getOrderState() != TradeOrderState.CLOSED) {
-            AssetCreateRequest allocateRequest = new AssetCreateRequest();
-            allocateRequest.setBusinessNo(order.getOrderId());
-            allocateRequest.setBusinessType(payOrder.getBizType());
-            allocateRequest.setBuyerId(Long.valueOf(order.getBuyerId()));
-            allocateRequest.setArtworkId(Long.valueOf(order.getProductId()));
-            allocateRequest.setNftType(order.getNftType());
-            allocateRequest.setPurchasePrice(order.getPaymentAmount());
-            allocateRequest.setIdentifier(payOrder.getPayOrderId());
-            Boolean allocateResult = nftFacade.allocateAsset(allocateRequest);
+            AssetCreateRequest mintRequest = new AssetCreateRequest();
+            mintRequest.setBusinessNo(order.getOrderId());
+            mintRequest.setBusinessType(payOrder.getBizType());
+            mintRequest.setBuyerId(Long.valueOf(order.getBuyerId()));
+            mintRequest.setArtworkId(Long.valueOf(order.getProductId()));
+            mintRequest.setNftType(order.getNftType());
+            mintRequest.setPurchasePrice(order.getPaymentAmount());
+            mintRequest.setIdentifier(payOrder.getPayOrderId());
+            Boolean allocateResult = nftFacade.mintAsset(mintRequest);
             if (!Boolean.TRUE.equals(allocateResult)) {
                 log.error("支付成功后分发资产失败, payOrderId={}, orderId={}", payOrderId, order.getOrderId());
                 return false;

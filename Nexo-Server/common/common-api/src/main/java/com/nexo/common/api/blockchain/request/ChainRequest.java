@@ -36,22 +36,7 @@ public class ChainRequest extends BaseRequest {
      */
     private ChainOperationBizType bizType;
 
-
-    /**
-     * 藏品序列号
-     */
-    private String serialNo;
-
-
     private String owner;
-
-    /**
-     * ntf唯一编号
-     */
-    private String ntfId;
-
-
-
     // 用户注册上链
 
     /**
@@ -65,12 +50,6 @@ public class ChainRequest extends BaseRequest {
     private String pwd;
 
     // 资产上链
-
-    /**
-     * 藏品类目ID（可选）
-     */
-    private String classId;
-
     /**
      * 藏品类目名称
      */
@@ -99,6 +78,11 @@ public class ChainRequest extends BaseRequest {
     private String uri;
 
     // 资产铸造
+
+    /**
+     * 藏品类目ID（可选）
+     */
+    private String classId;
 
     /**
      * 接收者地址

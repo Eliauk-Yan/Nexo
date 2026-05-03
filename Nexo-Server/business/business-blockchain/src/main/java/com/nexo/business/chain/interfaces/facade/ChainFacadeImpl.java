@@ -4,7 +4,6 @@ import com.nexo.business.chain.service.ChainService;
 import com.nexo.common.api.blockchain.ChainFacade;
 import com.nexo.common.api.blockchain.request.ChainRequest;
 import com.nexo.common.api.blockchain.response.ChainResponse;
-import com.nexo.common.api.blockchain.response.data.ChainOperationData;
 import lombok.RequiredArgsConstructor;
 import org.apache.dubbo.config.annotation.DubboService;
 
@@ -30,12 +29,12 @@ public class ChainFacadeImpl implements ChainFacade {
     }
 
     @Override
-    public ChainResponse<ChainOperationData> mint(ChainRequest request) {
+    public ChainResponse mint(ChainRequest request) {
         return chainService.mint(request);
     }
 
     @Override
-    public ChainResponse<ChainOperationData> transfer(ChainRequest request) {
+    public ChainResponse transfer(ChainRequest request) {
         return chainService.transfer(request);
     }
 }

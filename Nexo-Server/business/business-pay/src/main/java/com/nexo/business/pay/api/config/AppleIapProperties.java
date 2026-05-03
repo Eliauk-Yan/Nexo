@@ -43,12 +43,4 @@ public class AppleIapProperties {
      * Sandbox 或 Production。
      */
     private String environment = "Sandbox";
-
-    private String sandboxBaseUrl = "https://api.storekit-sandbox.itunes.apple.com";
-
-    private String productionBaseUrl = "https://api.storekit.itunes.apple.com";
-
-    private int connectTimeoutSeconds = 5;
-
-    private int requestTimeoutSeconds = 10;
 }

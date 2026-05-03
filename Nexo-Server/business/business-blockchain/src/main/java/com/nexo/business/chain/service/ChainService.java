@@ -3,7 +3,6 @@ package com.nexo.business.chain.service;
 import com.nexo.business.chain.domain.entity.ChainOperationStream;
 import com.nexo.common.api.blockchain.request.ChainRequest;
 import com.nexo.common.api.blockchain.response.ChainResponse;
-import com.nexo.common.api.blockchain.response.data.ChainOperationData;
 import com.nexo.common.api.blockchain.response.data.ChainResultData;
 
 public interface ChainService {
@@ -21,12 +20,12 @@ public interface ChainService {
     /**
      * 铸造藏品
      */
-    ChainResponse<ChainOperationData> mint(ChainRequest request);
+    ChainResponse mint(ChainRequest request);
 
     /**
      * 交易藏品
      */
-    ChainResponse<ChainOperationData> transfer(ChainRequest request);
+    ChainResponse transfer(ChainRequest request);
 
     /**
      * 发送消息

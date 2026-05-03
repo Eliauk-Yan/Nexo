@@ -27,6 +27,4 @@ public class ChainResultData {
      */
     private String txid;
 
-
-
 }

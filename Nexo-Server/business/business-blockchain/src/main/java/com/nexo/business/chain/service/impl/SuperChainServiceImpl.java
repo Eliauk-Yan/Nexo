@@ -14,7 +14,6 @@ import com.nexo.common.api.blockchain.constant.ChainType;
 import com.nexo.common.api.blockchain.model.ChainOperateBody;
 import com.nexo.common.api.blockchain.request.ChainRequest;
 import com.nexo.common.api.blockchain.response.ChainResponse;
-import com.nexo.common.api.blockchain.response.data.ChainOperationData;
 import com.nexo.common.api.blockchain.response.data.ChainResultData;
 import com.nexo.common.base.response.ResponseCode;
 import com.nexo.common.mq.producer.StreamProducer;
@@ -131,12 +130,12 @@ public class SuperChainServiceImpl implements ChainService {
     }
 
     @Override
-    public ChainResponse<ChainOperationData> mint(ChainRequest request) {
+    public ChainResponse mint(ChainRequest request) {
         // 1. 幂等控制
         request.setBizType(ChainOperationBizType.ASSET);
         ChainOperationStream stream = chainOperationLogService.queryLog(request.getBizId(), request.getBizType(), request.getIdentifier());
         if (stream != null) {
-            return ChainResponse.success(new ChainOperationData(stream.getIdentifier()));
+            return ChainResponse.success(stream.getIdentifier());
         }
         // 2. 构造请求参数
         Map<String, Object> body = new LinkedHashMap<>();
@@ -151,7 +150,7 @@ public class SuperChainServiceImpl implements ChainService {
         ChainOperationState state = result.getIntValue("code") == SUCCESS_CODE ? ChainOperationState.SUCCESS : ChainOperationState.FAILED;
         ChainOperationStream newStream = chainOperationLogService.updateLog(streamId, state, result.toJSONString(), result.getString("taskNo"));
         if (state != ChainOperationState.SUCCESS) {
-            ChainResponse<ChainOperationData> response = new ChainResponse<>();
+            ChainResponse response = new ChainResponse();
             response.setSuccess(false);
             response.setCode(result.getString("code"));
             response.setMessage(result.getString("msg"));
@@ -164,20 +163,20 @@ public class SuperChainServiceImpl implements ChainService {
         resultData.setTxid(data.getString("txid"));
         // 7. 发送MQ消息
         sendMsg(newStream, resultData);
-        return ChainResponse.success(new ChainOperationData(request.getIdentifier()));
+        return ChainResponse.success(request.getIdentifier());
     }
 
     @Override
-    public ChainResponse<ChainOperationData> transfer(ChainRequest request) {
+    public ChainResponse transfer(ChainRequest request) {
         // 1. 幂等控制
         request.setBizType(ChainOperationBizType.ASSET);
         ChainOperationStream stream = chainOperationLogService.queryLog(request.getBizId(), request.getBizType(), request.getIdentifier());
         if (stream != null) {
-            return ChainResponse.success(new ChainOperationData(stream.getIdentifier()));
+            return ChainResponse.success(stream.getIdentifier());
         }
         // 2. 构造请求参数
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("tokenId", request.getNtfId());
+        body.put("tokenId", request.getClassId());
         body.put("from", request.getOwner());
         body.put("pwd", adminPwd);
         body.put("to", request.getTo());
@@ -189,7 +188,7 @@ public class SuperChainServiceImpl implements ChainService {
         ChainOperationState state = result.getIntValue("code") == SUCCESS_CODE ? ChainOperationState.SUCCESS : ChainOperationState.FAILED;
         ChainOperationStream newStream = chainOperationLogService.updateLog(streamId, state, result.toJSONString(), result.getString("taskNo"));
         if (state != ChainOperationState.SUCCESS) {
-            ChainResponse<ChainOperationData> response = new ChainResponse<>();
+            ChainResponse response = new ChainResponse();
             response.setSuccess(false);
             response.setCode(result.getString("code"));
             response.setMessage(result.getString("msg"));
@@ -198,11 +197,11 @@ public class SuperChainServiceImpl implements ChainService {
         // 6. 解析响应
         JSONObject data = result.getJSONObject("data");
         ChainResultData resultData = new ChainResultData();
-        resultData.setAssetId(request.getNtfId());
+        resultData.setAssetId(request.getClassId());
         resultData.setTxid(data.getString("txid"));
         // 7. 发送MQ消息
         sendMsg(newStream, resultData);
-        return ChainResponse.success(new ChainOperationData(request.getIdentifier()));
+        return ChainResponse.success(request.getIdentifier());
     }
 
     /**

@@ -13,12 +13,10 @@ import java.io.Serial;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class ChainResponse<T> extends BaseResponse {
+public class ChainResponse extends BaseResponse {
 
     @Serial
     private static final long serialVersionUID = 1L;
-
-    private T data;
 
     /**
      * 链账户名称
@@ -34,7 +32,6 @@ public class ChainResponse<T> extends BaseResponse {
      * 状态
      */
     private String state;
-
 
     /**
      * 藏品编号
@@ -81,13 +78,6 @@ public class ChainResponse<T> extends BaseResponse {
         response.setSuccess(false);
         response.setMessage(msg);
         response.setCode(code);
-        return response;
-    }
-
-    public static <T> ChainResponse<T> success(T data) {
-        ChainResponse<T> response = new ChainResponse<>();
-        response.setSuccess(true);
-        response.setData(data);
         return response;
     }
 
