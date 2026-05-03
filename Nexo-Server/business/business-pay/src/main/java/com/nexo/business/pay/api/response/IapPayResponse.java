@@ -1,6 +1,5 @@
-package com.nexo.business.pay.channel.data;
+package com.nexo.business.pay.api.response;
 
-import com.nexo.common.api.pay.response.WechatPayParamsDTO;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,11 +7,11 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * 支付渠道响应
+ * 应用内购买支付响应
  */
 @Getter
 @Setter
-public class PayChannelResponse implements Serializable {
+public class IapPayResponse implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -32,8 +31,4 @@ public class PayChannelResponse implements Serializable {
      */
     private String responseMessage;
 
-    /**
-     * 微信App支付参数
-     */
-    private WechatPayParamsDTO wechatPayParams;
 }

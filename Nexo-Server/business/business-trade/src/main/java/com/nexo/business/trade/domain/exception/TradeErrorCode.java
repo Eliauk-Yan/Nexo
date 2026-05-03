@@ -25,6 +25,10 @@ public enum TradeErrorCode implements ErrorCode {
 
     ORDER_CANCEL_FAILED("ORDER_CANCEL_FAILED", "订单取消失败"),
 
+    IAP_TRANSACTION_REUSED("IAP_TRANSACTION_REUSED", "应用内购买交易已被其他订单使用"),
+
+    IAP_PURCHASE_PROOF_INVALID("IAP_PURCHASE_PROOF_INVALID", "应用内购买凭据无效"),
+
     INVENTORY_ROLLBACK_FAILED("INVENTORY_ROLLBACK_FAILED", "库存回滚失败");
 
     private final String code;

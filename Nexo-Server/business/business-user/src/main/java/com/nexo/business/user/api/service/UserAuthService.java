@@ -1,4 +1,4 @@
-package com.nexo.business.user.service;
+package com.nexo.business.user.api.service;
 
 import com.nexo.business.user.interfaces.dto.RealNameAuthDTO;
 

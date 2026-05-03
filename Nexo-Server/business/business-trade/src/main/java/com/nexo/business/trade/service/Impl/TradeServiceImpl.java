@@ -27,6 +27,7 @@ import com.nexo.common.api.order.request.OrderTimeoutRequest;
 import com.nexo.common.api.order.response.OrderResponse;
 import com.nexo.common.api.order.response.data.OrderDTO;
 import com.nexo.common.api.pay.PayFacade;
+import com.nexo.common.api.pay.constant.PayState;
 import com.nexo.common.api.pay.request.PayCreateRequest;
 import com.nexo.common.api.pay.response.PayOrderDTO;
 import com.nexo.common.api.pay.response.PayResponse;
@@ -36,6 +37,7 @@ import com.nexo.common.web.filter.TokenFilter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -48,6 +50,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import static com.nexo.business.trade.domain.exception.TradeErrorCode.GOODS_NOT_FOR_SALE;
+import static com.nexo.business.trade.domain.exception.TradeErrorCode.IAP_TRANSACTION_REUSED;
 import static com.nexo.business.trade.domain.exception.TradeErrorCode.ORDER_CREATE_FAILED;
 import static com.nexo.business.trade.domain.exception.TradeErrorCode.ORDER_IS_CANNOT_PAY;
 import static com.nexo.business.trade.domain.exception.TradeErrorCode.ORDER_NOT_EXIST;
@@ -159,7 +162,12 @@ public class TradeServiceImpl implements TradeService {
         if (order == null) {
             throw new TradeException(ORDER_NOT_EXIST);
         }
-        // 2.2 订单状态是否正确
+        // 2.2 订单状态是否正确（已支付/已完成视为幂等成功）
+        if (order.getOrderState() == TradeOrderState.PAID || order.getOrderState() == TradeOrderState.FINISH) {
+            PayVO payVO = new PayVO();
+            payVO.setPayState(PayState.PAID);
+            return payVO;
+        }
         if (order.getOrderState() != TradeOrderState.CONFIRM) {
             throw new TradeException(ORDER_IS_CANNOT_PAY);
         }
@@ -189,12 +197,22 @@ public class TradeServiceImpl implements TradeService {
         payCreateRequest.setPayerType(UserType.CUSTOMER); // 买家类型
         payCreateRequest.setPayeeId(order.getSellerId()); // 卖家ID
         payCreateRequest.setPayeeType(PLATFORM); // 卖家类型
-        payCreateRequest.setPayChannel(payParams.getPaymentType()); // 支付类型
         payCreateRequest.setMemo(order.getProductName()); //藏品名称
+        payCreateRequest.setIapProductId(payParams.getIapProductId());
+        payCreateRequest.setIapTransactionId(payParams.getIapTransactionId());
+        payCreateRequest.setIapPurchaseToken(payParams.getIapPurchaseToken());
         // 6. 调用支付服务创建支付单
         PayResponse<PayOrderDTO> payResponse = payFacade.createPayOrder(payCreateRequest);
         if (!payResponse.getSuccess()) {
+            if (StringUtils.equals(payResponse.getCode(), "ORDER_ALREADY_PAID")) {
+                PayVO payVO = new PayVO();
+                payVO.setPayState(PayState.PAID);
+                return payVO;
+            }
             log.error("创建支付单失败, orderId={}, msg={}", order.getOrderId(), payResponse.getMessage());
+            if (StringUtils.equals(payResponse.getCode(), IAP_TRANSACTION_REUSED.getCode())) {
+                throw new TradeException(IAP_TRANSACTION_REUSED, payResponse.getMessage());
+            }
             throw new TradeException(ORDER_IS_CANNOT_PAY);
         }
         // 6. 构造并返回
@@ -204,10 +222,9 @@ public class TradeServiceImpl implements TradeService {
         payVO.setPayOrderId(payOrderDTO.getPayOrderId());
         // 支付状态
         payVO.setPayState(payOrderDTO.getOrderState());
-        // 微信App支付参数
-        payVO.setWechatPayParams(payOrderDTO.getWechatPayParams());
         return payVO;
     }
+
 
     @Override
     public Boolean cancel(CancelParam param) {

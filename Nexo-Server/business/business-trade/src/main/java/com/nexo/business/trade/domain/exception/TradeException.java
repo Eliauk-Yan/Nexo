@@ -13,4 +13,8 @@ public class TradeException extends BusinessException {
     public TradeException(ErrorCode errorCode) {
         super(errorCode);
     }
+
+    public TradeException(ErrorCode errorCode, String message) {
+        super(errorCode, message);
+    }
 }

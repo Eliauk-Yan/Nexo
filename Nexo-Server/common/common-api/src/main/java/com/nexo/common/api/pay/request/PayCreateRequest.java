@@ -1,7 +1,6 @@
 package com.nexo.common.api.pay.request;
 
 import com.nexo.common.base.request.BaseRequest;
-import com.nexo.common.api.pay.constant.PaymentType;
 import com.nexo.common.api.user.constant.UserType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
@@ -60,13 +59,22 @@ public class PayCreateRequest extends BaseRequest {
     private UserType payeeType;
 
     /**
-     * 支付渠道
-     */
-    @NotNull(message = "支付渠道不能为空")
-    private PaymentType payChannel;
-
-    /**
      * 备注
      */
     private String memo;
+
+    /**
+     * 应用内购买商品ID
+     */
+    private String iapProductId;
+
+    /**
+     * 应用内购买交易ID
+     */
+    private String iapTransactionId;
+
+    /**
+     * 应用内购买凭证或购买令牌
+     */
+    private String iapPurchaseToken;
 }

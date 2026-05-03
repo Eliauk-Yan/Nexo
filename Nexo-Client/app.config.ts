@@ -1,14 +1,12 @@
 import type { ExpoConfig } from 'expo/config'
 
-const wechatAppId = process.env.EXPO_PUBLIC_WECHAT_APP_ID?.trim() ?? ''
-
 const config: ExpoConfig = {
   name: 'Nexo',
   slug: 'Nexo',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './src/assets/images/icon.png',
-  scheme: ['nexo', ...(wechatAppId ? [wechatAppId] : [])],
+  scheme: 'nexo',
   userInterfaceStyle: 'automatic',
   ios: {
     usesAppleSignIn: true,
@@ -48,16 +46,7 @@ const config: ExpoConfig = {
         photosPermission: 'The app accesses your photos to let you share them with your friends.',
       },
     ],
-    [
-      'expo-build-properties',
-      {
-        android: {
-          extraProguardRules:
-            '-keep class com.tencent.mm.opensdk.** {\n    *;\n}\n\n-keep class com.tencent.wxop.** {\n    *;\n}\n\n-keep class com.tencent.mm.sdk.** {\n    *;\n}',
-        },
-      },
-    ],
-    'expo-wechat',
+    'expo-build-properties',
     'expo-apple-authentication',
   ],
   experiments: {

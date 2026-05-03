@@ -29,11 +29,6 @@ public interface ChainService {
     ChainResponse<ChainOperationData> transfer(ChainRequest request);
 
     /**
-     * 销毁藏品
-     */
-    ChainResponse<ChainOperationData> destroy(ChainRequest request);
-
-    /**
      * 发送消息
      */
     void sendMsg(ChainOperationStream operateStream, ChainResultData resultData);

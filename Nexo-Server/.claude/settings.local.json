@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:reactnavigation.org)",
+      "WebSearch",
+      "WebFetch(domain:docs.expo.dev)",
+      "Bash(pnpm add *)"
+    ]
+  }
+}

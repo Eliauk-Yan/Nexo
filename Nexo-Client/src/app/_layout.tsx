@@ -2,14 +2,27 @@ import { SplashScreenController } from '@/utils/splash'
 import { SessionProvider, useSession } from '@/utils/ctx'
 import { Stack, useRouter, useSegments } from 'expo-router'
 import { StatusBar } from 'expo-status-bar'
+import { useIAP } from 'expo-iap'
 import React, { useEffect } from 'react'
+import { Platform } from 'react-native'
+
+const IapProvider = ({ children }: { children: React.ReactNode }) => {
+  useIAP()
+  return <>{children}</>
+}
 
 const RootLayout = () => {
   return (
     <SessionProvider>
       <StatusBar style="light" />
       <SplashScreenController />
-      <AuthLayout />
+      {Platform.OS === 'ios' || Platform.OS === 'android' ? (
+        <IapProvider>
+          <AuthLayout />
+        </IapProvider>
+      ) : (
+        <AuthLayout />
+      )}
     </SessionProvider>
   )
 }
@@ -68,8 +81,13 @@ const AuthLayout = () => {
       <Stack.Screen
         name="assets"
         options={{
-          title: '我的数字资产',
-          headerShown: true,
+          title: '数字资产',
+          headerBackTitle: '我的',
+          headerTransparent: true,
+          headerBackTitleStyle: {
+            fontSize: 16,
+            fontFamily: 'RobotoSlab_400Regular',
+          },
         }}
       />
 

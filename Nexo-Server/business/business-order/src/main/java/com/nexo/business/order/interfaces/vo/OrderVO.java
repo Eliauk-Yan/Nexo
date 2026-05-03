@@ -137,5 +137,9 @@ public class OrderVO implements Serializable {
      */
     private LocalDateTime completionTime;
 
+    /**
+     * 创建时间
+     */
+    private LocalDateTime createdAt;
 
 }

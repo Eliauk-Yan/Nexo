@@ -60,11 +60,11 @@ public class AssetServiceImpl extends ServiceImpl<AssetMapper, Asset> implements
         if (!asset.getCurrentHolderId().toString().equals(request.getOperator())) {
             throw new NFTException(ASSET_CHECK_ERROR);
         }
-        if (asset.getState() == AssetState.DESTROYING || asset.getState() == AssetState.DESTROYED) {
+        if (asset.getState() == AssetState.DESTROYED) {
             return asset;
         }
         // 2. 状态转移
-        asset.destroying();
+        asset.destroyed();
         // 3. 创建资产流水
         AssetStream assetStream = new AssetStream();
         assetStream.setAssetId(asset.getId());

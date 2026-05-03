@@ -1,21 +1,23 @@
 import { orderApi, OrderState, OrderVO } from '@/api/order'
-import { PaymentType, tradeApi } from '@/api/trade'
-import { colors, spacing, typography } from '@/config/theme'
-import { ensureWeChatRegistered, getWeChatConfigError, isWeChatConfigured } from '@/utils/wechat'
+import { tradeApi } from '@/api/trade'
+import { spacing, typography } from '@/config/theme'
 import { showErrorAlert } from '@/utils/error'
 import { useSession } from '@/utils/ctx'
+import {
+  finishNftPurchase,
+  getPurchaseToken,
+  getPurchaseTransactionId,
+  isIapTransactionReusedError,
+  purchaseNftProduct,
+  type NftIapPurchaseResult,
+} from '@/utils/iap'
 import Feather from '@expo/vector-icons/Feather'
-import { useEvent } from 'expo'
-import ExpoWeChat from 'expo-wechat'
 import { Stack, useRouter } from 'expo-router'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   Alert,
   FlatList,
   Image,
-  Modal,
-  Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -33,12 +35,40 @@ const TABS: { id: string; label: string; state?: OrderState }[] = [
   { id: 'closed', label: '已关闭', state: 'CLOSED' },
 ]
 
-const ORDER_STATE_MAP: Record<string, { label: string; color: string; bgColor: string; borderColor: string }> = {
-  CREATE: { label: '待付款', color: '#FFB800', bgColor: 'rgba(255,184,0,0.14)', borderColor: 'rgba(255,184,0,0.28)' },
-  CONFIRM: { label: '待付款', color: '#FFB800', bgColor: 'rgba(255,184,0,0.14)', borderColor: 'rgba(255,184,0,0.28)' },
-  PAID: { label: '已付款', color: '#22C55E', bgColor: 'rgba(34,197,94,0.14)', borderColor: 'rgba(34,197,94,0.28)' },
-  FINISH: { label: '已完成', color: '#22C55E', bgColor: 'rgba(34,197,94,0.14)', borderColor: 'rgba(34,197,94,0.28)' },
-  CLOSED: { label: '已关闭', color: '#8E8E93', bgColor: 'rgba(142,142,147,0.12)', borderColor: 'rgba(142,142,147,0.24)' },
+const ORDER_STATE_MAP: Record<
+  string,
+  { label: string; color: string; bgColor: string; borderColor: string }
+> = {
+  CREATE: {
+    label: '待付款',
+    color: '#FFB800',
+    bgColor: 'rgba(255,184,0,0.14)',
+    borderColor: 'rgba(255,184,0,0.28)',
+  },
+  CONFIRM: {
+    label: '待付款',
+    color: '#FFB800',
+    bgColor: 'rgba(255,184,0,0.14)',
+    borderColor: 'rgba(255,184,0,0.28)',
+  },
+  PAID: {
+    label: '已付款',
+    color: '#22C55E',
+    bgColor: 'rgba(34,197,94,0.14)',
+    borderColor: 'rgba(34,197,94,0.28)',
+  },
+  FINISH: {
+    label: '已完成',
+    color: '#22C55E',
+    bgColor: 'rgba(34,197,94,0.14)',
+    borderColor: 'rgba(34,197,94,0.28)',
+  },
+  CLOSED: {
+    label: '已关闭',
+    color: '#8E8E93',
+    bgColor: 'rgba(142,142,147,0.12)',
+    borderColor: 'rgba(142,142,147,0.24)',
+  },
 }
 
 const formatPrice = (price?: number | null) => (price ?? 0).toFixed(2)
@@ -55,11 +85,6 @@ const OrderPage = () => {
   const [orders, setOrders] = useState<OrderVO[]>([])
   const [loading, setLoading] = useState(false)
   const [purchasingOrderId, setPurchasingOrderId] = useState('')
-  const [paymentSheetVisible, setPaymentSheetVisible] = useState(false)
-  const [selectedPaymentType, setSelectedPaymentType] = useState<PaymentType>('MOCK')
-  const [selectedOrder, setSelectedOrder] = useState<OrderVO | null>(null)
-  const payResult = useEvent(ExpoWeChat, 'onPayResult')
-  const wechatConfigured = isWeChatConfigured()
 
   const ui = {
     background: isDark ? '#000000' : '#F2F2F7',
@@ -73,21 +98,6 @@ const OrderPage = () => {
     tabBg: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(118,118,128,0.12)',
     tabActive: isDark ? 'rgba(255,255,255,0.18)' : '#FFFFFF',
   }
-
-  const paymentMethods = [
-    {
-      type: 'MOCK' as PaymentType,
-      title: '模拟支付',
-      iconLabel: '模',
-      iconColor: '#F59E0B',
-    },
-    {
-      type: 'WECHAT' as PaymentType,
-      title: '微信支付',
-      iconLabel: '微',
-      iconColor: '#07C160',
-    },
-  ]
 
   const fetchOrders = useCallback(
     async (tabId = activeTab, silent = false) => {
@@ -152,7 +162,6 @@ const OrderPage = () => {
 
             await fetchOrders(activeTab, true)
             setPurchasingOrderId('')
-            setSelectedOrder(null)
             Alert.alert('提示', '支付完成，订单状态已更新。')
             return
           }
@@ -177,53 +186,34 @@ const OrderPage = () => {
   )
 
   const payWithRetry = useCallback(
-    async (orderId: string, paymentType: PaymentType) => {
+    async (order: OrderVO) => {
       const maxAttempts = 5
 
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        let iapPurchase: NftIapPurchaseResult | undefined
         try {
-          if (paymentType === 'MOCK') {
-            await tradeApi.pay({
-              orderId,
-              paymentType,
-            })
-            return 'MOCK'
+          if (!order.productId) {
+            throw new Error('订单缺少商品信息，无法发起应用内购买。')
           }
 
-          await ensureWeChatRegistered()
+          iapPurchase = await purchaseNftProduct(order.productId, order.orderId)
 
-          const payResponse = await tradeApi.pay({
-            orderId,
-            paymentType,
+          await tradeApi.pay({
+            orderId: order.orderId,
+            iapProductId: iapPurchase.productId,
+            iapTransactionId: getPurchaseTransactionId(iapPurchase.purchase),
+            iapPurchaseToken: getPurchaseToken(iapPurchase.purchase),
+          }, {
+            suppressErrorAlert: true,
           })
 
-          const wechatPayParams = payResponse.wechatPayParams
-          if (
-            !wechatPayParams?.partnerId ||
-            !wechatPayParams.prepayId ||
-            !wechatPayParams.nonceStr ||
-            !wechatPayParams.timeStamp ||
-            !wechatPayParams.sign ||
-            !wechatPayParams.packageValue
-          ) {
-            throw new Error('微信支付参数尚未就绪，请稍后再试。')
-          }
-
-          const isRequestSent = await ExpoWeChat.pay({
-            partnerId: wechatPayParams.partnerId,
-            prepayId: wechatPayParams.prepayId,
-            nonceStr: wechatPayParams.nonceStr,
-            timeStamp: wechatPayParams.timeStamp,
-            sign: wechatPayParams.sign,
-            package: wechatPayParams.packageValue,
-            extraData: wechatPayParams.extraData ?? payResponse.payOrderId ?? orderId,
-          })
-
-          if (!isRequestSent) {
-            throw new Error('微信支付请求发送失败，请确认微信客户端是否可用。')
-          }
-          return 'WECHAT'
+          await finishNftPurchase(iapPurchase.purchase)
+          return 'IAP'
         } catch (error) {
+          if (iapPurchase && isIapTransactionReusedError(error)) {
+            await finishNftPurchase(iapPurchase.purchase).catch(() => undefined)
+            throw error
+          }
           if (isOrderSyncingError(error) && attempt < maxAttempts - 1) {
             await sleep(800)
             continue
@@ -234,24 +224,6 @@ const OrderPage = () => {
     },
     [isOrderSyncingError, sleep],
   )
-
-  useEffect(() => {
-    if (!payResult || !selectedOrder) return
-
-    if (payResult.errorCode === 0) {
-      pollOrderStatus(selectedOrder.orderId)
-      return
-    }
-
-    if (payResult.errorCode === -2) {
-      setPurchasingOrderId('')
-      Alert.alert('提示', '你已取消微信支付。')
-      return
-    }
-
-    setPurchasingOrderId('')
-    Alert.alert('提示', payResult.errorMessage || '微信支付失败，请稍后重试。')
-  }, [payResult, pollOrderStatus, selectedOrder])
 
   useEffect(() => {
     if (isSessionLoading) return
@@ -292,26 +264,11 @@ const OrderPage = () => {
     ])
   }
 
-  const handlePayOrder = (order: OrderVO) => {
-    setSelectedOrder(order)
-    setPaymentSheetVisible(true)
-  }
-
-  const handleConfirmPayment = async () => {
-    if (!selectedOrder) return
-
-    if (selectedPaymentType === 'WECHAT' && !wechatConfigured) {
-      Alert.alert('提示', getWeChatConfigError() || '微信支付配置未完成。')
-      return
-    }
-
+  const handlePayOrder = async (order: OrderVO) => {
     try {
-      setPaymentSheetVisible(false)
-      setPurchasingOrderId(selectedOrder.orderId)
-      const payType = await payWithRetry(selectedOrder.orderId, selectedPaymentType)
-      if (payType === 'MOCK') {
-        pollOrderStatus(selectedOrder.orderId)
-      }
+      setPurchasingOrderId(order.orderId)
+      await payWithRetry(order)
+      pollOrderStatus(order.orderId)
     } catch (error) {
       setPurchasingOrderId('')
       if (!isOrderSyncingError(error)) {
@@ -349,7 +306,12 @@ const OrderPage = () => {
             订单号：{item.orderId}
           </Text>
 
-          <View style={[styles.stateBadge, { backgroundColor: stateInfo.bgColor, borderColor: stateInfo.borderColor }]}>
+          <View
+            style={[
+              styles.stateBadge,
+              { backgroundColor: stateInfo.bgColor, borderColor: stateInfo.borderColor },
+            ]}
+          >
             <Text style={[styles.stateText, { color: stateInfo.color }]}>{stateInfo.label}</Text>
           </View>
         </View>
@@ -379,16 +341,16 @@ const OrderPage = () => {
               {item.productName || '未知商品'}
             </Text>
 
-            <Text style={[styles.productMeta, { color: ui.textSecondary }]}>数量：{item.quantity}</Text>
+            <Text style={[styles.productMeta, { color: ui.textSecondary }]}>
+              数量：{item.quantity}
+            </Text>
 
             <Text style={[styles.productPrice, { color: ui.textPrimary }]}>
               单价：￥{formatPrice(item.unitPrice)}
             </Text>
 
             {canPay && (
-              <Text style={[styles.iapText, { color: ui.textTertiary }]}>
-                支付方式：模拟支付 / 微信支付
-              </Text>
+              <Text style={[styles.iapText, { color: ui.textTertiary }]}>支付方式：应用内购买</Text>
             )}
           </View>
         </View>
@@ -397,14 +359,16 @@ const OrderPage = () => {
 
         <View style={styles.rowBetweenEnd}>
           <Text style={[styles.timeText, { color: ui.textTertiary }]}>
-            {item.confirmTime != null
-              ? new Date(item.confirmTime).toLocaleString('zh-CN', { hour12: false })
+            {item.createdAt != null
+              ? `下单时间：${new Date(item.createdAt).toLocaleString('zh-CN', { hour12: false })}`
               : ''}
           </Text>
 
           <View style={styles.totalRow}>
             <Text style={[styles.totalLabel, { color: ui.textSecondary }]}>合计</Text>
-            <Text style={[styles.totalPrice, { color: ui.blue }]}>￥{formatPrice(item.totalPrice)}</Text>
+            <Text style={[styles.totalPrice, { color: ui.blue }]}>
+              ￥{formatPrice(item.totalPrice)}
+            </Text>
           </View>
         </View>
 
@@ -423,10 +387,12 @@ const OrderPage = () => {
               <TouchableOpacity
                 activeOpacity={0.82}
                 style={styles.payButton}
-                onPress={() => { void handlePayOrder(item) }}
+                onPress={() => {
+                  void handlePayOrder(item)
+                }}
                 disabled={isPurchasing}
               >
-                <Text style={styles.payButtonText}>{isPurchasing ? '处理中...' : '去付款'}</Text>
+                <Text style={styles.payButtonText}>{isPurchasing ? '处理中' : '去付款'}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -467,10 +433,7 @@ const OrderPage = () => {
 
   return (
     <View style={[styles.screen, { backgroundColor: ui.background }]}>
-      <Spinner
-        visible={loading}
-        animation="fade"
-      />
+      <Spinner visible={loading || !!purchasingOrderId} animation="fade" />
       <Stack.Screen
         options={{
           title: '我的订单',
@@ -494,90 +457,9 @@ const OrderPage = () => {
           flexGrow: 1,
         }}
         showsVerticalScrollIndicator={false}
-        ListHeaderComponent={
-          <View style={styles.pickerWrapper}>
-            {renderTabBar()}
-          </View>
-        }
+        ListHeaderComponent={<View style={styles.pickerWrapper}>{renderTabBar()}</View>}
         ListEmptyComponent={renderEmpty}
       />
-
-      {/* Payment Bottom Sheet */}
-      <Modal
-        visible={paymentSheetVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={() => {
-          if (!purchasingOrderId) {
-            setPaymentSheetVisible(false)
-          }
-        }}
-      >
-        <View style={styles.modalBackdrop}>
-          <Pressable
-            style={styles.modalDismissArea}
-            onPress={() => {
-              if (!purchasingOrderId) {
-                setPaymentSheetVisible(false)
-              }
-            }}
-          />
-          <View style={[styles.paymentSheet, { backgroundColor: ui.background }]}>
-            <View style={styles.sheetHandle} />
-
-            {/* Amount */}
-            <View style={styles.paymentAmountSection}>
-              <Text style={[styles.paymentAmount, { color: ui.textPrimary }]}>
-                ￥{selectedOrder ? formatPrice(selectedOrder.totalPrice) : '0.00'}
-              </Text>
-              <Text style={[styles.paymentOrderId, { color: ui.textSecondary }]}>
-                订单号：{selectedOrder?.orderId || '-'}
-              </Text>
-            </View>
-
-            {/* Payment Methods */}
-            <View style={styles.paymentMethodSection}>
-              <Text style={[styles.paymentMethodTitle, { color: ui.textSecondary }]}>支付方式</Text>
-              <View style={[styles.paymentMethodList, { backgroundColor: ui.card, borderColor: ui.border }]}>
-                {paymentMethods.map((method, index) => (
-                  <React.Fragment key={method.type}>
-                    {index > 0 && <View style={[styles.methodDivider, { backgroundColor: ui.border }]} />}
-                    <TouchableOpacity
-                      activeOpacity={0.78}
-                      style={styles.paymentMethodRow}
-                      onPress={() => setSelectedPaymentType(method.type)}
-                    >
-                      <View style={[styles.paymentMethodIcon, { backgroundColor: method.iconColor }]}>
-                        <Text style={styles.paymentMethodIconText}>{method.iconLabel}</Text>
-                      </View>
-                      <Text style={[styles.paymentMethodLabel, { color: ui.textPrimary }]}>{method.title}</Text>
-                      <View style={styles.paymentMethodCheck}>
-                        <Feather
-                          name={selectedPaymentType === method.type ? 'check-circle' : 'circle'}
-                          size={20}
-                          color={selectedPaymentType === method.type ? '#007AFF' : '#C7C7CC'}
-                        />
-                      </View>
-                    </TouchableOpacity>
-                  </React.Fragment>
-                ))}
-              </View>
-            </View>
-
-            {/* Confirm Button */}
-            <TouchableOpacity
-              activeOpacity={0.85}
-              style={[styles.confirmPayButton, purchasingOrderId ? styles.confirmPayButtonDisabled : null]}
-              disabled={!!purchasingOrderId}
-              onPress={() => { void handleConfirmPayment() }}
-            >
-              <Text style={styles.confirmPayButtonText}>
-                {purchasingOrderId ? '支付处理中...' : '确认支付'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </View>
   )
 }
@@ -749,103 +631,6 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: typography.fontSize.md,
     marginTop: 12,
-  },
-  // Payment Sheet
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.38)',
-  },
-  modalDismissArea: {
-    flex: 1,
-  },
-  paymentSheet: {
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingTop: 10,
-    paddingBottom: 34,
-    paddingHorizontal: 20,
-  },
-  sheetHandle: {
-    width: 42,
-    height: 5,
-    borderRadius: 999,
-    backgroundColor: 'rgba(142,142,147,0.42)',
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  paymentAmountSection: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  paymentAmount: {
-    fontSize: 40,
-    fontWeight: '800',
-  },
-  paymentOrderId: {
-    fontSize: 12,
-    marginTop: 6,
-  },
-  paymentMethodSection: {
-    marginBottom: 20,
-  },
-  paymentMethodTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginBottom: 8,
-    marginLeft: 4,
-    textTransform: 'uppercase',
-  },
-  paymentMethodList: {
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  paymentMethodRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  methodDivider: {
-    height: 1,
-    marginHorizontal: 16,
-  },
-  paymentMethodIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  paymentMethodIconText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  paymentMethodLabel: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '500',
-    marginLeft: 12,
-  },
-  paymentMethodCheck: {
-    marginLeft: 8,
-  },
-  confirmPayButton: {
-    height: 52,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0A84FF',
-  },
-  confirmPayButtonDisabled: {
-    opacity: 0.6,
-  },
-  confirmPayButtonText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '800',
   },
 })
 

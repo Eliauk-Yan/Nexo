@@ -13,8 +13,6 @@ public enum AssetState {
 
     INACTIVE("INACTIVE", "失效"),
 
-    DESTROYING("DESTROYING", "销毁中"),
-
     DESTROYED("DESTROYED", "已销毁");
 
     private final String code;

@@ -117,14 +117,6 @@ public class Asset extends BaseEntity {
     }
 
     /**
-     * 销毁中
-     */
-    public void destroying() {
-        this.state = AssetState.DESTROYING;
-        this.destroyTime = LocalDateTime.now();
-    }
-
-    /**
      * 已销毁
      */
     public void destroyed() {

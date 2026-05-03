@@ -55,6 +55,8 @@ export interface OrderVO {
   paymentStreamId: string | null
   /** 是否超时 */
   timeout: boolean | null
+  /** 创建时间 */
+  createdAt: string | null
 }
 
 /**

@@ -1,6 +1,5 @@
-package com.nexo.business.pay.channel.data;
+package com.nexo.business.pay.api.request;
 
-import com.nexo.common.api.pay.constant.PaymentType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,11 +7,11 @@ import java.io.Serial;
 import java.io.Serializable;
 
 /**
- * 支付渠道请求
+ * 应用内购买支付请求
  */
 @Getter
 @Setter
-public class PayChannelRequest implements Serializable {
+public class IapPayRequest implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -38,7 +37,17 @@ public class PayChannelRequest implements Serializable {
     private String attach;
 
     /**
-     * 支付渠道
+     * 应用内购买商品ID
      */
-    private PaymentType payChannel;
+    private String productId;
+
+    /**
+     * 应用内购买交易ID
+     */
+    private String transactionId;
+
+    /**
+     * 应用内购买凭证或购买令牌
+     */
+    private String purchaseToken;
 }

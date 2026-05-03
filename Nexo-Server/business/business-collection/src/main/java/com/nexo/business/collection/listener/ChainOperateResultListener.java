@@ -28,8 +28,6 @@ import java.time.LocalDateTime;
 import java.util.function.Consumer;
 
 import static com.nexo.business.collection.domain.exception.NFTErrorCode.*;
-import static com.nexo.common.api.nft.constant.AssetState.DESTROYED;
-import static com.nexo.common.api.nft.constant.AssetState.DESTROYING;
 
 /**
  * 链上操作结果监听器
@@ -73,80 +71,46 @@ public class ChainOperateResultListener extends StreamConsumer {
                     break;
                 case NFT_MINT:
                     // 藏品铸造
-                    handleAssetActivated(chainOperateBody, chainResultData);
-                    break;
-                case NFT_DESTROY:
-                    // 资产销毁
-                    handleAssetDestroyed(chainOperateBody);
+                    Long assetId = Long.parseLong(chainOperateBody.getBizId());
+                    Asset asset = assetService.getById(assetId);
+                    if (asset == null) {
+                        throw new NFTException(NFT_QUERY_FAILED);
+                    }
+                    asset.active(chainResultData.getTxid(), chainResultData.getAssetId());
+                    boolean activated = assetService.updateById(asset);
+                    if (!activated) {
+                        throw new NFTException(NFT_UPDATE_FAILED);
+                    }
+                    if (asset.getBusinessNo() == null || asset.getBusinessNo().isBlank()) {
+                        break;
+                    }
+                    OrderFinishRequest request = new OrderFinishRequest();
+                    request.setIdentifier("asset_finish_" + assetId);
+                    request.setOrderId(asset.getBusinessNo());
+                    request.setOperateTime(LocalDateTime.now());
+                    request.setOperator(UserType.PLATFORM.getCode());
+                    request.setOperatorType(UserType.PLATFORM);
+                    var response = orderFacade.finish(request);
+                    if (!response.getSuccess()) {
+                        throw new NFTException(NFT_UPDATE_FAILED);
+                    }
                     break;
                 case NFT_TRANSFER:
                     // 资产转增
-                    handleAssetTransfer(chainOperateBody, chainResultData);
+                    Asset newAsset = assetService.getById(Long.valueOf(chainOperateBody.getBizId()));
+                    if (newAsset == null || !newAsset.getState().equals(AssetState.INIT)) {
+                        throw new NFTException(ASSET_QUERY_FAILED);
+                    }
+                    newAsset.active(chainResultData.getAssetId(), chainResultData.getTxid());
+                    boolean result = assetService.updateById(newAsset);
+                    if (!result) {
+                        throw new NFTException(NFT_UPDATE_FAILED);
+                    }
                     break;
                 default:
                     log.warn("未处理的链回调操作类型, bizType={}, operateType={}", chainOperateBody.getBizType(), chainOperateBody.getOperateType());
             }
         };
-    }
-
-    private void handleAssetActivated(ChainOperateBody chainOperateBody, ChainResultData chainResultData) {
-        // 1. 根据资产ID查找资产
-        Long assetId = Long.parseLong(chainOperateBody.getBizId());
-        Asset asset = assetService.getById(assetId);
-        if (asset == null) {
-            throw new NFTException(NFT_QUERY_FAILED);
-        }
-        // 2. 状态激活
-        asset.active(chainResultData.getTxid(), chainResultData.getAssetId());
-        boolean activated = assetService.updateById(asset);
-        if (!activated) {
-            throw new NFTException(NFT_UPDATE_FAILED);
-        }
-        if (asset.getBusinessNo() == null || asset.getBusinessNo().isBlank()) {
-            return;
-        }
-        OrderFinishRequest request = new OrderFinishRequest();
-        request.setIdentifier("asset_finish_" + assetId);
-        request.setOrderId(asset.getBusinessNo());
-        request.setOperateTime(LocalDateTime.now());
-        request.setOperator(UserType.PLATFORM.getCode());
-        request.setOperatorType(UserType.PLATFORM);
-        var response = orderFacade.finish(request);
-        if (!response.getSuccess()) {
-            throw new NFTException(NFT_UPDATE_FAILED);
-        }
-    }
-
-    private void handleAssetDestroyed(ChainOperateBody chainOperateBody) {
-        Long assetId = Long.parseLong(chainOperateBody.getBizId());
-        Asset asset = assetService.getById(assetId);
-        if (asset == null) {
-            throw new NFTException(ASSET_QUERY_FAILED);
-        }
-        if (DESTROYED.equals(asset.getState())) {
-            return;
-        }
-        if (!DESTROYING.equals(asset.getState())) {
-            log.warn("资产销毁链回调状态不匹配, assetId={}, state={}", assetId, asset.getState());
-            throw new NFTException(NFT_UPDATE_FAILED);
-        }
-        asset.destroyed();
-        if (!assetService.updateById(asset)) {
-            throw new NFTException(NFT_UPDATE_FAILED);
-        }
-    }
-
-    private void handleAssetTransfer(ChainOperateBody chainOperateBody, ChainResultData chainResultData) {
-        //藏品铸造成功有nftId和txHash
-        Asset newAsset = assetService.getById(Long.valueOf(chainOperateBody.getBizId()));
-        if (newAsset == null || !newAsset.getState().equals(AssetState.INIT)) {
-            throw new NFTException(ASSET_QUERY_FAILED);
-        }
-        newAsset.active(chainResultData.getAssetId(), chainResultData.getTxid());
-        boolean result = assetService.updateById(newAsset);
-        if (!result) {
-            throw new NFTException(NFT_UPDATE_FAILED);
-        }
     }
 
     private void initInventory(String productId, Long inventory, String identifier) {

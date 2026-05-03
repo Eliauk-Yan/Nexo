@@ -1,9 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import Feather from '@expo/vector-icons/Feather'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
+import React, { useCallback, useState } from 'react'
 import { Stack, useFocusEffect, useRouter } from 'expo-router'
 import {
-  ActivityIndicator,
   Alert,
   Dimensions,
   FlatList,
@@ -13,20 +10,27 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   useColorScheme,
   View,
 } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import * as Haptics from 'expo-haptics'
+import Feather from '@expo/vector-icons/Feather'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 
 import { nftApi, Asset, AssetState } from '@/api/nft'
 import { borderRadius, colors, spacing, typography } from '@/config/theme'
 import { showErrorAlert } from '@/utils/error'
 import { useSession } from '@/utils/ctx'
 
-function EmptyAssets({ message = '暂无相关资产', textColor = '#8E8E93' }: { message?: string; textColor?: string }) {
+function EmptyAssets({
+  message = '暂无相关资产',
+  textColor = '#8E8E93',
+}: {
+  message?: string
+  textColor?: string
+}) {
   return (
     <View style={styles.emptyContainer}>
       <Feather name="inbox" size={46} color="#8E8E93" />
@@ -103,13 +107,7 @@ function getAssetStateStyle(state?: string, isDark = false) {
   }
 }
 
-function AssetCard({
-  asset,
-  onPress,
-}: {
-  asset: Asset
-  onPress: () => void
-}) {
+function AssetCard({ asset, onPress }: { asset: Asset; onPress: () => void }) {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const cardBg = isDark ? colors.backgroundCard : '#FFFFFF'
@@ -121,7 +119,9 @@ function AssetCard({
 
   return (
     <Pressable style={styles.assetCardWrap} onPress={onPress}>
-      <View style={[styles.assetCardContainer, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+      <View
+        style={[styles.assetCardContainer, { backgroundColor: cardBg, borderColor: cardBorder }]}
+      >
         <View style={styles.assetImageContainer}>
           <View style={[styles.assetImageFrame, { backgroundColor: frameBg }]}>
             {asset.artworkCover ? (
@@ -130,8 +130,15 @@ function AssetCard({
               <Feather name="image" size={30} color="#8E8E93" />
             )}
           </View>
-          <View style={[styles.assetStatusBadge, { backgroundColor: stateStyle.background, borderColor: stateStyle.border }]}>
-            <Text style={[styles.assetStatusText, { color: stateStyle.text }]}>{getAssetStateLabel(asset.state)}</Text>
+          <View
+            style={[
+              styles.assetStatusBadge,
+              { backgroundColor: stateStyle.background, borderColor: stateStyle.border },
+            ]}
+          >
+            <Text style={[styles.assetStatusText, { color: stateStyle.text }]}>
+              {getAssetStateLabel(asset.state)}
+            </Text>
           </View>
         </View>
 
@@ -153,46 +160,6 @@ function AssetCard({
   )
 }
 
-function DetailRow({
-  icon,
-  iconColor,
-  label,
-  value,
-  borderColor,
-  textColor,
-  subTextColor,
-  onPress,
-}: {
-  icon: React.ComponentProps<typeof Feather>['name']
-  iconColor: string
-  label: string
-  value: string
-  borderColor: string
-  textColor: string
-  subTextColor: string
-  onPress?: () => void
-}) {
-  const content = (
-    <View style={[styles.detailRow, { borderBottomColor: borderColor }]}>
-      <View style={[styles.detailIcon, { backgroundColor: `${iconColor}1F` }]}>
-        <Feather name={icon} size={16} color={iconColor} />
-      </View>
-      <Text style={[styles.detailLabel, { color: textColor }]}>{label}</Text>
-      <Text numberOfLines={1} style={[styles.detailValue, { color: subTextColor }]}>
-        {value}
-      </Text>
-      {onPress ? <Feather name="copy" size={15} color={subTextColor} /> : null}
-    </View>
-  )
-
-  if (!onPress) return content
-  return (
-    <TouchableOpacity activeOpacity={0.82} onPress={onPress}>
-      {content}
-    </TouchableOpacity>
-  )
-}
-
 export default function MyAssetsScreen() {
   const router = useRouter()
   const colorScheme = useColorScheme()
@@ -204,18 +171,17 @@ export default function MyAssetsScreen() {
   const [loading, setLoading] = useState(false)
   const [destroyingAssetId, setDestroyingAssetId] = useState<number | null>(null)
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
-  const [activeTab, setActiveTab] = useState('all')
+  const [activeTab, setActiveTab] = useState<string>('all')
   const [keyword, setKeyword] = useState('')
-  const [searchText, setSearchText] = useState('')
 
   const ui = {
     background: isDark ? '#000000' : '#F2F2F7',
     card: isDark ? colors.backgroundCard : '#FFFFFF',
-    cardMuted: isDark ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
     text: isDark ? colors.text : '#111827',
     textSecondary: isDark ? colors.textSecondary : '#6B7280',
     border: isDark ? colors.border : 'rgba(15, 23, 42, 0.08)',
     search: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(118,118,128,0.12)',
+    tabBg: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(118,118,128,0.12)',
   }
 
   const handleCopy = async (text: string, label: string) => {
@@ -223,37 +189,37 @@ export default function MyAssetsScreen() {
       await Clipboard.setStringAsync(text)
       try {
         await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-      } catch {
-        // Haptics might not be available.
-      }
+      } catch {}
       Alert.alert('提示', `${label}已复制到剪贴板`)
     } catch {
       Alert.alert('复制失败', '无法自动复制，请长按文本进行手动选择复制。')
     }
   }
 
-  const fetchMyAssets = useCallback(async (tabId = activeTab, searchKeyword = keyword) => {
-    if (!isLogin) {
-      setAssets([])
-      return
-    }
-
-    try {
-      setLoading(true)
-      const state = ASSET_TABS.find((tab) => tab.id === tabId)?.state
-      const response = await nftApi.getMyAssets({
-        currentPage: 1,
-        pageSize: 20,
-        keyword: searchKeyword.trim() || undefined,
-        state,
-      })
-      setAssets(Array.isArray(response) ? response : [])
-    } catch (error) {
-      showErrorAlert(error, '加载资产失败，请稍后重试。')
-    } finally {
-      setLoading(false)
-    }
-  }, [activeTab, isLogin, keyword])
+  const fetchMyAssets = useCallback(
+    async (tabId = activeTab, searchKeyword = keyword) => {
+      if (!isLogin) {
+        setAssets([])
+        return
+      }
+      try {
+        setLoading(true)
+        const state = ASSET_TABS.find((tab) => tab.id === tabId)?.state
+        const response = await nftApi.getMyAssets({
+          currentPage: 1,
+          pageSize: 20,
+          keyword: searchKeyword.trim() || undefined,
+          state,
+        })
+        setAssets(Array.isArray(response) ? response : [])
+      } catch (error) {
+        showErrorAlert(error, '加载资产失败，请稍后重试。')
+      } finally {
+        setLoading(false)
+      }
+    },
+    [activeTab, isLogin, keyword],
+  )
 
   const handleDestroyAsset = useCallback(
     (asset: Asset) => {
@@ -261,7 +227,6 @@ export default function MyAssetsScreen() {
         Alert.alert('提示', '只有已持有的资产可以销毁。')
         return
       }
-
       Alert.alert('销毁确认', '销毁会提交链上处理，确认后不可恢复。', [
         { text: '取消', style: 'cancel' },
         {
@@ -277,9 +242,7 @@ export default function MyAssetsScreen() {
               await nftApi.destroyAsset(asset.id)
               try {
                 await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-              } catch {
-                // Haptics might not be available.
-              }
+              } catch {}
               Alert.alert('提示', '销毁请求已提交')
               setSelectedAsset(null)
               await fetchMyAssets(activeTab, keyword)
@@ -295,14 +258,6 @@ export default function MyAssetsScreen() {
     [activeTab, fetchMyAssets, keyword],
   )
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setKeyword(searchText)
-    }, 350)
-
-    return () => clearTimeout(timer)
-  }, [searchText])
-
   useFocusEffect(
     useCallback(() => {
       fetchMyAssets(activeTab, keyword).catch(() => {})
@@ -311,270 +266,247 @@ export default function MyAssetsScreen() {
 
   const selectedStateStyle = getAssetStateStyle(selectedAsset?.state, isDark)
 
-  const renderHeader = () => (
-    <View>
-      <View style={[styles.searchBox, { backgroundColor: ui.search, borderColor: ui.border }]}>
-        <Feather name="search" size={18} color={ui.textSecondary} />
-        <TextInput
-          value={searchText}
-          onChangeText={setSearchText}
-          placeholder="搜索资产"
-          placeholderTextColor={ui.textSecondary}
-          style={[styles.searchInput, { color: ui.text }]}
-          returnKeyType="search"
-          clearButtonMode="while-editing"
-        />
-        {searchText ? (
-          <TouchableOpacity activeOpacity={0.72} onPress={() => setSearchText('')}>
-            <Feather name="x-circle" size={17} color={ui.textSecondary} />
-          </TouchableOpacity>
-        ) : null}
-      </View>
-
-      <View style={styles.filterContent}>
-        {ASSET_TABS.map((tab) => {
-          const active = activeTab === tab.id
-          return (
-            <TouchableOpacity
-              key={tab.id}
-              activeOpacity={0.82}
-              style={[
-                styles.filterChip,
-                {
-                  backgroundColor: active ? '#0A84FF' : ui.cardMuted,
-                  borderColor: active ? '#0A84FF' : ui.border,
-                },
-              ]}
-              onPress={() => setActiveTab(tab.id)}
-            >
-              <Text style={[styles.filterChipText, { color: active ? '#FFFFFF' : ui.textSecondary }]}>{tab.label}</Text>
-            </TouchableOpacity>
-          )
-        })}
-      </View>
-
-      <View style={styles.listTitleRow}>
-        <Text style={[styles.listTitle, { color: ui.text }]}>资产列表</Text>
-        <Text style={[styles.listCount, { color: ui.textSecondary }]}>{assets.length} 件</Text>
-      </View>
-    </View>
-  )
-
   return (
-    <View style={[styles.container, { backgroundColor: ui.background }]}>
-      <Stack.Screen
-        options={{
-          headerTitle: '我的资产',
-          headerTransparent: true,
+    <>
+      <Stack.SearchBar
+        placeholder="搜索资产"
+        onChangeText={(e: any) => {
+          const text = typeof e === 'string' ? e : (e?.nativeEvent?.text ?? '')
+          setKeyword(text)
         }}
       />
-
-      <Stack.Toolbar placement="left">
-        <Stack.Toolbar.Button icon="chevron.left" onPress={() => router.back()} />
-      </Stack.Toolbar>
-
-      {!isLogin ? (
-        <View style={styles.loginContainer}>
-          {renderHeader()}
-          <View style={[styles.loginCard, { backgroundColor: ui.card, borderColor: ui.border }]}>
-            <EmptyAssets message="登录后查看我的数字资产" textColor={ui.textSecondary} />
-            <TouchableOpacity activeOpacity={0.85} style={styles.loginButton} onPress={() => router.push('/(auth)/sign-in')}>
-              <Text style={styles.loginButtonText}>去登录</Text>
-            </TouchableOpacity>
+      <View style={[styles.container, { backgroundColor: ui.background }]}>
+        {!isLogin ? (
+          <View style={styles.loginContainer}>
+            <View style={[styles.loginCard, { backgroundColor: ui.card, borderColor: ui.border }]}>
+              <EmptyAssets message="登录后查看我的数字资产" textColor={ui.textSecondary} />
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={styles.loginButton}
+                onPress={() => router.push('/(auth)/sign-in')}
+              >
+                <Text style={styles.loginButtonText}>去登录</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      ) : (
-        <FlatList
-          data={assets}
-          numColumns={2}
-          keyExtractor={(item) => String(item.id)}
-          renderItem={({ item }) => (
-            <AssetCard
-              asset={item}
-              onPress={() => {
-                setSelectedAsset(item)
-              }}
-            />
-          )}
-          ListHeaderComponent={renderHeader}
-          ListEmptyComponent={
-            loading ? (
-              <View style={styles.loadingWrapper}>
-                <ActivityIndicator size="small" />
-              </View>
-            ) : (
-              <EmptyAssets textColor={ui.textSecondary} />
-            )
-          }
-          contentInsetAdjustmentBehavior="automatic"
-          contentContainerStyle={styles.listContent}
-          columnWrapperStyle={assets.length > 0 ? styles.assetRow : undefined}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
+        ) : (
+          <FlatList
+            data={assets}
+            numColumns={2}
+            keyExtractor={(item) => String(item.id)}
+            renderItem={({ item }) => (
+              <AssetCard asset={item} onPress={() => setSelectedAsset(item)} />
+            )}
+            ListHeaderComponent={
+              <>
+                <View style={styles.tabBarWrap}>
+                  {ASSET_TABS.map((tab) => {
+                    const active = activeTab === tab.id
+                    return (
+                      <TouchableOpacity
+                        key={tab.id}
+                        activeOpacity={0.82}
+                        style={[
+                          styles.tabChip,
+                          {
+                            backgroundColor: active ? '#0A84FF' : ui.tabBg,
+                            borderColor: active ? '#0A84FF' : ui.border,
+                          },
+                        ]}
+                        onPress={() => setActiveTab(tab.id)}
+                      >
+                        <Text style={[styles.tabChipText, { color: active ? '#FFFFFF' : ui.textSecondary }]}>
+                          {tab.label}
+                        </Text>
+                      </TouchableOpacity>
+                    )
+                  })}
+                </View>
+                <View style={styles.listTitleRow}>
+                  <Text style={[styles.listTitle, { color: ui.text }]}>资产列表</Text>
+                  <Text style={[styles.listCount, { color: ui.textSecondary }]}>
+                    {assets.length} 件
+                  </Text>
+                </View>
+              </>
+            }
+            ListEmptyComponent={<EmptyAssets textColor={ui.textSecondary} />}
+            contentInsetAdjustmentBehavior="automatic"
+            contentContainerStyle={styles.listContent}
+            columnWrapperStyle={assets.length > 0 ? styles.assetRow : undefined}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
 
-      <Modal
-        visible={Boolean(selectedAsset)}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setSelectedAsset(null)}
-      >
-        <View style={styles.modalBackdrop}>
-          <Pressable style={styles.modalDismissArea} onPress={() => setSelectedAsset(null)} />
-          {selectedAsset ? (
-            <View style={[styles.detailSheet, { backgroundColor: ui.background }]}>
-              <View style={styles.sheetHandle} />
-              <View style={styles.sheetHeader}>
-                <Text style={[styles.sheetTitle, { color: ui.text }]}>资产详情</Text>
-                <TouchableOpacity activeOpacity={0.78} style={[styles.closeButton, { backgroundColor: ui.search }]} onPress={() => setSelectedAsset(null)}>
-                  <Feather name="x" size={18} color={ui.text} />
-                </TouchableOpacity>
-              </View>
+        <Modal
+          visible={Boolean(selectedAsset)}
+          animationType="slide"
+          transparent
+          onRequestClose={() => setSelectedAsset(null)}
+        >
+          <View style={styles.modalBackdrop}>
+            <Pressable style={styles.modalDismissArea} onPress={() => setSelectedAsset(null)} />
+            {selectedAsset ? (
+              <View style={[styles.detailSheet, { backgroundColor: ui.background }]}>
+                <View style={styles.sheetHandle} />
+                <View style={styles.sheetHeader}>
+                  <Text style={[styles.sheetTitle, { color: ui.text }]}>资产详情</Text>
+                  <TouchableOpacity
+                    activeOpacity={0.78}
+                    style={[styles.closeButton, { backgroundColor: ui.search }]}
+                    onPress={() => setSelectedAsset(null)}
+                  >
+                    <Feather name="x" size={18} color={ui.text} />
+                  </TouchableOpacity>
+                </View>
 
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={[styles.detailHeroCard, { backgroundColor: ui.card, borderColor: ui.border }]}>
-                  <View style={[styles.detailCoverWrap, { backgroundColor: ui.search }]}>
-                    {selectedAsset.artworkCover ? (
-                      <RNImage source={{ uri: selectedAsset.artworkCover }} style={styles.detailCover} />
-                    ) : (
-                      <Feather name="image" size={34} color="#8E8E93" />
-                    )}
-                  </View>
-                  <View style={styles.detailHeroText}>
-                    <Text style={[styles.detailAssetTitle, { color: ui.text }]} numberOfLines={2}>
-                      {selectedAsset.artworkName || '未命名藏品'}
-                    </Text>
-                    <View style={[styles.detailStatus, { backgroundColor: selectedStateStyle.background, borderColor: selectedStateStyle.border }]}>
-                      <Text style={[styles.detailStatusText, { color: selectedStateStyle.text }]}>
-                        {getAssetStateLabel(selectedAsset.state)}
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  <View
+                    style={[
+                      styles.detailHeroCard,
+                      { backgroundColor: ui.card, borderColor: ui.border },
+                    ]}
+                  >
+                    <View style={[styles.detailCoverWrap, { backgroundColor: ui.search }]}>
+                      {selectedAsset.artworkCover ? (
+                        <RNImage
+                          source={{ uri: selectedAsset.artworkCover }}
+                          style={styles.detailCover}
+                        />
+                      ) : (
+                        <Feather name="image" size={34} color="#8E8E93" />
+                      )}
+                    </View>
+                    <View style={styles.detailHeroText}>
+                      <Text style={[styles.detailAssetTitle, { color: ui.text }]} numberOfLines={2}>
+                        {selectedAsset.artworkName || '未命名藏品'}
                       </Text>
+                      <View
+                        style={[
+                          styles.detailStatus,
+                          {
+                            backgroundColor: selectedStateStyle.background,
+                            borderColor: selectedStateStyle.border,
+                          },
+                        ]}
+                      >
+                        <Text style={[styles.detailStatusText, { color: selectedStateStyle.text }]}>
+                          {getAssetStateLabel(selectedAsset.state)}
+                        </Text>
+                      </View>
                     </View>
                   </View>
-                </View>
 
-                <View style={[styles.detailCard, { backgroundColor: ui.card }]}>
-                  <DetailRow
-                    icon="hash"
-                    iconColor="#0A84FF"
-                    label="标识符"
-                    value={formatShortText(selectedAsset.serialNumber)}
-                    borderColor={ui.border}
-                    textColor={ui.text}
-                    subTextColor={ui.textSecondary}
-                    onPress={() => {
-                      if (selectedAsset.serialNumber) handleCopy(selectedAsset.serialNumber, '资产唯一标识')
-                    }}
-                  />
-                  <DetailRow
-                    icon="dollar-sign"
-                    iconColor="#22C55E"
-                    label="买入价"
-                    value={`¥${selectedAsset.purchasePrice}`}
-                    borderColor={ui.border}
-                    textColor={ui.text}
-                    subTextColor={ui.textSecondary}
-                  />
-                  <DetailRow
-                    icon="calendar"
-                    iconColor="#FF9500"
-                    label="获得时间"
-                    value={new Date(selectedAsset.createdAt).toLocaleString('zh-CN')}
-                    borderColor={selectedAsset.transactionHash ? ui.border : 'transparent'}
-                    textColor={ui.text}
-                    subTextColor={ui.textSecondary}
-                  />
-                  {selectedAsset.transactionHash ? (
-                    <DetailRow
-                      icon="link"
-                      iconColor="#5856D6"
-                      label="交易哈希"
-                      value={formatShortText(selectedAsset.transactionHash, 10, 6)}
-                      borderColor="transparent"
-                      textColor={ui.text}
-                      subTextColor={ui.textSecondary}
-                      onPress={() => handleCopy(selectedAsset.transactionHash, '交易哈希')}
-                    />
+                  <View style={[styles.detailCard, { backgroundColor: ui.card }]}>
+                    {[
+                      {
+                        icon: 'hash',
+                        iconColor: '#0A84FF',
+                        label: '标识符',
+                        value: formatShortText(selectedAsset.serialNumber),
+                        copy: selectedAsset.serialNumber ? '资产唯一标识' : undefined,
+                        showBorder: true,
+                      },
+                      {
+                        icon: 'dollar-sign',
+                        iconColor: '#22C55E',
+                        label: '买入价',
+                        value: `¥${selectedAsset.purchasePrice}`,
+                        showBorder: true,
+                      },
+                      {
+                        icon: 'calendar',
+                        iconColor: '#FF9500',
+                        label: '获得时间',
+                        value: new Date(selectedAsset.createdAt).toLocaleString('zh-CN'),
+                        showBorder: !!selectedAsset.transactionHash,
+                      },
+                      ...(selectedAsset.transactionHash
+                        ? [
+                            {
+                              icon: 'link',
+                              iconColor: '#5856D6',
+                              label: '交易哈希',
+                              value: formatShortText(selectedAsset.transactionHash, 10, 6),
+                              copy: '交易哈希',
+                              showBorder: false,
+                            },
+                          ]
+                        : []),
+                    ].map((row, i) => (
+                      <TouchableOpacity
+                        key={i}
+                        activeOpacity={row.copy ? 0.82 : 1}
+                        onPress={
+                          row.copy
+                            ? () =>
+                                handleCopy(
+                                  selectedAsset[
+                                    row.icon === 'link' ? 'transactionHash' : 'serialNumber'
+                                  ],
+                                  row.copy!,
+                                )
+                            : undefined
+                        }
+                        style={[
+                          styles.detailRow,
+                          { borderBottomColor: row.showBorder ? ui.border : 'transparent' },
+                        ]}
+                      >
+                        <View
+                          style={[styles.detailIcon, { backgroundColor: `${row.iconColor}1F` }]}
+                        >
+                          <Feather name={row.icon as any} size={16} color={row.iconColor} />
+                        </View>
+                        <Text style={[styles.detailLabel, { color: ui.text }]}>{row.label}</Text>
+                        <Text
+                          numberOfLines={1}
+                          style={[styles.detailValue, { color: ui.textSecondary }]}
+                        >
+                          {row.value}
+                        </Text>
+                        {row.copy ? (
+                          <Feather name="copy" size={15} color={ui.textSecondary} />
+                        ) : null}
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {selectedAsset.state === 'ACTIVE' ? (
+                    <TouchableOpacity
+                      activeOpacity={0.86}
+                      disabled={destroyingAssetId === selectedAsset.id}
+                      style={[
+                        styles.destroyButton,
+                        destroyingAssetId === selectedAsset.id && styles.disabledButton,
+                      ]}
+                      onPress={() => handleDestroyAsset(selectedAsset)}
+                    >
+                      <Text style={styles.destroyButtonText}>
+                        {destroyingAssetId === selectedAsset.id ? '提交中...' : '销毁资产'}
+                      </Text>
+                    </TouchableOpacity>
                   ) : null}
-                </View>
-
-                {selectedAsset.state === 'ACTIVE' ? (
-                  <TouchableOpacity
-                    activeOpacity={0.86}
-                    disabled={destroyingAssetId === selectedAsset.id}
-                    style={[styles.destroyButton, destroyingAssetId === selectedAsset.id && styles.disabledButton]}
-                    onPress={() => handleDestroyAsset(selectedAsset)}
-                  >
-                    <Text style={styles.destroyButtonText}>
-                      {destroyingAssetId === selectedAsset.id ? '提交中...' : '销毁资产'}
-                    </Text>
-                  </TouchableOpacity>
-                ) : null}
-              </ScrollView>
-            </View>
-          ) : null}
-        </View>
-      </Modal>
-    </View>
+                </ScrollView>
+              </View>
+            ) : null}
+          </View>
+        </Modal>
+      </View>
+    </>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loginContainer: {
-    flex: 1,
-    paddingHorizontal: PAGE_PADDING,
-    paddingTop: 12,
-  },
-  loginCard: {
-    marginTop: 18,
-    borderRadius: 24,
-    borderWidth: 1,
-    padding: 20,
-  },
-  loginButton: {
-    height: 48,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#0A84FF',
-  },
-  loginButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  listContent: {
-    paddingHorizontal: PAGE_PADDING,
-    paddingTop: 12,
-    paddingBottom: 34,
-    flexGrow: 1,
-  },
-  searchBox: {
-    height: 44,
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  searchInput: {
-    flex: 1,
-    height: '100%',
-    fontSize: 16,
-    fontWeight: '600',
-    paddingVertical: 0,
-  },
-  filterContent: {
+  container: { flex: 1 },
+  tabBarWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingTop: 14,
-    paddingBottom: 12,
     gap: 10,
+    marginTop: 16,
+    marginBottom: spacing.sm,
   },
-  filterChip: {
+  tabChip: {
     height: 32,
     flexGrow: 1,
     flexBasis: 0,
@@ -585,10 +517,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  filterChipText: {
+  tabChipText: {
     fontSize: 13,
     fontWeight: '800',
   },
+  loginContainer: { flex: 1, paddingHorizontal: PAGE_PADDING, paddingTop: 12 },
+  loginCard: { marginTop: 18, borderRadius: 24, borderWidth: 1, padding: 20 },
+  loginButton: {
+    height: 48,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0A84FF',
+  },
+  loginButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '800' },
+  listContent: { paddingHorizontal: PAGE_PADDING, paddingTop: 4, paddingBottom: 34, flexGrow: 1 },
   listTitleRow: {
     marginTop: 4,
     marginBottom: 12,
@@ -596,21 +539,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  listTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-  },
-  listCount: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  assetRow: {
-    gap: 12,
-  },
-  assetCardWrap: {
-    width: CARD_WIDTH,
-    marginBottom: 12,
-  },
+  listTitle: { fontSize: 22, fontWeight: '900' },
+  listCount: { fontSize: 13, fontWeight: '700' },
+  assetRow: { gap: 12 },
+  assetCardWrap: { width: CARD_WIDTH, marginBottom: 12 },
   assetCardContainer: {
     borderRadius: 20,
     padding: spacing.sm,
@@ -634,11 +566,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  assetImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
+  assetImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   assetStatusBadge: {
     position: 'absolute',
     top: 8,
@@ -648,61 +576,25 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
   },
-  assetStatusText: {
-    fontSize: 11,
-    fontWeight: '800',
-  },
+  assetStatusText: { fontSize: 11, fontWeight: '800' },
   assetTitle: {
     fontSize: typography.fontSize.md,
     fontWeight: typography.fontWeight.bold,
     marginBottom: 6,
   },
-  assetSerialContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 10,
-  },
-  assetSerialText: {
-    fontSize: typography.fontSize.xs,
-    fontFamily: 'monospace',
-  },
-  assetFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  assetPriceLabel: {
-    fontSize: 11,
-  },
+  assetSerialContainer: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 10 },
+  assetSerialText: { fontSize: typography.fontSize.xs, fontFamily: 'monospace' },
+  assetFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  assetPriceLabel: { fontSize: 11 },
   assetPriceValue: {
     color: '#0A84FF',
     fontSize: typography.fontSize.sm,
     fontWeight: typography.fontWeight.bold,
   },
-  emptyContainer: {
-    alignItems: 'center',
-    minHeight: 280,
-    paddingTop: 150,
-  },
-  emptyText: {
-    fontSize: typography.fontSize.md,
-    marginTop: 12,
-    fontWeight: '600',
-  },
-  loadingWrapper: {
-    minHeight: 280,
-    paddingTop: 150,
-    alignItems: 'center',
-  },
-  modalBackdrop: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.38)',
-  },
-  modalDismissArea: {
-    flex: 1,
-  },
+  emptyContainer: { alignItems: 'center', minHeight: 280, paddingTop: 150 },
+  emptyText: { fontSize: typography.fontSize.md, marginTop: 12, fontWeight: '600' },
+  modalBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.38)' },
+  modalDismissArea: { flex: 1 },
   detailSheet: {
     maxHeight: '82%',
     borderTopLeftRadius: 28,
@@ -725,10 +617,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 14,
   },
-  sheetTitle: {
-    fontSize: 21,
-    fontWeight: '900',
-  },
+  sheetTitle: { fontSize: 21, fontWeight: '900' },
   closeButton: {
     width: 34,
     height: 34,
@@ -752,36 +641,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  detailCover: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  detailHeroText: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  detailAssetTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    lineHeight: 24,
-    marginBottom: 10,
-  },
-  detailStatus: {
-    borderRadius: 999,
-    borderWidth: 1,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  detailStatusText: {
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  detailCard: {
-    borderRadius: 22,
-    overflow: 'hidden',
-  },
+  detailCover: { width: '100%', height: '100%', resizeMode: 'cover' },
+  detailHeroText: { flex: 1, justifyContent: 'center', alignItems: 'flex-start' },
+  detailAssetTitle: { fontSize: 18, fontWeight: '900', lineHeight: 24, marginBottom: 10 },
+  detailStatus: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5 },
+  detailStatusText: { fontSize: 12, fontWeight: '800' },
+  detailCard: { borderRadius: 22, overflow: 'hidden' },
   detailRow: {
     minHeight: 58,
     paddingHorizontal: 14,
@@ -797,17 +662,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 10,
   },
-  detailLabel: {
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  detailValue: {
-    flex: 1,
-    marginLeft: 12,
-    textAlign: 'right',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  detailLabel: { fontSize: 15, fontWeight: '800' },
+  detailValue: { flex: 1, marginLeft: 12, textAlign: 'right', fontSize: 14, fontWeight: '600' },
   destroyButton: {
     marginTop: 18,
     height: 52,
@@ -816,12 +672,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: '#FF3B30',
   },
-  disabledButton: {
-    opacity: 0.62,
-  },
-  destroyButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '900',
-  },
+  disabledButton: { opacity: 0.62 },
+  destroyButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
 })

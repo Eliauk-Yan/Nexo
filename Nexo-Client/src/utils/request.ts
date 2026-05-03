@@ -19,6 +19,7 @@ interface RequestOptions {
 }
 // 定义 API 错误接口
 interface ApiError extends Error {
+  code?: string
   status?: number
   errors?: any
 }
@@ -101,6 +102,7 @@ const request = async (url: string, opts: RequestOptions = {}) => {
       }
     }
     const error = new Error(errMsg) as ApiError
+    error.code = res.code
     error.status = response.status
     error.errors = res.errors
     if (!suppressErrorAlert) {
@@ -130,13 +132,19 @@ export function post<T = any>(
   url: string,
   body: any,
   headers: Record<string, string> | undefined,
+  options: Pick<RequestOptions, 'suppressErrorAlert'>,
+): Promise<T>
+export function post<T = any>(
+  url: string,
+  body: any,
+  headers: Record<string, string> | undefined,
   options: { throwOnError: false },
 ): Promise<T | undefined>
 export function post<T = any>(
   url: string,
   body?: any,
   headers?: Record<string, string>,
-  options?: Pick<RequestOptions, 'throwOnError'>,
+  options?: Pick<RequestOptions, 'throwOnError' | 'suppressErrorAlert'>,
 ): Promise<T | undefined> {
   return request(url, { method: 'POST', body, headers, ...options })
 }

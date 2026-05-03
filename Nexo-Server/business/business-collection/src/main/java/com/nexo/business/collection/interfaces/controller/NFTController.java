@@ -104,19 +104,7 @@ public class NFTController {
         request.setIdentifier(param.getAssetId());
         // 2. 资产服务销毁资产
         Asset asset = assetService.destroy(request);
-        if (asset != null) {
-            ChainRequest chainRequest = new ChainRequest();
-            chainRequest.setBizId(String.valueOf(asset.getId())); // 业务ID
-            chainRequest.setBizType(ChainOperationBizType.ASSET); // 业务类型
-            chainRequest.setIdentifier(asset.getId().toString() + SEPARATOR + ChainOperateType.NFT_DESTROY.getCode()); // 幂等号
-            UserInfo user = StpUtil.getSession().getModel("userInfo", UserInfo.class);
-            chainRequest.setOwner(user.getAddress());
-            chainRequest.setClassId(asset.getNftId().toString());
-            chainRequest.setNtfId(String.valueOf(asset.getNftId()));
-            ChainResponse<ChainOperationData> response = chainFacade.destroy(chainRequest);
-            return Result.success(response.getSuccess());
-        }
-        return Result.success(false);
+        return Result.success(asset != null);
     }
 
     @PostMapping("/transfer")
@@ -153,11 +141,9 @@ public class NFTController {
             // 6.2 区块链操作
             ChainRequest chainRequest = new ChainRequest();
             chainRequest.setBizId(String.valueOf(newAsset.getId()));
-            chainRequest.setBizType(ChainOperationBizType.ASSET);
             chainRequest.setIdentifier(param.getAssetId() + SEPARATOR + param.getRecipeId() + SEPARATOR + ChainOperateType.NFT_TRANSFER.getCode());
             UserInfo currentUser = StpUtil.getSession().getModel("userInfo", UserInfo.class);
             chainRequest.setOwner(currentUser.getAddress());
-            chainRequest.setClassId(asset.getNftId().toString());
             chainRequest.setNtfId(String.valueOf(asset.getNftIdentifier()));
             chainRequest.setTo(reciveUserInfo.getAddress());
             ChainResponse<ChainOperationData> response = chainFacade.transfer(chainRequest);

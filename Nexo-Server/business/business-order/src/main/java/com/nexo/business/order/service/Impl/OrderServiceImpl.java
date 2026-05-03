@@ -180,10 +180,6 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
                 && !Objects.equals(tradeOrder.getBuyerId(), updateRequest.getOperator())) {
             throw new OrderException(PERMISSION_DENIED);
         }
-        // 2.3 状态校验
-        if (tradeOrder.getOrderState() != TradeOrderState.CONFIRM) {
-            throw new OrderException(ORDER_STATE_ILLEGAL);
-        }
         // 3. 幂等判断
         TradeOrderStream tradeOrderStream = orderStreamMapper.selectOne(
                 new LambdaQueryWrapper<TradeOrderStream>()
@@ -200,15 +196,23 @@ public class OrderServiceImpl extends ServiceImpl<OrderMapper, TradeOrder> imple
             orderResponse.setMessage(ResponseCode.DUPLICATED.getMessage());
             return orderResponse;
         }
-        // 4. 业务处理
+        // 4. 状态校验
+        if (updateRequest instanceof OrderFinishRequest) {
+            if (tradeOrder.getOrderState() != TradeOrderState.PAID) {
+                throw new OrderException(ORDER_STATE_ILLEGAL);
+            }
+        } else if (tradeOrder.getOrderState() != TradeOrderState.CONFIRM) {
+            throw new OrderException(ORDER_STATE_ILLEGAL);
+        }
+        // 5. 业务处理
         consumer.accept(tradeOrder);
-        // 5. 持久化到数据库
-        // 5.1 跟新订单状态
+        // 6. 持久化到数据库
+        // 6.1 更新订单状态
         boolean result = orderMapper.updateById(tradeOrder) == 1;
         if (!result) {
             throw new OrderException(UPDATE_ORDER_FAILED);
         }
-        // 5.2 持久化操作流水
+        // 6.2 持久化操作流水
         TradeOrderStream orderStream = new TradeOrderStream();
         orderStream.setOrderId(tradeOrder.getOrderId());
         orderStream.setBuyerId(tradeOrder.getBuyerId());

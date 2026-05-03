@@ -130,7 +130,6 @@ public class NFTFacadeImpl implements NFTFacade {
         asset.setNftId(request.getArtworkId());
         asset.setPurchasePrice(request.getPurchasePrice());
         asset.setSerialNumber(java.util.UUID.randomUUID().toString().replace("-", ""));
-        asset.setNftIdentifier(request.getIdentifier());
         asset.setCurrentHolderId(request.getBuyerId());
         asset.setState(AssetState.INIT);
         asset.setReferencePrice(nft.getPrice());
@@ -144,7 +143,8 @@ public class NFTFacadeImpl implements NFTFacade {
         try {
             ChainRequest chainRequest = new ChainRequest();
             chainRequest.setIdentifier(request.getIdentifier());
-            chainRequest.setClassId(request.getArtworkId().toString());
+            chainRequest.setBizId(asset.getId().toString());
+            chainRequest.setClassId(nft.getClassId());
             chainRequest.setTo(buyer.getAddress());
             ChainResponse<ChainOperationData> chainResponse = chainFacade.mint(chainRequest);
             if (chainResponse.getSuccess() && chainResponse.getData() != null) {

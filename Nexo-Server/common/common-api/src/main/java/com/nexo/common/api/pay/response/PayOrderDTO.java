@@ -44,13 +44,4 @@ public class PayOrderDTO implements Serializable {
      */
     private String bizNo;
 
-    /**
-     * 支付渠道
-     */
-    private String payChannel;
-
-    /**
-     * 微信App支付参数
-     */
-    private WechatPayParamsDTO wechatPayParams;
 }

@@ -1,17 +1,5 @@
 import { post } from '@/utils/request'
 
-export type PaymentType = 'MOCK' | 'WECHAT'
-
-export interface WechatPayParams {
-  partnerId?: string
-  prepayId?: string
-  nonceStr?: string
-  timeStamp?: number
-  packageValue?: string
-  sign?: string
-  extraData?: string
-}
-
 export interface BuyRequest {
   productId: string
   nftType: 'NFT'
@@ -20,7 +8,9 @@ export interface BuyRequest {
 
 export interface PayRequest {
   orderId: string
-  paymentType: PaymentType
+  iapProductId?: string
+  iapTransactionId?: string
+  iapPurchaseToken?: string
 }
 
 export interface CancelRequest {
@@ -30,7 +20,10 @@ export interface CancelRequest {
 export interface PayVO {
   payOrderId?: string
   payState?: string
-  wechatPayParams?: WechatPayParams
+}
+
+interface PayOptions {
+  suppressErrorAlert?: boolean
 }
 
 export const tradeApi = {
@@ -47,8 +40,8 @@ export const tradeApi = {
     )
   },
 
-  pay: (data: PayRequest) => {
-    return post<PayVO>('/trade/pay', data)
+  pay: (data: PayRequest, options?: PayOptions) => {
+    return post<PayVO>('/trade/pay', data, undefined, options)
   },
 
   cancel: (data: CancelRequest) => {

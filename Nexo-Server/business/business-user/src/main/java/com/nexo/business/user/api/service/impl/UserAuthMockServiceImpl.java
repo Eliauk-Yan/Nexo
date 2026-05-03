@@ -1,7 +1,7 @@
-package com.nexo.business.user.service.impl;
+package com.nexo.business.user.api.service.impl;
 
 import com.nexo.business.user.interfaces.dto.RealNameAuthDTO;
-import com.nexo.business.user.service.UserAuthService;
+import com.nexo.business.user.api.service.UserAuthService;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 

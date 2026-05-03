@@ -1,4 +1,4 @@
-package com.nexo.business.user.service.impl;
+package com.nexo.business.user.api.service.impl;
 
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpResponse;
@@ -7,7 +7,7 @@ import com.nexo.business.user.api.response.RealNameAuthResponse;
 import com.nexo.business.user.domain.exception.UserErrorCode;
 import com.nexo.business.user.domain.exception.UserException;
 import com.nexo.business.user.interfaces.dto.RealNameAuthDTO;
-import com.nexo.business.user.service.UserAuthService;
+import com.nexo.business.user.api.service.UserAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;

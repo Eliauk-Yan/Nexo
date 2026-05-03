@@ -85,7 +85,7 @@ public class AuthController {
     }
 
     /**
-     * 防止重复提交的token
+     * 幂等token
      */
     @GetMapping("/token")
     public Result<String> getToken(TokenDTO tokenDTO) {

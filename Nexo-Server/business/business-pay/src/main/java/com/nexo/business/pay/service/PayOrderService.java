@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.nexo.business.pay.domain.entity.PayOrder;
-import com.nexo.business.pay.exception.PayException;
+import com.nexo.business.pay.domain.exception.PayException;
 import com.nexo.business.pay.mapper.mybatis.PayOrderMapper;
 import com.nexo.common.api.pay.constant.PayState;
 import com.nexo.common.api.pay.request.PayCreateRequest;
@@ -14,7 +14,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 
-import static com.nexo.business.pay.exception.PayErrorCode.PAY_ORDER_UPDATE_FAILED;
+import static com.nexo.business.pay.domain.exception.PayErrorCode.PAY_ORDER_UPDATE_FAILED;
+
 
 /**
  * 支付单服务
@@ -34,8 +35,7 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
         PayOrder existPayOrder = this.getOne(new LambdaQueryWrapper<PayOrder>()
                 .eq(PayOrder::getPayerId, request.getPayerId())
                 .eq(PayOrder::getBizNo, request.getBizNo())
-                .eq(PayOrder::getBizType, request.getBizType())
-                .eq(PayOrder::getPayChannel, request.getPayChannel().getCode()));
+                .eq(PayOrder::getBizType, request.getBizType()));
         // 2. 如果以创建直接返回
         if (existPayOrder != null) {
             if (existPayOrder.getOrderState() != PayState.EXPIRED) {
@@ -109,6 +109,14 @@ public class PayOrderService extends ServiceImpl<PayOrderMapper, PayOrder> {
     public PayOrder queryByOrderId(String payOrderId) {
         return this.getOne(new LambdaQueryWrapper<PayOrder>()
                 .eq(PayOrder::getPayOrderId, payOrderId));
+    }
+
+    /**
+     * 根据渠道流水号查询支付单。
+     */
+    public PayOrder queryByChannelStreamId(String channelStreamId) {
+        return this.getOne(new LambdaQueryWrapper<PayOrder>()
+                .eq(PayOrder::getChannelStreamId, channelStreamId));
     }
 
 }

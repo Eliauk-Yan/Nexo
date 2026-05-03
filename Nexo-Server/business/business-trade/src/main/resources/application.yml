@@ -32,3 +32,7 @@ spring:
           destination: order-close-topic
           group: order-group
           binder: rocketmq
+
+nexo:
+  iap:
+    product-prefix: ${IAP_PRODUCT_PREFIX:com.shijieyan.nexo.nft}

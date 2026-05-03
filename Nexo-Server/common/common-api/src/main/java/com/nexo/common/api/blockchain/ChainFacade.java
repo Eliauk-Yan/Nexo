@@ -27,9 +27,4 @@ public interface ChainFacade {
      */
     ChainResponse<ChainOperationData> transfer(ChainRequest request);
 
-    /**
-     * 资产销毁
-     */
-    ChainResponse<ChainOperationData> destroy(ChainRequest request);
-
 }

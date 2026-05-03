@@ -38,9 +38,4 @@ public class ChainFacadeImpl implements ChainFacade {
     public ChainResponse<ChainOperationData> transfer(ChainRequest request) {
         return chainService.transfer(request);
     }
-
-    @Override
-    public ChainResponse<ChainOperationData> destroy(ChainRequest request) {
-        return chainService.destroy(request);
-    }
 }

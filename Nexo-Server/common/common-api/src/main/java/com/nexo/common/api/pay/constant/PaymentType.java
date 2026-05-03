@@ -7,9 +7,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum PaymentType {
 
-    MOCK("MOCK", "模拟"),
-
-    WECHAT("WECHAT", "微信支付");
+    IAP("IAP", "应用内购买");
 
     private final String code;
 

@@ -1,5 +1,5 @@
 server:
-  port: 8100
+  port: 8101
 spring:
   profiles:
     active: dev
@@ -13,11 +13,11 @@ spring:
   application:
     name: business-pay
 
-wxpay:
-  appId: 你的AppId
-  mchId: 你的商户号
-  apiKey3: 你的APIv3密钥
-  serialNo: 你的商户API证书序列号
-  keyPath: classpath:cert/apiclient_key.pem
-  platformCertPath: classpath:cert/wechatpay.pem
-  notifyUrl: https://你的域名/wxpay/notify
+nexo:
+  iap:
+    apple:
+      bundle-id: com.shijieyan.nexo
+      issuer-id: bbe9f5f0-f5c8-4702-82f4-8a7d4ce78804
+      key-id: UTQ69QMHY6
+      private-key-location: classpath:AuthKey_UTQ69QMHY6.p8
+      environment: Sandbox

@@ -1,4 +1,4 @@
-package com.nexo.business.pay.exception;
+package com.nexo.business.pay.domain.exception;
 
 import com.nexo.common.base.exception.code.ErrorCode;
 import lombok.AllArgsConstructor;

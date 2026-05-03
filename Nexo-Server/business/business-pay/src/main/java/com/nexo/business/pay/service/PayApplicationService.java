@@ -64,7 +64,7 @@ public class PayApplicationService {
             orderPayRequest.setOrderId(payOrder.getBizNo());
             orderPayRequest.setPaymentAmount(paidAmount);
             orderPayRequest.setPaymentStreamId(payOrder.getPayOrderId());
-            orderPayRequest.setPaymentMethod(PaymentType.valueOf(payOrder.getPayChannel()));
+            orderPayRequest.setPaymentMethod(PaymentType.IAP);
             orderPayRequest.setOperateTime(LocalDateTime.now());
             orderPayRequest.setOperator(payOrder.getPayerId());
             orderPayRequest.setOperatorType(UserType.CUSTOMER);
